@@ -494,9 +494,15 @@
               <input type="number" id="cabinetPrice" placeholder="Price/Unit" step="0.01" class="input-field">
             </div>
 
-            <!-- Material Requirements Section -->
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                          <!-- Material Requirements Section -->
+                          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
               <h4 class="font-semibold text-blue-800 mb-3">📦 Material Requirements (per cabinet)</h4>
+              
+              <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-4">
+                <p class="text-sm text-yellow-700">
+                  <strong>💡 Note:</strong> This information will be saved with the cabinet type. Materials will be deducted only when you add more cabinets using the +1 button.
+                </p>
+              </div>
               
               <!-- Plywood Selection -->
               <div class="mb-4">
@@ -533,7 +539,7 @@
             <div id="materialWarnings" class="hidden mb-4"></div>
 
             <div class="flex flex-col sm:flex-row gap-3">
-              <button onclick="addCabinet()" class="btn btn-green flex-1">✅ Make Cabinets</button>
+              <button onclick="addCabinet()" class="btn btn-green flex-1">✅ Create Cabinet Type</button>
               <button onclick="hideCabinetForm()" class="btn btn-gray flex-1">❌ Cancel</button>
             </div>
           </div>
@@ -1035,19 +1041,44 @@
       plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
       mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
       
-      // Populate with available plywood materials
+      // Populate with available materials
       plywood.forEach(item => {
         const option = document.createElement('option');
         option.value = item.id;
         option.textContent = `${item.type} (${item.sheets} sheets available)`;
         
-        // Add to both selects - users can choose what to use for what
-        const plywoodOption = option.cloneNode(true);
-        const mdfOption = option.cloneNode(true);
+        // Check if this is MDF based on the name/type
+        const isMDF = item.type.toLowerCase().includes('mdf');
+        const isPlywood = !isMDF; // Everything else is considered plywood
         
-        plywoodSelect.appendChild(plywoodOption);
-        mdfSelect.appendChild(mdfOption);
+        if (isPlywood) {
+          const plywoodOption = option.cloneNode(true);
+          plywoodSelect.appendChild(plywoodOption);
+        }
+        
+        if (isMDF) {
+          const mdfOption = option.cloneNode(true);
+          mdfSelect.appendChild(mdfOption);
+        }
       });
+      
+      // If no MDF found, add a note
+      if (mdfSelect.children.length === 1) {
+        const noMDFOption = document.createElement('option');
+        noMDFOption.value = '';
+        noMDFOption.textContent = 'No MDF materials found - Add MDF to plywood inventory';
+        noMDFOption.disabled = true;
+        mdfSelect.appendChild(noMDFOption);
+      }
+      
+      // If no plywood found, add a note  
+      if (plywoodSelect.children.length === 1) {
+        const noPlywoodOption = document.createElement('option');
+        noPlywoodOption.value = '';
+        noPlywoodOption.textContent = 'No plywood materials found';
+        noPlywoodOption.disabled = true;
+        plywoodSelect.appendChild(noPlywoodOption);
+      }
     }
 
     function setupMaterialCalculation() {
@@ -1246,64 +1277,12 @@
         return;
       }
       
-      if (!quantity || isNaN(quantity) || quantity < 1) {
-        alert('❌ Please enter a valid quantity');
+      if (!quantity || isNaN(quantity) || quantity < 0) {
+        alert('❌ Please enter a valid initial quantity (can be 0)');
         return;
       }
 
-      // Check if any materials are specified
-      if (plywoodSheets === 0 && mdfSheets === 0) {
-        if (!confirm('⚠️ No materials specified. Continue without deducting materials?')) {
-          return;
-        }
-      }
-
-      // Validate material availability
-      const materialChecks = [];
-      
-      if (plywoodId && plywoodSheets > 0) {
-        const plywoodItem = plywood.find(p => p.id == plywoodId);
-        const totalPlywoodNeeded = quantity * plywoodSheets;
-        
-        if (!plywoodItem) {
-          alert('❌ Selected plywood type not found');
-          return;
-        }
-        
-        if (totalPlywoodNeeded > plywoodItem.sheets) {
-          alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${totalPlywoodNeeded} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
-          return;
-        }
-        
-        materialChecks.push({
-          item: plywoodItem,
-          needed: totalPlywoodNeeded,
-          type: 'plywood'
-        });
-      }
-      
-      if (mdfId && mdfSheets > 0) {
-        const mdfItem = plywood.find(p => p.id == mdfId);
-        const totalMDFNeeded = quantity * mdfSheets;
-        
-        if (!mdfItem) {
-          alert('❌ Selected MDF type not found');
-          return;
-        }
-        
-        if (totalMDFNeeded > mdfItem.sheets) {
-          alert(`❌ Insufficient ${mdfItem.type} for doors!\nNeed: ${totalMDFNeeded} sheets\nAvailable: ${mdfItem.sheets} sheets`);
-          return;
-        }
-        
-        materialChecks.push({
-          item: mdfItem,
-          needed: totalMDFNeeded,
-          type: 'mdf'
-        });
-      }
-
-      // Create cabinet record
+      // Create cabinet record with material requirements
       const cabinet = {
         id: Date.now(),
         type,
@@ -1314,48 +1293,35 @@
           plywood: plywoodId ? {
             id: plywoodId,
             sheetsPerUnit: plywoodSheets,
-            totalUsed: quantity * plywoodSheets
+            type: plywood.find(p => p.id == plywoodId)?.type || 'Unknown'
           } : null,
           mdf: mdfId ? {
             id: mdfId,
             sheetsPerUnit: mdfSheets,
-            totalUsed: quantity * mdfSheets
+            type: plywood.find(p => p.id == mdfId)?.type || 'Unknown'
           } : null
         },
         dateCreated: new Date().toISOString()
       };
 
       try {
-        // Deduct materials from inventory
-        for (const check of materialChecks) {
-          const newQuantity = check.item.sheets - check.needed;
-          
-          await updateData('plywood', check.item.firebaseId, {
-            sheets: newQuantity,
-            lastUpdated: new Date().toISOString()
-          });
-          
-          console.log(`Deducted ${check.needed} sheets of ${check.item.type}`);
-        }
-
-        // Add cabinet to inventory
+        // Just save the cabinet - NO material deduction here
         await saveData('cabinets', cabinet);
         
         hideCabinetForm();
         
         // Show success message
         const msg = document.getElementById('successMessage');
-        const materialInfo = materialChecks.length > 0 ? 
-          `<br><small>Materials deducted: ${materialChecks.map(c => 
-            `${c.needed} sheets of ${c.item.type}`
-          ).join(', ')}</small>` : '';
+        const materialInfo = (plywoodId || mdfId) ? 
+          `<br><small>📋 Material requirements saved: ${plywoodId ? plywood.find(p => p.id == plywoodId)?.type + ' (' + plywoodSheets + '/unit)' : ''} ${mdfId ? plywood.find(p => p.id == mdfId)?.type + ' (' + mdfSheets + '/unit)' : ''}</small>` : '';
         
         msg.innerHTML = `
           <div class="flex items-center">
             <span class="text-green-600 mr-2">✅</span>
             <div>
-              <strong>${quantity} ${type}(s) manufactured successfully!</strong>
+              <strong>Cabinet type "${type}" created successfully!</strong>
               ${materialInfo}
+              <br><small>💡 Use +1 button to manufacture and deduct materials</small>
             </div>
           </div>
         `;
@@ -1364,7 +1330,7 @@
         
       } catch (error) {
         console.error('Error adding cabinet:', error);
-        alert('❌ Error manufacturing cabinet. Please try again.');
+        alert('❌ Error creating cabinet type. Please try again.');
       }
     }
 
@@ -1402,6 +1368,88 @@
       if (item) {
         const newQuantity = item.quantity + change;
         if (newQuantity >= 0) {
+          
+          // If adding cabinets (+1) and material requirements exist, deduct materials
+          if (change > 0 && item.materialRequirements) {
+            const materialChecks = [];
+            
+            // Check plywood requirements
+            if (item.materialRequirements.plywood && item.materialRequirements.plywood.sheetsPerUnit > 0) {
+              const plywoodItem = plywood.find(p => p.id == item.materialRequirements.plywood.id);
+              const needed = item.materialRequirements.plywood.sheetsPerUnit * change;
+              
+              if (plywoodItem && needed > plywoodItem.sheets) {
+                alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${needed} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
+                return;
+              }
+              
+              if (plywoodItem) {
+                materialChecks.push({
+                  item: plywoodItem,
+                  needed: needed,
+                  type: 'plywood'
+                });
+              }
+            }
+            
+            // Check MDF requirements
+            if (item.materialRequirements.mdf && item.materialRequirements.mdf.sheetsPerUnit > 0) {
+              const mdfItem = plywood.find(p => p.id == item.materialRequirements.mdf.id);
+              const needed = item.materialRequirements.mdf.sheetsPerUnit * change;
+              
+              if (mdfItem && needed > mdfItem.sheets) {
+                alert(`❌ Insufficient ${mdfItem.type}!\nNeed: ${needed} sheets\nAvailable: ${mdfItem.sheets} sheets`);
+                return;
+              }
+              
+              if (mdfItem) {
+                materialChecks.push({
+                  item: mdfItem,
+                  needed: needed,
+                  type: 'mdf'
+                });
+              }
+            }
+            
+            // Deduct materials if adding cabinets
+            try {
+              for (const check of materialChecks) {
+                const newMaterialQuantity = check.item.sheets - check.needed;
+                
+                await updateData('plywood', check.item.firebaseId, {
+                  sheets: newMaterialQuantity,
+                  lastUpdated: new Date().toISOString()
+                });
+                
+                console.log(`Deducted ${check.needed} sheets of ${check.item.type} for ${item.type}`);
+              }
+              
+              // Show material deduction message
+              if (materialChecks.length > 0) {
+                const msg = document.getElementById('successMessage');
+                msg.innerHTML = `
+                  <div class="flex items-center">
+                    <span class="text-green-600 mr-2">✅</span>
+                    <div>
+                      <strong>Cabinet manufactured! Materials deducted:</strong><br>
+                      <small>${materialChecks.map(c => 
+                        `${c.needed} sheets of ${c.item.type}`
+                      ).join(', ')}</small>
+                    </div>
+                  </div>
+                `;
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 4000);
+              }
+              
+            } catch (error) {
+              console.error('Error deducting materials:', error);
+              alert('❌ Error deducting materials. Cabinet not added.');
+              return;
+            }
+          }
+          
+          // Update cabinet quantity
           if (item.firebaseId) {
             await updateData('cabinets', item.firebaseId, {
               quantity: newQuantity
