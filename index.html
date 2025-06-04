@@ -73,6 +73,11 @@
       color: white;
     }
 
+    .btn-purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+    }
+
     /* Small Blue Edit Button Style */
     .btn-edit {
       background: linear-gradient(135deg, #3b82f6, #1d4ed8);
@@ -125,6 +130,17 @@
       border-radius: 20px;
       max-width: 400px;
       width: 100%;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-content-large {
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
     }
 
@@ -226,11 +242,35 @@
       50% { opacity: .5; }
     }
 
+    .invoice-row {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 0;
+      transition: background-color 0.3s ease;
+    }
+
+    .invoice-row:hover {
+      background-color: #f9fafb;
+    }
+
+    .bulk-item {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+    }
+
     /* Mobile Optimizations */
     @media (max-width: 768px) {
       .modal-content {
         margin: 16px;
         padding: 24px;
+      }
+      
+      .modal-content-large {
+        margin: 16px;
+        padding: 24px;
+        max-height: 85vh;
       }
       
       .card {
@@ -323,6 +363,29 @@
             </div>
           </div>
         </div>
+
+        <!-- Invoice Dashboard -->
+        <div id="invoiceDashboard" class="hidden">
+          <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📋 Invoice Tracking Overview</h3>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="stat-item">
+              <div class="text-2xl lg:text-3xl font-bold" id="totalInvoices">0</div>
+              <div class="text-blue-100 text-sm lg:text-base mt-2">Total Invoices</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-2xl lg:text-3xl font-bold" id="totalInvoiceValue">$0</div>
+              <div class="text-blue-100 text-sm lg:text-base mt-2">Total Invoice Value</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-2xl lg:text-3xl font-bold" id="recentInvoices">0</div>
+              <div class="text-blue-100 text-sm lg:text-base mt-2">This Month</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-2xl lg:text-3xl font-bold" id="uniqueSuppliers">0</div>
+              <div class="text-blue-100 text-sm lg:text-base mt-2">Suppliers</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Low Stock Alert -->
@@ -350,6 +413,9 @@
         <button onclick="setActiveTab('cabinets')" id="cabinetTab" class="flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive">
           🔨 Finished Cabinets
         </button>
+        <button onclick="setActiveTab('invoices')" id="invoiceTab" class="flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive">
+          📋 Invoice History
+        </button>
       </div>
 
       <!-- Content Area -->
@@ -363,13 +429,16 @@
                 <span class="qr-icon w-5 h-5 text-xs">QR</span>
                 Scan QR Code
               </button>
+              <button onclick="showBulkOperations()" class="btn btn-purple">
+                📦 Bulk Operations
+              </button>
               <button onclick="showPlywoodForm()" class="btn btn-primary">
                 ➕ Add New Plywood
               </button>
             </div>
           </div>
 
-          <!-- Plywood Form - NO INVOICE REQUIRED -->
+          <!-- Plywood Form - NOW WITH INVOICE REQUIRED -->
           <div id="plywoodForm" class="card p-6 mb-6 hidden">
             <h3 class="font-bold text-lg mb-4 text-gray-800">➕ Add New Plywood Material</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -378,6 +447,15 @@
               <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input-field">
               <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input-field" required>
               <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field" required>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <input type="text" id="plywoodInvoice" placeholder="Invoice Number *" class="input-field" required>
+              <input type="date" id="plywoodDate" class="input-field" required>
+            </div>
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mt-4">
+              <p class="text-sm text-blue-700">
+                <strong>📋 Invoice Required:</strong> All material additions must include invoice details for tracking.
+              </p>
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mt-6">
               <button onclick="addPlywood()" class="btn btn-green flex-1">✅ Add Plywood</button>
@@ -422,6 +500,62 @@
           <!-- Cabinet List -->
           <div id="cabinetList" class="space-y-4"></div>
         </div>
+
+        <!-- Invoice Content -->
+        <div id="invoiceContent" class="hidden">
+          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">Invoice History & Tracking</h2>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <input type="text" id="invoiceSearch" placeholder="Search invoices..." class="input-field" onkeyup="filterInvoices()">
+              <button onclick="exportInvoices()" class="btn btn-green">
+                📄 Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Invoice List -->
+          <div class="card p-6">
+            <div id="invoiceList">
+              <div class="text-center text-gray-500 py-8">
+                📋 No invoice records found. Add plywood materials to see invoice history.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Operations Modal -->
+  <div id="bulkModal" class="modal hidden">
+    <div class="modal-content-large">
+      <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📦 Bulk Operations</h3>
+      
+      <div class="mb-6">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <button onclick="setBulkMode('add')" id="bulkAddBtn" class="btn btn-green">➕ Bulk Add</button>
+          <button onclick="setBulkMode('remove')" id="bulkRemoveBtn" class="btn btn-red">➖ Bulk Remove</button>
+        </div>
+        
+        <div id="bulkInvoiceSection" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <input type="text" id="bulkInvoice" placeholder="Invoice Number (Required for Add)" class="input-field" required>
+          <input type="date" id="bulkDate" class="input-field" required>
+        </div>
+        
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4">
+          <p class="text-sm text-blue-700">
+            <strong>📋 Invoice Policy:</strong> Invoice required only for ADD operations. Remove operations don't need invoice details.
+          </p>
+        </div>
+      </div>
+
+      <div id="bulkItemsList" class="space-y-3 mb-6 max-h-60 overflow-y-auto">
+        <!-- Bulk items will be populated here -->
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="processBulkOperation()" class="btn btn-primary flex-1">✅ Process Bulk Operation</button>
+        <button onclick="closeBulkModal()" class="btn btn-gray flex-1">❌ Cancel</button>
       </div>
     </div>
   </div>
@@ -497,10 +631,13 @@
     // Global Variables
     let plywood = [];
     let cabinets = [];
+    let invoices = [];
     let activeTab = 'plywood';
     let scannedPlywoodId = null;
     let scannedCabinetId = null;
     let db = null;
+    let bulkMode = 'add';
+    let bulkItems = [];
 
     // Firebase config
     const firebaseConfig = {
@@ -586,6 +723,17 @@
           updateStats();
           console.log('🔨 Cabinets updated in real-time');
         });
+
+        db.collection('invoices').onSnapshot((snapshot) => {
+          invoices = [];
+          snapshot.forEach(doc => invoices.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderInvoices();
+          updateStats();
+          console.log('📋 Invoices updated in real-time');
+        });
       } catch (e) {
         console.log('Real-time listeners failed, loading sample data');
         loadSampleData();
@@ -599,9 +747,10 @@
           return;
         }
 
-        const [plywoodSnap, cabinetSnap] = await Promise.all([
+        const [plywoodSnap, cabinetSnap, invoiceSnap] = await Promise.all([
           db.collection('plywood').get(),
-          db.collection('cabinets').get()
+          db.collection('cabinets').get(),
+          db.collection('invoices').get()
         ]);
 
         plywood = [];
@@ -612,6 +761,12 @@
 
         cabinets = [];
         cabinetSnap.forEach(doc => cabinets.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
+
+        invoices = [];
+        invoiceSnap.forEach(doc => invoices.push({
           firebaseId: doc.id,
           ...doc.data()
         }));
@@ -668,6 +823,8 @@
           pricePerUnit: 280.00
         }
       ];
+
+      invoices = [];
       render();
     }
 
@@ -732,6 +889,17 @@
         const avgCabinetPrice = cabinetTypesCount > 0 ? 
           cabinets.reduce((sum, item) => sum + (item.pricePerUnit || 0), 0) / cabinetTypesCount : 0;
 
+        // Invoice stats
+        const totalInvoicesCount = invoices.length;
+        const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (inv.totalValue || 0), 0);
+        const thisMonth = new Date().getMonth();
+        const thisYear = new Date().getFullYear();
+        const recentInvoicesCount = invoices.filter(inv => {
+          const invDate = new Date(inv.date);
+          return invDate.getMonth() === thisMonth && invDate.getFullYear() === thisYear;
+        }).length;
+        const uniqueSuppliersCount = [...new Set(invoices.map(inv => inv.supplier))].length;
+
         document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
         document.getElementById('plywoodTypes').textContent = plywoodTypesCount.toString();
         document.getElementById('lowStockPlywood').textContent = lowStockItems.length.toString();
@@ -742,6 +910,11 @@
         document.getElementById('cabinetValue').textContent = `${Math.round(cabinetValue).toLocaleString()}`;
         document.getElementById('avgCabinetPrice').textContent = `${Math.round(avgCabinetPrice).toLocaleString()}`;
 
+        document.getElementById('totalInvoices').textContent = totalInvoicesCount.toString();
+        document.getElementById('totalInvoiceValue').textContent = `${Math.round(totalInvoiceValue).toLocaleString()}`;
+        document.getElementById('recentInvoices').textContent = recentInvoicesCount.toString();
+        document.getElementById('uniqueSuppliers').textContent = uniqueSuppliersCount.toString();
+
       } catch (error) {
         console.error('Error updating stats:', error);
       }
@@ -750,6 +923,7 @@
     function render() {
       renderPlywood();
       renderCabinets();
+      renderInvoices();
       checkLowStock();
       updateStats();
     }
@@ -757,29 +931,43 @@
     // Tab Functions
     function setActiveTab(tab) {
       activeTab = tab;
+      
+      // Hide all content and dashboards
+      document.getElementById('plywoodContent').classList.add('hidden');
+      document.getElementById('cabinetContent').classList.add('hidden');
+      document.getElementById('invoiceContent').classList.add('hidden');
+      document.getElementById('plywoodDashboard').classList.add('hidden');
+      document.getElementById('cabinetDashboard').classList.add('hidden');
+      document.getElementById('invoiceDashboard').classList.add('hidden');
+      
+      // Reset all tabs to inactive
+      document.getElementById('plywoodTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
+      document.getElementById('cabinetTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
+      document.getElementById('invoiceTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
+      
+      // Show selected tab content and dashboard
       if (tab === 'plywood') {
         document.getElementById('plywoodContent').classList.remove('hidden');
-        document.getElementById('cabinetContent').classList.add('hidden');
         document.getElementById('plywoodDashboard').classList.remove('hidden');
-        document.getElementById('cabinetDashboard').classList.add('hidden');
-        
         document.getElementById('plywoodTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-active';
-        document.getElementById('cabinetTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
-      } else {
-        document.getElementById('plywoodContent').classList.add('hidden');
+      } else if (tab === 'cabinets') {
         document.getElementById('cabinetContent').classList.remove('hidden');
-        document.getElementById('plywoodDashboard').classList.add('hidden');
         document.getElementById('cabinetDashboard').classList.remove('hidden');
-        
-        document.getElementById('plywoodTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
         document.getElementById('cabinetTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-active';
+      } else if (tab === 'invoices') {
+        document.getElementById('invoiceContent').classList.remove('hidden');
+        document.getElementById('invoiceDashboard').classList.remove('hidden');
+        document.getElementById('invoiceTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-active';
       }
+      
       updateStats();
     }
 
     // Form Functions
     function showPlywoodForm() {
       document.getElementById('plywoodForm').classList.remove('hidden');
+      // Set today's date as default
+      document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
     }
 
     function hidePlywoodForm() {
@@ -797,7 +985,7 @@
     }
 
     function clearPlywoodForm() {
-      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost'].forEach(id =>
+      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost', 'plywoodInvoice', 'plywoodDate'].forEach(id =>
         document.getElementById(id).value = ''
       );
     }
@@ -808,13 +996,15 @@
       );
     }
 
-    // Add Functions - NO INVOICE REQUIRED FOR NEW PLYWOOD
+    // Add Functions - NOW WITH INVOICE REQUIRED FOR NEW PLYWOOD
     async function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value);
       const minStock = parseInt(document.getElementById('plywoodMinStock').value) || 5;
       const supplier = document.getElementById('plywoodSupplier').value.trim();
       const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
+      const invoiceNumber = document.getElementById('plywoodInvoice').value.trim();
+      const date = document.getElementById('plywoodDate').value;
 
       if (!type) {
         alert('❌ Please enter the plywood type');
@@ -836,6 +1026,16 @@
         return;
       }
 
+      if (!invoiceNumber) {
+        alert('❌ Please enter an invoice number');
+        return;
+      }
+
+      if (!date) {
+        alert('❌ Please select a date');
+        return;
+      }
+
       const item = {
         id: Date.now(),
         type,
@@ -843,10 +1043,30 @@
         minStock,
         supplier,
         cost,
-        dateAdded: new Date().toISOString()
+        dateAdded: new Date().toISOString(),
+        lastInvoice: invoiceNumber
+      };
+      
+      // Create invoice record
+      const invoice = {
+        id: Date.now() + 1,
+        invoiceNumber,
+        date,
+        supplier,
+        operation: 'ADD',
+        items: [{
+          type,
+          quantity: sheets,
+          unitCost: cost,
+          totalCost: sheets * cost
+        }],
+        totalValue: sheets * cost,
+        notes: `Initial stock addition: ${type}`,
+        createdAt: new Date().toISOString()
       };
       
       await saveData('plywood', item);
+      await saveData('invoices', invoice);
       hidePlywoodForm();
     }
 
@@ -878,13 +1098,31 @@
       hideCabinetForm();
     }
 
-    // Update Functions - INVOICE REQUIRED FOR QTY UPDATES
+    // Update Functions - NO INVOICE REQUIRED FOR QTY UPDATES
     async function updatePlywoodQuantity(id, change) {
       const item = plywood.find(p => p.id === id);
       if (item) {
         const newQuantity = item.sheets + change;
         if (newQuantity >= 0) {
-          showInvoiceModal(item, change);
+          if (item.firebaseId) {
+            await updateData('plywood', item.firebaseId, {
+              sheets: newQuantity,
+              lastUpdated: new Date().toISOString()
+            });
+            
+            const msg = document.getElementById('successMessage');
+            msg.innerHTML = `
+              <div class="flex items-center">
+                <span class="text-green-600 mr-2">✅</span>
+                <div>
+                  <strong>Updated ${item.type}!</strong><br>
+                  <small>Change: ${change > 0 ? '+' : ''}${change} sheets</small>
+                </div>
+              </div>
+            `;
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+          }
         }
       }
     }
@@ -924,6 +1162,13 @@
             <input type="text" id="invoiceInput" placeholder="Enter invoice number" 
                    class="input-field w-full" required>
           </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Notes (Optional)
+            </label>
+            <textarea id="invoiceNotes" placeholder="Additional notes..." 
+                      class="input-field w-full" rows="3"></textarea>
+          </div>
           <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
             <p class="text-sm text-yellow-700">
               <strong>Required:</strong> Invoice number needed for quantity changes.
@@ -944,6 +1189,7 @@
 
     async function confirmQuantityUpdate(itemId, change) {
       const invoiceNumber = document.getElementById('invoiceInput').value.trim();
+      const notes = document.getElementById('invoiceNotes').value.trim();
       
       if (!invoiceNumber) {
         alert('🚨 Invoice number required!');
@@ -959,6 +1205,26 @@
           lastInvoice: invoiceNumber,
           lastUpdated: new Date().toISOString()
         });
+
+        // Create invoice record for the update
+        const invoice = {
+          id: Date.now(),
+          invoiceNumber,
+          date: new Date().toISOString().split('T')[0],
+          supplier: item.supplier,
+          operation: change > 0 ? 'ADD' : 'REMOVE',
+          items: [{
+            type: item.type,
+            quantity: Math.abs(change),
+            unitCost: item.cost,
+            totalCost: Math.abs(change) * item.cost
+          }],
+          totalValue: Math.abs(change) * item.cost,
+          notes: notes || `${change > 0 ? 'Added' : 'Removed'} ${Math.abs(change)} sheets of ${item.type}`,
+          createdAt: new Date().toISOString()
+        };
+
+        await saveData('invoices', invoice);
 
         closeInvoiceModal();
         
@@ -981,6 +1247,209 @@
       const modal = document.getElementById('invoiceModal');
       if (modal) {
         modal.remove();
+      }
+    }
+
+    // Bulk Operations Functions
+    function showBulkOperations() {
+      document.getElementById('bulkModal').classList.remove('hidden');
+      document.getElementById('bulkDate').value = new Date().toISOString().split('T')[0];
+      bulkItems = {}; // Reset bulk items
+      populateBulkItems();
+      setBulkMode('add'); // Default to add mode which shows invoice fields
+    }
+
+    function closeBulkModal() {
+      document.getElementById('bulkModal').classList.add('hidden');
+      bulkItems = {};
+      // Clear all input fields
+      const inputs = document.querySelectorAll('[id^="bulk_"]');
+      inputs.forEach(input => input.value = '');
+    }
+
+    function setBulkMode(mode) {
+      bulkMode = mode;
+      
+      document.getElementById('bulkAddBtn').className = mode === 'add' ? 'btn btn-green' : 'btn btn-gray';
+      document.getElementById('bulkRemoveBtn').className = mode === 'remove' ? 'btn btn-red' : 'btn btn-gray';
+      
+      // Show/hide invoice section based on mode
+      const invoiceSection = document.getElementById('bulkInvoiceSection');
+      if (mode === 'add') {
+        invoiceSection.classList.remove('hidden');
+      } else {
+        invoiceSection.classList.add('hidden');
+      }
+      
+      populateBulkItems();
+    }
+
+    function populateBulkItems() {
+      const container = document.getElementById('bulkItemsList');
+      container.innerHTML = '';
+      
+      plywood.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'bulk-item';
+        div.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h4 class="font-semibold">${item.type}</h4>
+              <p class="text-sm text-gray-600">Current: ${item.sheets} sheets | Supplier: ${item.supplier}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <input type="number" id="bulk_${item.id}" placeholder="Qty" min="1" 
+                     class="input-field w-20" onchange="updateBulkItem(${item.id}, this.value)">
+              <span class="text-sm text-gray-500">${bulkMode === 'add' ? '+' : '-'}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateBulkItem(itemId, quantity) {
+      const qty = parseInt(quantity);
+      if (qty && qty > 0) {
+        bulkItems[itemId] = qty;
+        console.log('Updated bulk item:', itemId, 'quantity:', qty);
+        console.log('Current bulk items:', bulkItems);
+      } else {
+        delete bulkItems[itemId];
+        console.log('Removed bulk item:', itemId);
+      }
+    }
+
+    async function processBulkOperation() {
+      console.log('Processing bulk operation. Mode:', bulkMode);
+      console.log('Bulk items:', bulkItems);
+      
+      const invoiceNumber = document.getElementById('bulkInvoice').value.trim();
+      const date = document.getElementById('bulkDate').value;
+      
+      // Only require invoice for ADD operations
+      if (bulkMode === 'add') {
+        if (!invoiceNumber) {
+          alert('❌ Please enter an invoice number for bulk add operation');
+          return;
+        }
+        
+        if (!date) {
+          alert('❌ Please select a date for bulk add operation');
+          return;
+        }
+      }
+      
+      const itemIds = Object.keys(bulkItems);
+      console.log('Item IDs to process:', itemIds);
+      
+      if (itemIds.length === 0) {
+        alert('❌ Please select at least one item and specify quantities');
+        return;
+      }
+
+      let totalValue = 0;
+      const invoiceItems = [];
+      let processedCount = 0;
+      
+      // Process each bulk item
+      for (const itemId of itemIds) {
+        const item = plywood.find(p => p.id == itemId);
+        const quantity = bulkItems[itemId];
+        
+        console.log('Processing item:', item?.type, 'ID:', itemId, 'Quantity:', quantity);
+        
+        if (item && item.firebaseId) {
+          const change = bulkMode === 'add' ? quantity : -quantity;
+          const newQuantity = item.sheets + change;
+          
+          console.log('Current sheets:', item.sheets, 'Change:', change, 'New quantity:', newQuantity);
+          
+          if (newQuantity >= 0) {
+            const updatePayload = {
+              sheets: newQuantity,
+              lastUpdated: new Date().toISOString()
+            };
+            
+            // Only add invoice info for ADD operations
+            if (bulkMode === 'add') {
+              updatePayload.lastInvoice = invoiceNumber;
+            }
+            
+            try {
+              await updateData('plywood', item.firebaseId, updatePayload);
+              processedCount++;
+              console.log('Successfully updated:', item.type, 'New quantity:', newQuantity);
+              
+              if (bulkMode === 'add') {
+                invoiceItems.push({
+                  type: item.type,
+                  quantity: quantity,
+                  unitCost: item.cost,
+                  totalCost: quantity * item.cost
+                });
+                
+                totalValue += quantity * item.cost;
+              }
+            } catch (error) {
+              console.error('Error updating item:', item.type, error);
+              alert(`❌ Error updating ${item.type}: ${error.message}`);
+            }
+          } else {
+            console.log('Skipping item due to negative quantity:', item.type);
+            alert(`⚠️ Cannot remove ${Math.abs(change)} sheets from ${item.type} - only ${item.sheets} available`);
+          }
+        } else {
+          console.log('Item not found or missing firebaseId:', itemId, item);
+          alert(`❌ Item not found or missing database ID: ${itemId}`);
+        }
+      }
+      
+      // Create invoice record only for ADD operations
+      if (bulkMode === 'add' && invoiceItems.length > 0) {
+        const invoice = {
+          id: Date.now(),
+          invoiceNumber,
+          date,
+          supplier: 'Multiple',
+          operation: 'ADD',
+          items: invoiceItems,
+          totalValue,
+          notes: `Bulk add operation for ${invoiceItems.length} items`,
+          createdAt: new Date().toISOString()
+        };
+        
+        try {
+          await saveData('invoices', invoice);
+          console.log('Invoice saved successfully');
+        } catch (error) {
+          console.error('Error saving invoice:', error);
+        }
+      }
+      
+      closeBulkModal();
+      
+      if (processedCount > 0) {
+        const msg = document.getElementById('successMessage');
+        msg.innerHTML = `
+          <div class="flex items-center">
+            <span class="text-green-600 mr-2">✅</span>
+            <div>
+              <strong>Bulk ${bulkMode.charAt(0).toUpperCase() + bulkMode.slice(1)} Completed!</strong><br>
+              <small>${processedCount} items processed${bulkMode === 'add' && invoiceNumber ? ` | Invoice: ${invoiceNumber}` : ''}</small>
+            </div>
+          </div>
+        `;
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+        
+        // Force a manual refresh of the display
+        setTimeout(() => {
+          renderPlywood();
+          updateStats();
+        }, 500);
+      } else {
+        alert('❌ No items were processed. Please check your selections.');
       }
     }
 
@@ -1151,6 +1620,127 @@
       }
     }
 
+    // Invoice Functions
+    function renderInvoices() {
+      const list = document.getElementById('invoiceList');
+      if (!list) return;
+      
+      if (invoices.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            📋 No invoice records found. Add plywood materials to see invoice history.
+          </div>
+        `;
+        return;
+      }
+      
+      // Sort invoices by date (newest first)
+      const sortedInvoices = [...invoices].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      list.innerHTML = '';
+      
+      sortedInvoices.forEach(invoice => {
+        const div = document.createElement('div');
+        div.className = 'invoice-row';
+        
+        const operationColor = invoice.operation === 'ADD' ? 'text-green-600' : 'text-red-600';
+        const operationIcon = invoice.operation === 'ADD' ? '➕' : '➖';
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="${operationColor} text-xl">${operationIcon}</span>
+                <h3 class="font-bold text-lg text-gray-800">Invoice #${invoice.invoiceNumber}</h3>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${operationColor} bg-gray-100">
+                  ${invoice.operation}
+                </span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div>
+                  <strong>📅 Date:</strong> ${new Date(invoice.date).toLocaleDateString()}
+                </div>
+                <div>
+                  <strong>🏢 Supplier:</strong> ${invoice.supplier}
+                </div>
+                <div>
+                  <strong>💰 Total Value:</strong> ${invoice.totalValue.toFixed(2)}
+                </div>
+              </div>
+              ${invoice.notes ? `<p class="text-sm text-gray-500 mt-2"><strong>📝 Notes:</strong> ${invoice.notes}</p>` : ''}
+            </div>
+            <div class="lg:w-80">
+              <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
+              <div class="space-y-1">
+                ${invoice.items.map(item => `
+                  <div class="text-xs bg-gray-50 p-2 rounded flex justify-between">
+                    <span>${item.type} (${item.quantity}x)</span>
+                    <span>${item.totalCost.toFixed(2)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    function filterInvoices() {
+      const searchTerm = document.getElementById('invoiceSearch').value.toLowerCase();
+      const rows = document.querySelectorAll('.invoice-row');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function exportInvoices() {
+      if (invoices.length === 0) {
+        alert('No invoice data to export');
+        return;
+      }
+      
+      // Create CSV content
+      let csvContent = 'Invoice Number,Date,Supplier,Operation,Total Value,Notes,Items\n';
+      
+      invoices.forEach(invoice => {
+        const itemsString = invoice.items.map(item => 
+          `${item.type} (${item.quantity}x @ ${item.unitCost})`
+        ).join('; ');
+        
+        csvContent += `"${invoice.invoiceNumber}","${invoice.date}","${invoice.supplier}","${invoice.operation}","${invoice.totalValue}","${invoice.notes || ''}","${itemsString}"\n`;
+      });
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_history_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      const msg = document.getElementById('successMessage');
+      msg.innerHTML = `
+        <div class="flex items-center">
+          <span class="text-green-600 mr-2">✅</span>
+          <div>
+            <strong>Invoice History Exported!</strong><br>
+            <small>📄 ${invoices.length} invoices exported to CSV</small>
+          </div>
+        </div>
+      `;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 4000);
+    }
+
     // Render Functions
     function renderPlywood() {
       const list = document.getElementById('plywoodList');
@@ -1169,7 +1759,6 @@
         
         div.className = `card p-4 lg:p-6 ${sheets <= minStock ? 'low-stock' : ''}`;
         
-        // Create everything with innerHTML for visibility
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
@@ -1203,7 +1792,6 @@
         `;
         
         list.appendChild(div);
-        console.log('Added item with edit button:', item.type);
       });
     }
 
@@ -1223,7 +1811,6 @@
         
         div.className = 'card p-4 lg:p-6';
         
-        // Create everything with innerHTML for visibility
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
@@ -1255,7 +1842,6 @@
         `;
         
         list.appendChild(div);
-        console.log('Added cabinet with edit button:', item.type);
       });
     }
 
@@ -1266,7 +1852,7 @@
       
       if (lowStockItems.length > 0) {
         alert.classList.remove('hidden');
-        list.innerHTML = '';
+        list.innerHTML = '';A
         lowStockItems.forEach(item => {
           const li = document.createElement('li');
           li.className = 'font-semibold';
