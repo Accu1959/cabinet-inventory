@@ -260,6 +260,74 @@
       margin: 8px 0;
     }
 
+    /* Category Styles */
+    .category-header {
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px 0 8px 0;
+      border-left: 4px solid #3b82f6;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .category-header:hover {
+      background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .category-expanded {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+      border-left-color: #1d4ed8;
+    }
+
+    .subcategory-header {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0 4px 20px;
+      border-left: 3px solid #6366f1;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .subcategory-header:hover {
+      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      transform: translateY(-1px);
+    }
+
+    .subcategory-expanded {
+      background: linear-gradient(135deg, #e0e7ff, #c7d2fe) !important;
+      border-left-color: #4f46e5;
+    }
+
+    .cabinet-item {
+      margin-left: 40px;
+      margin-bottom: 8px;
+    }
+
+    .category-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .subcategory-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
     /* Mobile Optimizations */
     @media (max-width: 768px) {
       .modal-content {
@@ -296,6 +364,14 @@
       
       h2 {
         font-size: 20px !important;
+      }
+
+      .cabinet-item {
+        margin-left: 20px;
+      }
+      
+      .subcategory-header {
+        margin-left: 10px;
       }
     }
   </style>
@@ -350,8 +426,8 @@
               <div class="text-blue-100 text-sm lg:text-base mt-2">Total Cabinets</div>
             </div>
             <div class="stat-item">
-              <div class="text-2xl lg:text-3xl font-bold" id="cabinetTypes">0</div>
-              <div class="text-blue-100 text-sm lg:text-base mt-2">Cabinet Types</div>
+              <div class="text-2xl lg:text-3xl font-bold" id="cabinetCategories">0</div>
+              <div class="text-blue-100 text-sm lg:text-base mt-2">Categories</div>
             </div>
             <div class="stat-item">
               <div class="text-2xl lg:text-3xl font-bold" id="cabinetValue">$0</div>
@@ -476,9 +552,34 @@
                 <span class="qr-icon w-5 h-5 text-xs">QR</span>
                 Scan QR Code
               </button>
+              <button onclick="showCategoryModal()" class="btn btn-purple">
+                📂 Manage Categories
+              </button>
               <button onclick="showCabinetForm()" class="btn btn-primary">
                 ➕ Add New Cabinet
               </button>
+            </div>
+          </div>
+
+          <!-- Category/Subcategory Filter -->
+          <div class="card p-4 mb-6">
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Category:</label>
+                <select id="categoryFilter" class="input-field w-full" onchange="filterCabinets()">
+                  <option value="">All Categories</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Subcategory:</label>
+                <select id="subcategoryFilter" class="input-field w-full" onchange="filterCabinets()">
+                  <option value="">All Subcategories</option>
+                </select>
+              </div>
+              <div class="flex gap-2 pt-6">
+                <button onclick="clearFilters()" class="btn btn-gray">Clear Filters</button>
+                <button onclick="toggleCategoryView()" id="viewToggle" class="btn btn-primary">📋 List View</button>
+              </div>
             </div>
           </div>
 
@@ -494,8 +595,24 @@
               <input type="number" id="cabinetPrice" placeholder="Price/Unit" step="0.01" class="input-field">
             </div>
 
-                          <!-- Material Requirements Section -->
-                          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <!-- Category and Subcategory Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Category:</label>
+                <select id="cabinetCategory" class="input-field w-full" onchange="updateSubcategoryOptions()" required>
+                  <option value="">Select Category</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Subcategory:</label>
+                <select id="cabinetSubcategory" class="input-field w-full" required>
+                  <option value="">Select Subcategory</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Material Requirements Section -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
               <h4 class="font-semibold text-blue-800 mb-3">📦 Material Requirements (per cabinet)</h4>
               
               <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-4">
@@ -569,6 +686,48 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Management Modal -->
+  <div id="categoryModal" class="modal hidden">
+    <div class="modal-content-large">
+      <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📂 Manage Categories & Subcategories</h3>
+      
+      <!-- Add New Category -->
+      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <h4 class="font-semibold text-blue-800 mb-3">➕ Add New Category</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="text" id="newCategoryName" placeholder="Category Name" class="input-field">
+          <input type="text" id="newCategoryIcon" placeholder="Icon (emoji)" class="input-field">
+          <button onclick="addCategory()" class="btn btn-green">Add Category</button>
+        </div>
+      </div>
+
+      <!-- Add New Subcategory -->
+      <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <h4 class="font-semibold text-green-800 mb-3">➕ Add New Subcategory</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <select id="subcategoryParentCategory" class="input-field">
+            <option value="">Select Parent Category</option>
+          </select>
+          <input type="text" id="newSubcategoryName" placeholder="Subcategory Name" class="input-field">
+          <input type="text" id="newSubcategoryIcon" placeholder="Icon (emoji)" class="input-field">
+          <button onclick="addSubcategory()" class="btn btn-green">Add Subcategory</button>
+        </div>
+      </div>
+
+      <!-- Existing Categories List -->
+      <div class="mb-6">
+        <h4 class="font-semibold text-gray-800 mb-3">📋 Current Categories & Subcategories</h4>
+        <div id="categoriesList" class="space-y-3 max-h-60 overflow-y-auto">
+          <!-- Categories will be populated here -->
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeCategoryModal()" class="btn btn-gray flex-1">Close</button>
       </div>
     </div>
   </div>
@@ -679,12 +838,14 @@
     let plywood = [];
     let cabinets = [];
     let invoices = [];
+    let categories = [];
     let activeTab = 'plywood';
     let scannedPlywoodId = null;
     let scannedCabinetId = null;
     let db = null;
     let bulkMode = 'add';
     let bulkItems = [];
+    let categoryView = true; // true = category view, false = list view
 
     // Firebase config
     const firebaseConfig = {
@@ -781,6 +942,19 @@
           updateStats();
           console.log('📋 Invoices updated in real-time');
         });
+
+        db.collection('categories').onSnapshot((snapshot) => {
+          categories = [];
+          snapshot.forEach(doc => categories.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          console.log('Categories loaded from Firebase:', categories.length);
+          populateCategoryOptions();
+          renderCabinets();
+          updateStats();
+          console.log('📂 Categories updated in real-time');
+        });
       } catch (e) {
         console.log('Real-time listeners failed, loading sample data');
         loadSampleData();
@@ -794,10 +968,11 @@
           return;
         }
 
-        const [plywoodSnap, cabinetSnap, invoiceSnap] = await Promise.all([
+        const [plywoodSnap, cabinetSnap, invoiceSnap, categorySnap] = await Promise.all([
           db.collection('plywood').get(),
           db.collection('cabinets').get(),
-          db.collection('invoices').get()
+          db.collection('invoices').get(),
+          db.collection('categories').get()
         ]);
 
         plywood = [];
@@ -818,7 +993,13 @@
           ...doc.data()
         }));
 
-        if (plywood.length === 0 && cabinets.length === 0) {
+        categories = [];
+        categorySnap.forEach(doc => categories.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
+
+        if (plywood.length === 0 && cabinets.length === 0 && categories.length === 0) {
           await addSampleData();
         }
         
@@ -854,29 +1035,99 @@
         }
       ];
 
+      categories = [
+        {
+          id: 1,
+          name: 'Base Cabinets',
+          icon: '🏠',
+          subcategories: [
+            { id: 1, name: 'Standard Base', icon: '📦' },
+            { id: 2, name: 'Corner Base', icon: '📐' },
+            { id: 3, name: 'Sink Base', icon: '🚿' }
+          ]
+        },
+        {
+          id: 2,
+          name: 'Wall Cabinets',
+          icon: '🔲',
+          subcategories: [
+            { id: 4, name: 'Standard Wall', icon: '⬜' },
+            { id: 5, name: 'Corner Wall', icon: '📐' },
+            { id: 6, name: 'Glass Door', icon: '🪟' }
+          ]
+        },
+        {
+          id: 3,
+          name: 'Tall Cabinets',
+          icon: '🏢',
+          subcategories: [
+            { id: 7, name: 'Pantry', icon: '🥫' },
+            { id: 8, name: 'Utility', icon: '🧹' }
+          ]
+        }
+      ];
+
       cabinets = [
         {
           id: 1,
           type: 'Base Cabinet 24"',
           quantity: 5,
           materials: 'Oak 3/4"',
-          pricePerUnit: 350.00
+          pricePerUnit: 350.00,
+          category: 'Base Cabinets',
+          subcategory: 'Standard Base'
         },
         {
           id: 2,
           type: 'Wall Cabinet 30"',
           quantity: 8,
           materials: 'Maple 1/2"',
-          pricePerUnit: 280.00
+          pricePerUnit: 280.00,
+          category: 'Wall Cabinets',
+          subcategory: 'Standard Wall'
         }
       ];
 
       invoices = [];
+      console.log('Sample data loaded, categories:', categories.length);
       render();
     }
 
     async function addSampleData() {
-      const samples = [
+      // Sample categories
+      const sampleCategories = [
+        {
+          id: 1,
+          name: 'Base Cabinets',
+          icon: '🏠',
+          subcategories: [
+            { id: 1, name: 'Standard Base', icon: '📦' },
+            { id: 2, name: 'Corner Base', icon: '📐' },
+            { id: 3, name: 'Sink Base', icon: '🚿' }
+          ]
+        },
+        {
+          id: 2,
+          name: 'Wall Cabinets',
+          icon: '🔲',
+          subcategories: [
+            { id: 4, name: 'Standard Wall', icon: '⬜' },
+            { id: 5, name: 'Corner Wall', icon: '📐' },
+            { id: 6, name: 'Glass Door', icon: '🪟' }
+          ]
+        },
+        {
+          id: 3,
+          name: 'Tall Cabinets',
+          icon: '🏢',
+          subcategories: [
+            { id: 7, name: 'Pantry', icon: '🥫' },
+            { id: 8, name: 'Utility', icon: '🧹' }
+          ]
+        }
+      ];
+
+      const samplePlywood = [
         {
           id: 1,
           type: 'Oak 3/4"',
@@ -895,25 +1146,30 @@
         }
       ];
 
-      const cabinetSamples = [
+      const sampleCabinets = [
         {
           id: 1,
           type: 'Base Cabinet 24"',
           quantity: 5,
           materials: 'Oak 3/4"',
-          pricePerUnit: 350.00
+          pricePerUnit: 350.00,
+          category: 'Base Cabinets',
+          subcategory: 'Standard Base'
         },
         {
           id: 2,
           type: 'Wall Cabinet 30"',
           quantity: 8,
           materials: 'Maple 1/2"',
-          pricePerUnit: 280.00
+          pricePerUnit: 280.00,
+          category: 'Wall Cabinets',
+          subcategory: 'Standard Wall'
         }
       ];
 
-      for (const item of samples) await saveData('plywood', item);
-      for (const item of cabinetSamples) await saveData('cabinets', item);
+      for (const item of sampleCategories) await saveData('categories', item);
+      for (const item of samplePlywood) await saveData('plywood', item);
+      for (const item of sampleCabinets) await saveData('cabinets', item);
       setTimeout(loadData, 1000);
     }
 
@@ -931,10 +1187,10 @@
         const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
 
         const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const cabinetTypesCount = cabinets.length;
+        const cabinetCategoriesCount = categories.length;
         const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
-        const avgCabinetPrice = cabinetTypesCount > 0 ? 
-          cabinets.reduce((sum, item) => sum + (item.pricePerUnit || 0), 0) / cabinetTypesCount : 0;
+        const avgCabinetPrice = cabinets.length > 0 ? 
+          cabinets.reduce((sum, item) => sum + (item.pricePerUnit || 0), 0) / cabinets.length : 0;
 
         // Invoice stats
         const totalInvoicesCount = invoices.length;
@@ -950,15 +1206,15 @@
         document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
         document.getElementById('plywoodTypes').textContent = plywoodTypesCount.toString();
         document.getElementById('lowStockPlywood').textContent = lowStockItems.length.toString();
-        document.getElementById('plywoodValue').textContent = `${Math.round(plywoodValue).toLocaleString()}`;
+        document.getElementById('plywoodValue').textContent = `$${Math.round(plywoodValue).toLocaleString()}`;
 
         document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
-        document.getElementById('cabinetTypes').textContent = cabinetTypesCount.toString();
-        document.getElementById('cabinetValue').textContent = `${Math.round(cabinetValue).toLocaleString()}`;
-        document.getElementById('avgCabinetPrice').textContent = `${Math.round(avgCabinetPrice).toLocaleString()}`;
+        document.getElementById('cabinetCategories').textContent = cabinetCategoriesCount.toString();
+        document.getElementById('cabinetValue').textContent = `$${Math.round(cabinetValue).toLocaleString()}`;
+        document.getElementById('avgCabinetPrice').textContent = `$${Math.round(avgCabinetPrice).toLocaleString()}`;
 
         document.getElementById('totalInvoices').textContent = totalInvoicesCount.toString();
-        document.getElementById('totalInvoiceValue').textContent = `${Math.round(totalInvoiceValue).toLocaleString()}`;
+        document.getElementById('totalInvoiceValue').textContent = `$${Math.round(totalInvoiceValue).toLocaleString()}`;
         document.getElementById('recentInvoices').textContent = recentInvoicesCount.toString();
         document.getElementById('uniqueSuppliers').textContent = uniqueSuppliersCount.toString();
 
@@ -971,8 +1227,285 @@
       renderPlywood();
       renderCabinets();
       renderInvoices();
+      populateCategoryOptions(); // Ensure this is called after data loads
       checkLowStock();
       updateStats();
+      console.log('Render complete, total categories:', categories.length);
+    }
+
+    // Category Management Functions
+    function showCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('hidden');
+      populateParentCategoryOptions();
+      renderCategoriesList();
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+      clearCategoryForm();
+    }
+
+    function clearCategoryForm() {
+      ['newCategoryName', 'newCategoryIcon', 'newSubcategoryName', 'newSubcategoryIcon'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+      document.getElementById('subcategoryParentCategory').selectedIndex = 0;
+    }
+
+    function populateParentCategoryOptions() {
+      const select = document.getElementById('subcategoryParentCategory');
+      select.innerHTML = '<option value="">Select Parent Category</option>';
+      
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = `${category.icon} ${category.name}`;
+        select.appendChild(option);
+      });
+    }
+
+    function populateCategoryOptions() {
+      // Populate category selects in cabinet form
+      const categorySelect = document.getElementById('cabinetCategory');
+      const categoryFilter = document.getElementById('categoryFilter');
+      
+      console.log('Populating category options, categories found:', categories.length);
+      
+      if (categorySelect) {
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category.name;
+          option.textContent = `${category.icon || '📂'} ${category.name}`;
+          categorySelect.appendChild(option);
+          console.log('Added category option:', category.name);
+        });
+      }
+
+      if (categoryFilter) {
+        categoryFilter.innerHTML = '<option value="">All Categories</option>';
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category.name;
+          option.textContent = `${category.icon || '📂'} ${category.name}`;
+          categoryFilter.appendChild(option);
+        });
+      }
+      
+      // Also populate parent category dropdown in category management modal
+      populateParentCategoryOptions();
+    }
+
+    function updateSubcategoryOptions() {
+      const categoryName = document.getElementById('cabinetCategory').value;
+      const subcategorySelect = document.getElementById('cabinetSubcategory');
+      const subcategoryFilter = document.getElementById('subcategoryFilter');
+      
+      subcategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+      if (subcategoryFilter) {
+        subcategoryFilter.innerHTML = '<option value="">All Subcategories</option>';
+      }
+      
+      const category = categories.find(cat => cat.name === categoryName);
+      if (category && category.subcategories) {
+        category.subcategories.forEach(subcategory => {
+          const option = document.createElement('option');
+          option.value = subcategory.name;
+          option.textContent = `${subcategory.icon} ${subcategory.name}`;
+          subcategorySelect.appendChild(option);
+          
+          if (subcategoryFilter) {
+            const filterOption = option.cloneNode(true);
+            subcategoryFilter.appendChild(filterOption);
+          }
+        });
+      }
+    }
+
+    async function addCategory() {
+      const name = document.getElementById('newCategoryName').value.trim();
+      const icon = document.getElementById('newCategoryIcon').value.trim() || '📂';
+      
+      if (!name) {
+        alert('❌ Please enter a category name');
+        return;
+      }
+      
+      // Check for duplicate names
+      if (categories.find(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Category name already exists');
+        return;
+      }
+      
+      const category = {
+        id: Date.now(),
+        name,
+        icon,
+        subcategories: [],
+        dateCreated: new Date().toISOString()
+      };
+      
+      await saveData('categories', category);
+      clearCategoryForm();
+    }
+
+    async function addSubcategory() {
+      const parentCategoryId = parseInt(document.getElementById('subcategoryParentCategory').value);
+      const name = document.getElementById('newSubcategoryName').value.trim();
+      const icon = document.getElementById('newSubcategoryIcon').value.trim() || '📄';
+      
+      if (!parentCategoryId) {
+        alert('❌ Please select a parent category');
+        return;
+      }
+      
+      if (!name) {
+        alert('❌ Please enter a subcategory name');
+        return;
+      }
+      
+      const parentCategory = categories.find(cat => cat.id === parentCategoryId);
+      if (!parentCategory) {
+        alert('❌ Parent category not found');
+        return;
+      }
+      
+      // Check for duplicate subcategory names within this category
+      if (parentCategory.subcategories?.find(sub => sub.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Subcategory name already exists in this category');
+        return;
+      }
+      
+      const subcategory = {
+        id: Date.now(),
+        name,
+        icon,
+        dateCreated: new Date().toISOString()
+      };
+      
+      // Update the category with new subcategory
+      const updatedSubcategories = [...(parentCategory.subcategories || []), subcategory];
+      
+      if (parentCategory.firebaseId) {
+        await updateData('categories', parentCategory.firebaseId, {
+          subcategories: updatedSubcategories
+        });
+      }
+      
+      clearCategoryForm();
+    }
+
+    function renderCategoriesList() {
+      const list = document.getElementById('categoriesList');
+      list.innerHTML = '';
+      
+      categories.forEach(category => {
+        const div = document.createElement('div');
+        div.className = 'bg-white border border-gray-200 rounded-lg p-4';
+        
+        const subcategoriesHtml = category.subcategories?.map(sub => 
+          `<span class="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm mr-2 mb-1">
+            ${sub.icon} ${sub.name}
+            <button onclick="deleteSubcategory(${category.id}, ${sub.id})" class="ml-2 text-red-500 hover:text-red-700">×</button>
+          </span>`
+        ).join('') || '<span class="text-gray-500 text-sm">No subcategories</span>';
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <h4 class="font-semibold text-lg text-gray-800 mb-2">
+                ${category.icon} ${category.name}
+                <button onclick="deleteCategory(${category.id})" class="ml-3 text-red-500 hover:text-red-700 text-sm">🗑️ Delete</button>
+              </h4>
+              <div class="text-sm text-gray-600">
+                <strong>Subcategories:</strong>
+                <div class="mt-2">${subcategoriesHtml}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    async function deleteCategory(categoryId) {
+      if (!confirm('Are you sure you want to delete this category? This will also affect cabinets in this category.')) {
+        return;
+      }
+      
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category?.firebaseId) {
+        await deleteData('categories', category.firebaseId);
+      }
+    }
+
+    async function deleteSubcategory(categoryId, subcategoryId) {
+      if (!confirm('Are you sure you want to delete this subcategory?')) {
+        return;
+      }
+      
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        const updatedSubcategories = category.subcategories?.filter(sub => sub.id !== subcategoryId) || [];
+        
+        if (category.firebaseId) {
+          await updateData('categories', category.firebaseId, {
+            subcategories: updatedSubcategories
+          });
+        }
+      }
+    }
+
+    // Cabinet Filtering and View Functions
+    function filterCabinets() {
+      const categoryFilter = document.getElementById('categoryFilter').value;
+      const subcategoryFilter = document.getElementById('subcategoryFilter').value;
+      
+      // Update subcategory options based on selected category
+      if (categoryFilter) {
+        const category = categories.find(cat => cat.name === categoryFilter);
+        const subcategorySelect = document.getElementById('subcategoryFilter');
+        subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
+        
+        if (category && category.subcategories) {
+          category.subcategories.forEach(subcategory => {
+            const option = document.createElement('option');
+            option.value = subcategory.name;
+            option.textContent = `${subcategory.icon} ${subcategory.name}`;
+            subcategorySelect.appendChild(option);
+          });
+        }
+      } else {
+        // Reset subcategory filter when no category is selected
+        const subcategorySelect = document.getElementById('subcategoryFilter');
+        subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
+        categories.forEach(category => {
+          if (category.subcategories) {
+            category.subcategories.forEach(subcategory => {
+              const option = document.createElement('option');
+              option.value = subcategory.name;
+              option.textContent = `${subcategory.icon} ${subcategory.name}`;
+              subcategorySelect.appendChild(option);
+            });
+          }
+        });
+      }
+      
+      renderCabinets();
+    }
+
+    function clearFilters() {
+      document.getElementById('categoryFilter').value = '';
+      document.getElementById('subcategoryFilter').value = '';
+      renderCabinets();
+    }
+
+    function toggleCategoryView() {
+      categoryView = !categoryView;
+      const toggleBtn = document.getElementById('viewToggle');
+      toggleBtn.textContent = categoryView ? '📋 List View' : '📂 Category View';
+      renderCabinets();
     }
 
     // Tab Functions
@@ -1025,7 +1558,9 @@
     function showCabinetForm() {
       document.getElementById('cabinetForm').classList.remove('hidden');
       populateMaterialSelects();
+      populateCategoryOptions(); // Make sure this is called
       setupMaterialCalculation();
+      console.log('Cabinet form shown, categories available:', categories.length);
     }
 
     function hideCabinetForm() {
@@ -1086,11 +1621,17 @@
       const selects = ['cabinetPlywoodType', 'cabinetMDFType'];
       
       inputs.forEach(id => {
-        document.getElementById(id).addEventListener('input', updateMaterialSummary);
+        const element = document.getElementById(id);
+        if (element) {
+          element.addEventListener('input', updateMaterialSummary);
+        }
       });
       
       selects.forEach(id => {
-        document.getElementById(id).addEventListener('change', updateMaterialSummary);
+        const element = document.getElementById(id);
+        if (element) {
+          element.addEventListener('change', updateMaterialSummary);
+        }
       });
     }
 
@@ -1177,7 +1718,7 @@
         document.getElementById(id).value = ''
       );
       
-      ['cabinetPlywoodType', 'cabinetMDFType'].forEach(id =>
+      ['cabinetPlywoodType', 'cabinetMDFType', 'cabinetCategory', 'cabinetSubcategory'].forEach(id =>
         document.getElementById(id).selectedIndex = 0
       );
       
@@ -1185,7 +1726,7 @@
       document.getElementById('materialWarnings').classList.add('hidden');
     }
 
-    // Add Functions - NOW WITH INVOICE REQUIRED FOR NEW PLYWOOD
+    // Add Functions - NOW WITH CATEGORIES
     async function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value);
@@ -1264,6 +1805,8 @@
       const quantity = parseInt(document.getElementById('cabinetQuantity').value);
       const materials = document.getElementById('cabinetMaterials').value.trim();
       const pricePerUnit = parseFloat(document.getElementById('cabinetPrice').value) || 0;
+      const category = document.getElementById('cabinetCategory').value;
+      const subcategory = document.getElementById('cabinetSubcategory').value;
       
       // Material requirements
       const plywoodId = document.getElementById('cabinetPlywoodType').value;
@@ -1282,13 +1825,25 @@
         return;
       }
 
-      // Create cabinet record with material requirements
+      if (!category) {
+        alert('❌ Please select a category');
+        return;
+      }
+
+      if (!subcategory) {
+        alert('❌ Please select a subcategory');
+        return;
+      }
+
+      // Create cabinet record with material requirements and categories
       const cabinet = {
         id: Date.now(),
         type,
         quantity,
         materials: materials || 'Custom materials',
         pricePerUnit,
+        category,
+        subcategory,
         materialRequirements: {
           plywood: plywoodId ? {
             id: plywoodId,
@@ -1312,6 +1867,7 @@
         
         // Show success message
         const msg = document.getElementById('successMessage');
+        const categoryInfo = `${category} → ${subcategory}`;
         const materialInfo = (plywoodId || mdfId) ? 
           `<br><small>📋 Material requirements saved: ${plywoodId ? plywood.find(p => p.id == plywoodId)?.type + ' (' + plywoodSheets + '/unit)' : ''} ${mdfId ? plywood.find(p => p.id == mdfId)?.type + ' (' + mdfSheets + '/unit)' : ''}</small>` : '';
         
@@ -1320,6 +1876,7 @@
             <span class="text-green-600 mr-2">✅</span>
             <div>
               <strong>Cabinet type "${type}" created successfully!</strong>
+              <br><small>📂 Category: ${categoryInfo}</small>
               ${materialInfo}
               <br><small>💡 Use +1 button to manufacture and deduct materials</small>
             </div>
@@ -1459,318 +2016,6 @@
       }
     }
 
-    // Invoice Modal for Quantity Updates
-    function showInvoiceModal(item, change) {
-      const actionText = change > 0 ? 'Adding' : 'Removing';
-      
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.id = 'invoiceModal';
-      modal.innerHTML = `
-        <div class="modal-content">
-          <h3 class="text-xl font-bold mb-4">📋 ${actionText} ${Math.abs(change)} Sheet(s)</h3>
-          <div class="bg-blue-50 p-4 rounded-lg mb-4">
-            <h4 class="font-semibold">${item.type}</h4>
-            <p class="text-gray-600">Current: ${item.sheets} → New: ${item.sheets + change}</p>
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Invoice/Reference Number <span class="text-red-500">*</span>
-            </label>
-            <input type="text" id="invoiceInput" placeholder="Enter invoice number" 
-                   class="input-field w-full" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Notes (Optional)
-            </label>
-            <textarea id="invoiceNotes" placeholder="Additional notes..." 
-                      class="input-field w-full" rows="3"></textarea>
-          </div>
-          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
-            <p class="text-sm text-yellow-700">
-              <strong>Required:</strong> Invoice number needed for quantity changes.
-            </p>
-          </div>
-          <div class="flex gap-3">
-            <button onclick="confirmQuantityUpdate(${item.id}, ${change})" class="btn btn-green flex-1">
-              ✅ Confirm
-            </button>
-            <button onclick="closeInvoiceModal()" class="btn btn-gray flex-1">
-              ❌ Cancel
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    async function confirmQuantityUpdate(itemId, change) {
-      const invoiceNumber = document.getElementById('invoiceInput').value.trim();
-      const notes = document.getElementById('invoiceNotes').value.trim();
-      
-      if (!invoiceNumber) {
-        alert('🚨 Invoice number required!');
-        return;
-      }
-
-      const item = plywood.find(p => p.id === itemId);
-      if (item && item.firebaseId) {
-        const newQuantity = item.sheets + change;
-        
-        await updateData('plywood', item.firebaseId, {
-          sheets: newQuantity,
-          lastInvoice: invoiceNumber,
-          lastUpdated: new Date().toISOString()
-        });
-
-        // Create invoice record for the update
-        const invoice = {
-          id: Date.now(),
-          invoiceNumber,
-          date: new Date().toISOString().split('T')[0],
-          supplier: item.supplier,
-          operation: change > 0 ? 'ADD' : 'REMOVE',
-          items: [{
-            type: item.type,
-            quantity: Math.abs(change),
-            unitCost: item.cost,
-            totalCost: Math.abs(change) * item.cost
-          }],
-          totalValue: Math.abs(change) * item.cost,
-          notes: notes || `${change > 0 ? 'Added' : 'Removed'} ${Math.abs(change)} sheets of ${item.type}`,
-          createdAt: new Date().toISOString()
-        };
-
-        await saveData('invoices', invoice);
-
-        closeInvoiceModal();
-        
-        const msg = document.getElementById('successMessage');
-        msg.innerHTML = `
-          <div class="flex items-center">
-            <span class="text-green-600 mr-2">✅</span>
-            <div>
-              <strong>Updated ${item.type}!</strong><br>
-              <small>📋 Invoice: ${invoiceNumber} | Change: ${change > 0 ? '+' : ''}${change}</small>
-            </div>
-          </div>
-        `;
-        msg.classList.remove('hidden');
-        setTimeout(() => msg.classList.add('hidden'), 4000);
-      }
-    }
-
-    function closeInvoiceModal() {
-      const modal = document.getElementById('invoiceModal');
-      if (modal) {
-        modal.remove();
-      }
-    }
-
-    // Bulk Operations Functions
-    function showBulkOperations() {
-      document.getElementById('bulkModal').classList.remove('hidden');
-      document.getElementById('bulkDate').value = new Date().toISOString().split('T')[0];
-      bulkItems = {}; // Reset bulk items
-      populateBulkItems();
-      setBulkMode('add'); // Default to add mode which shows invoice fields
-    }
-
-    function closeBulkModal() {
-      document.getElementById('bulkModal').classList.add('hidden');
-      bulkItems = {};
-      // Clear all input fields
-      const inputs = document.querySelectorAll('[id^="bulk_"]');
-      inputs.forEach(input => input.value = '');
-    }
-
-    function setBulkMode(mode) {
-      bulkMode = mode;
-      
-      document.getElementById('bulkAddBtn').className = mode === 'add' ? 'btn btn-green' : 'btn btn-gray';
-      document.getElementById('bulkRemoveBtn').className = mode === 'remove' ? 'btn btn-red' : 'btn btn-gray';
-      
-      // Show/hide invoice section based on mode
-      const invoiceSection = document.getElementById('bulkInvoiceSection');
-      if (mode === 'add') {
-        invoiceSection.classList.remove('hidden');
-      } else {
-        invoiceSection.classList.add('hidden');
-      }
-      
-      populateBulkItems();
-    }
-
-    function populateBulkItems() {
-      const container = document.getElementById('bulkItemsList');
-      container.innerHTML = '';
-      
-      plywood.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'bulk-item';
-        div.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="flex-1">
-              <h4 class="font-semibold">${item.type}</h4>
-              <p class="text-sm text-gray-600">Current: ${item.sheets} sheets | Supplier: ${item.supplier}</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <input type="number" id="bulk_${item.id}" placeholder="Qty" min="1" 
-                     class="input-field w-20" onchange="updateBulkItem(${item.id}, this.value)">
-              <span class="text-sm text-gray-500">${bulkMode === 'add' ? '+' : '-'}</span>
-            </div>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function updateBulkItem(itemId, quantity) {
-      const qty = parseInt(quantity);
-      if (qty && qty > 0) {
-        bulkItems[itemId] = qty;
-        console.log('Updated bulk item:', itemId, 'quantity:', qty);
-        console.log('Current bulk items:', bulkItems);
-      } else {
-        delete bulkItems[itemId];
-        console.log('Removed bulk item:', itemId);
-      }
-    }
-
-    async function processBulkOperation() {
-      console.log('Processing bulk operation. Mode:', bulkMode);
-      console.log('Bulk items:', bulkItems);
-      
-      const invoiceNumber = document.getElementById('bulkInvoice').value.trim();
-      const date = document.getElementById('bulkDate').value;
-      
-      // Only require invoice for ADD operations
-      if (bulkMode === 'add') {
-        if (!invoiceNumber) {
-          alert('❌ Please enter an invoice number for bulk add operation');
-          return;
-        }
-        
-        if (!date) {
-          alert('❌ Please select a date for bulk add operation');
-          return;
-        }
-      }
-      
-      const itemIds = Object.keys(bulkItems);
-      console.log('Item IDs to process:', itemIds);
-      
-      if (itemIds.length === 0) {
-        alert('❌ Please select at least one item and specify quantities');
-        return;
-      }
-
-      let totalValue = 0;
-      const invoiceItems = [];
-      let processedCount = 0;
-      
-      // Process each bulk item
-      for (const itemId of itemIds) {
-        const item = plywood.find(p => p.id == itemId);
-        const quantity = bulkItems[itemId];
-        
-        console.log('Processing item:', item?.type, 'ID:', itemId, 'Quantity:', quantity);
-        
-        if (item && item.firebaseId) {
-          const change = bulkMode === 'add' ? quantity : -quantity;
-          const newQuantity = item.sheets + change;
-          
-          console.log('Current sheets:', item.sheets, 'Change:', change, 'New quantity:', newQuantity);
-          
-          if (newQuantity >= 0) {
-            const updatePayload = {
-              sheets: newQuantity,
-              lastUpdated: new Date().toISOString()
-            };
-            
-            // Only add invoice info for ADD operations
-            if (bulkMode === 'add') {
-              updatePayload.lastInvoice = invoiceNumber;
-            }
-            
-            try {
-              await updateData('plywood', item.firebaseId, updatePayload);
-              processedCount++;
-              console.log('Successfully updated:', item.type, 'New quantity:', newQuantity);
-              
-              if (bulkMode === 'add') {
-                invoiceItems.push({
-                  type: item.type,
-                  quantity: quantity,
-                  unitCost: item.cost,
-                  totalCost: quantity * item.cost
-                });
-                
-                totalValue += quantity * item.cost;
-              }
-            } catch (error) {
-              console.error('Error updating item:', item.type, error);
-              alert(`❌ Error updating ${item.type}: ${error.message}`);
-            }
-          } else {
-            console.log('Skipping item due to negative quantity:', item.type);
-            alert(`⚠️ Cannot remove ${Math.abs(change)} sheets from ${item.type} - only ${item.sheets} available`);
-          }
-        } else {
-          console.log('Item not found or missing firebaseId:', itemId, item);
-          alert(`❌ Item not found or missing database ID: ${itemId}`);
-        }
-      }
-      
-      // Create invoice record only for ADD operations
-      if (bulkMode === 'add' && invoiceItems.length > 0) {
-        const invoice = {
-          id: Date.now(),
-          invoiceNumber,
-          date,
-          supplier: 'Multiple',
-          operation: 'ADD',
-          items: invoiceItems,
-          totalValue,
-          notes: `Bulk add operation for ${invoiceItems.length} items`,
-          createdAt: new Date().toISOString()
-        };
-        
-        try {
-          await saveData('invoices', invoice);
-          console.log('Invoice saved successfully');
-        } catch (error) {
-          console.error('Error saving invoice:', error);
-        }
-      }
-      
-      closeBulkModal();
-      
-      if (processedCount > 0) {
-        const msg = document.getElementById('successMessage');
-        msg.innerHTML = `
-          <div class="flex items-center">
-            <span class="text-green-600 mr-2">✅</span>
-            <div>
-              <strong>Bulk ${bulkMode.charAt(0).toUpperCase() + bulkMode.slice(1)} Completed!</strong><br>
-              <small>${processedCount} items processed${bulkMode === 'add' && invoiceNumber ? ` | Invoice: ${invoiceNumber}` : ''}</small>
-            </div>
-          </div>
-        `;
-        msg.classList.remove('hidden');
-        setTimeout(() => msg.classList.add('hidden'), 4000);
-        
-        // Force a manual refresh of the display
-        setTimeout(() => {
-          renderPlywood();
-          updateStats();
-        }, 500);
-      } else {
-        alert('❌ No items were processed. Please check your selections.');
-      }
-    }
-
     // Edit Functions
     function editPlywoodName(id) {
       const item = plywood.find(p => p.id === id);
@@ -1854,6 +2099,192 @@
         if (item?.firebaseId) {
           await deleteData('cabinets', item.firebaseId);
         }
+      }
+    }
+
+    // Bulk Operations Functions
+    function showBulkOperations() {
+      document.getElementById('bulkModal').classList.remove('hidden');
+      document.getElementById('bulkDate').value = new Date().toISOString().split('T')[0];
+      bulkItems = {}; // Reset bulk items
+      populateBulkItems();
+      setBulkMode('add'); // Default to add mode which shows invoice fields
+    }
+
+    function closeBulkModal() {
+      document.getElementById('bulkModal').classList.add('hidden');
+      bulkItems = {};
+      // Clear all input fields
+      const inputs = document.querySelectorAll('[id^="bulk_"]');
+      inputs.forEach(input => input.value = '');
+    }
+
+    function setBulkMode(mode) {
+      bulkMode = mode;
+      
+      document.getElementById('bulkAddBtn').className = mode === 'add' ? 'btn btn-green' : 'btn btn-gray';
+      document.getElementById('bulkRemoveBtn').className = mode === 'remove' ? 'btn btn-red' : 'btn btn-gray';
+      
+      // Show/hide invoice section based on mode
+      const invoiceSection = document.getElementById('bulkInvoiceSection');
+      if (mode === 'add') {
+        invoiceSection.classList.remove('hidden');
+      } else {
+        invoiceSection.classList.add('hidden');
+      }
+      
+      populateBulkItems();
+    }
+
+    function populateBulkItems() {
+      const container = document.getElementById('bulkItemsList');
+      container.innerHTML = '';
+      
+      plywood.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'bulk-item';
+        div.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h4 class="font-semibold">${item.type}</h4>
+              <p class="text-sm text-gray-600">Current: ${item.sheets} sheets | Supplier: ${item.supplier}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <input type="number" id="bulk_${item.id}" placeholder="Qty" min="1" 
+                     class="input-field w-20" onchange="updateBulkItem(${item.id}, this.value)">
+              <span class="text-sm text-gray-500">${bulkMode === 'add' ? '+' : '-'}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateBulkItem(itemId, quantity) {
+      const qty = parseInt(quantity);
+      if (qty && qty > 0) {
+        bulkItems[itemId] = qty;
+      } else {
+        delete bulkItems[itemId];
+      }
+    }
+
+    async function processBulkOperation() {
+      const invoiceNumber = document.getElementById('bulkInvoice').value.trim();
+      const date = document.getElementById('bulkDate').value;
+      
+      // Only require invoice for ADD operations
+      if (bulkMode === 'add') {
+        if (!invoiceNumber) {
+          alert('❌ Please enter an invoice number for bulk add operation');
+          return;
+        }
+        
+        if (!date) {
+          alert('❌ Please select a date for bulk add operation');
+          return;
+        }
+      }
+      
+      const itemIds = Object.keys(bulkItems);
+      
+      if (itemIds.length === 0) {
+        alert('❌ Please select at least one item and specify quantities');
+        return;
+      }
+
+      let totalValue = 0;
+      const invoiceItems = [];
+      let processedCount = 0;
+      
+      // Process each bulk item
+      for (const itemId of itemIds) {
+        const item = plywood.find(p => p.id == itemId);
+        const quantity = bulkItems[itemId];
+        
+        if (item && item.firebaseId) {
+          const change = bulkMode === 'add' ? quantity : -quantity;
+          const newQuantity = item.sheets + change;
+          
+          if (newQuantity >= 0) {
+            const updatePayload = {
+              sheets: newQuantity,
+              lastUpdated: new Date().toISOString()
+            };
+            
+            // Only add invoice info for ADD operations
+            if (bulkMode === 'add') {
+              updatePayload.lastInvoice = invoiceNumber;
+            }
+            
+            try {
+              await updateData('plywood', item.firebaseId, updatePayload);
+              processedCount++;
+              
+              if (bulkMode === 'add') {
+                invoiceItems.push({
+                  type: item.type,
+                  quantity: quantity,
+                  unitCost: item.cost,
+                  totalCost: quantity * item.cost
+                });
+                
+                totalValue += quantity * item.cost;
+              }
+            } catch (error) {
+              console.error('Error updating item:', item.type, error);
+              alert(`❌ Error updating ${item.type}: ${error.message}`);
+            }
+          } else {
+            alert(`⚠️ Cannot remove ${Math.abs(change)} sheets from ${item.type} - only ${item.sheets} available`);
+          }
+        }
+      }
+      
+      // Create invoice record only for ADD operations
+      if (bulkMode === 'add' && invoiceItems.length > 0) {
+        const invoice = {
+          id: Date.now(),
+          invoiceNumber,
+          date,
+          supplier: 'Multiple',
+          operation: 'ADD',
+          items: invoiceItems,
+          totalValue,
+          notes: `Bulk add operation for ${invoiceItems.length} items`,
+          createdAt: new Date().toISOString()
+        };
+        
+        try {
+          await saveData('invoices', invoice);
+        } catch (error) {
+          console.error('Error saving invoice:', error);
+        }
+      }
+      
+      closeBulkModal();
+      
+      if (processedCount > 0) {
+        const msg = document.getElementById('successMessage');
+        msg.innerHTML = `
+          <div class="flex items-center">
+            <span class="text-green-600 mr-2">✅</span>
+            <div>
+              <strong>Bulk ${bulkMode.charAt(0).toUpperCase() + bulkMode.slice(1)} Completed!</strong><br>
+              <small>${processedCount} items processed${bulkMode === 'add' && invoiceNumber ? ` | Invoice: ${invoiceNumber}` : ''}</small>
+            </div>
+          </div>
+        `;
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+        
+        // Force a manual refresh of the display
+        setTimeout(() => {
+          renderPlywood();
+          updateStats();
+        }, 500);
+      } else {
+        alert('❌ No items were processed. Please check your selections.');
       }
     }
 
@@ -2065,11 +2496,8 @@
       if (!list) return;
       
       list.innerHTML = '';
-      console.log('Rendering plywood, total items:', plywood.length);
       
       plywood.forEach(item => {
-        console.log('Creating item:', item.type);
-        
         const div = document.createElement('div');
         const sheets = item.sheets || 0;
         const minStock = item.minStock || 0;
@@ -2118,49 +2546,202 @@
       if (!list) return;
       
       list.innerHTML = '';
-      console.log('Rendering cabinets, total items:', cabinets.length);
       
-      cabinets.forEach(item => {
-        console.log('Creating cabinet:', item.type);
+      // Get filtered cabinets based on category/subcategory filters
+      let filteredCabinets = cabinets;
+      const categoryFilter = document.getElementById('categoryFilter')?.value;
+      const subcategoryFilter = document.getElementById('subcategoryFilter')?.value;
+      
+      if (categoryFilter) {
+        filteredCabinets = filteredCabinets.filter(cabinet => cabinet.category === categoryFilter);
+      }
+      
+      if (subcategoryFilter) {
+        filteredCabinets = filteredCabinets.filter(cabinet => cabinet.subcategory === subcategoryFilter);
+      }
+      
+      if (categoryView) {
+        // Category view - organize by categories and subcategories
+        renderCabinetsByCategory(list, filteredCabinets);
+      } else {
+        // List view - simple list
+        renderCabinetsAsList(list, filteredCabinets);
+      }
+    }
+
+    function renderCabinetsByCategory(container, cabinetsToRender) {
+      const categoryData = {};
+      
+      // Group cabinets by category and subcategory
+      cabinetsToRender.forEach(cabinet => {
+        const category = cabinet.category || 'Uncategorized';
+        const subcategory = cabinet.subcategory || 'Uncategorized';
         
-        const div = document.createElement('div');
-        const quantity = item.quantity || 0;
-        const pricePerUnit = item.pricePerUnit || 0;
+        if (!categoryData[category]) {
+          categoryData[category] = {};
+        }
         
-        div.className = 'card p-4 lg:p-6';
+        if (!categoryData[category][subcategory]) {
+          categoryData[category][subcategory] = [];
+        }
         
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
-                <button onclick="editCabinetName(${item.id})" class="btn-edit">
-                  ✏️ Edit
-                </button>
-              </div>
-              <p class="text-gray-600 mt-1">🔨 Materials: ${item.materials || 'N/A'}</p>
-              <p class="text-gray-600 mt-1">💰 ${pricePerUnit.toFixed(2)}/unit | 💵 Total: ${(quantity * pricePerUnit).toFixed(2)}</p>
-            </div>
-            <div class="flex flex-row lg:flex-col items-center gap-4">
-              <div class="text-center">
-                <div class="qr-icon mb-2">QR</div>
-                <div class="text-xs text-gray-500">ID: ${item.id}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-3xl lg:text-4xl font-bold text-blue-600">${quantity}</div>
-                <div class="text-gray-600 font-medium">units</div>
-              </div>
-              <div class="flex lg:flex-col gap-2">
-                <button onclick="updateCabinetQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
-                <button onclick="updateCabinetQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
-              </div>
-              <button onclick="deleteCabinet(${item.id})" class="text-red-600 hover:text-red-800 text-2xl" title="Delete item">🗑️</button>
-            </div>
+        categoryData[category][subcategory].push(cabinet);
+      });
+      
+      // Render each category
+      Object.keys(categoryData).forEach(categoryName => {
+        const categoryInfo = categories.find(cat => cat.name === categoryName);
+        const categoryIcon = categoryInfo?.icon || '📂';
+        
+        // Category header
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category-header';
+        categoryDiv.onclick = () => toggleCategory(categoryName);
+        categoryDiv.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+              ${categoryIcon} ${categoryName}
+              <span class="category-badge">${Object.values(categoryData[categoryName]).flat().length} items</span>
+            </h3>
+            <span id="categoryToggle_${categoryName}" class="text-gray-500">▼</span>
           </div>
         `;
+        container.appendChild(categoryDiv);
         
-        list.appendChild(div);
+        // Category content
+        const categoryContent = document.createElement('div');
+        categoryContent.id = `categoryContent_${categoryName}`;
+        categoryContent.className = 'category-content';
+        
+        // Render subcategories within this category
+        Object.keys(categoryData[categoryName]).forEach(subcategoryName => {
+          const subcategoryInfo = categoryInfo?.subcategories?.find(sub => sub.name === subcategoryName);
+          const subcategoryIcon = subcategoryInfo?.icon || '📄';
+          
+          // Subcategory header
+          const subcategoryDiv = document.createElement('div');
+          subcategoryDiv.className = 'subcategory-header';
+          subcategoryDiv.onclick = () => toggleSubcategory(categoryName, subcategoryName);
+          subcategoryDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+              <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                ${subcategoryIcon} ${subcategoryName}
+                <span class="subcategory-badge">${categoryData[categoryName][subcategoryName].length} items</span>
+              </h4>
+              <span id="subcategoryToggle_${categoryName}_${subcategoryName}" class="text-gray-400">▼</span>
+            </div>
+          `;
+          categoryContent.appendChild(subcategoryDiv);
+          
+          // Subcategory content
+          const subcategoryContent = document.createElement('div');
+          subcategoryContent.id = `subcategoryContent_${categoryName}_${subcategoryName}`;
+          subcategoryContent.className = 'subcategory-content';
+          
+          // Render cabinets in this subcategory
+          categoryData[categoryName][subcategoryName].forEach(cabinet => {
+            const cabinetDiv = createCabinetCard(cabinet);
+            cabinetDiv.className += ' cabinet-item';
+            subcategoryContent.appendChild(cabinetDiv);
+          });
+          
+          categoryContent.appendChild(subcategoryContent);
+        });
+        
+        container.appendChild(categoryContent);
       });
+    }
+
+    function renderCabinetsAsList(container, cabinetsToRender) {
+      cabinetsToRender.forEach(cabinet => {
+        const cabinetDiv = createCabinetCard(cabinet);
+        container.appendChild(cabinetDiv);
+      });
+    }
+
+    function createCabinetCard(item) {
+      const div = document.createElement('div');
+      const quantity = item.quantity || 0;
+      const pricePerUnit = item.pricePerUnit || 0;
+      
+      div.className = 'card p-4 lg:p-6';
+      
+      // Find category and subcategory info for icons
+      const categoryInfo = categories.find(cat => cat.name === item.category);
+      const subcategoryInfo = categoryInfo?.subcategories?.find(sub => sub.name === item.subcategory);
+      
+      const categoryIcon = categoryInfo?.icon || '📂';
+      const subcategoryIcon = subcategoryInfo?.icon || '📄';
+      
+      div.innerHTML = `
+        <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
+              <button onclick="editCabinetName(${item.id})" class="btn-edit">
+                ✏️ Edit
+              </button>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="category-badge">${categoryIcon} ${item.category || 'Uncategorized'}</span>
+              <span class="subcategory-badge">${subcategoryIcon} ${item.subcategory || 'Uncategorized'}</span>
+            </div>
+            <p class="text-gray-600 mt-1">🔨 Materials: ${item.materials || 'N/A'}</p>
+            <p class="text-gray-600 mt-1">💰 ${pricePerUnit.toFixed(2)}/unit | 💵 Total: ${(quantity * pricePerUnit).toFixed(2)}</p>
+            ${item.materialRequirements && (item.materialRequirements.plywood || item.materialRequirements.mdf) ? 
+              `<p class="text-xs text-blue-600 mt-1">📋 Material requirements configured</p>` : ''}
+          </div>
+          <div class="flex flex-row lg:flex-col items-center gap-4">
+            <div class="text-center">
+              <div class="qr-icon mb-2">QR</div>
+              <div class="text-xs text-gray-500">ID: ${item.id}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl lg:text-4xl font-bold text-blue-600">${quantity}</div>
+              <div class="text-gray-600 font-medium">units</div>
+            </div>
+            <div class="flex lg:flex-col gap-2">
+              <button onclick="updateCabinetQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
+              <button onclick="updateCabinetQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
+            </div>
+            <button onclick="deleteCabinet(${item.id})" class="text-red-600 hover:text-red-800 text-2xl" title="Delete item">🗑️</button>
+          </div>
+        </div>
+      `;
+      
+      return div;
+    }
+
+    function toggleCategory(categoryName) {
+      const content = document.getElementById(`categoryContent_${categoryName}`);
+      const toggle = document.getElementById(`categoryToggle_${categoryName}`);
+      const header = content.previousElementSibling;
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.textContent = '▼';
+        header.classList.add('category-expanded');
+      } else {
+        content.style.display = 'none';
+        toggle.textContent = '▶';
+        header.classList.remove('category-expanded');
+      }
+    }
+
+    function toggleSubcategory(categoryName, subcategoryName) {
+      const content = document.getElementById(`subcategoryContent_${categoryName}_${subcategoryName}`);
+      const toggle = document.getElementById(`subcategoryToggle_${categoryName}_${subcategoryName}`);
+      const header = content.previousElementSibling;
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.textContent = '▼';
+        header.classList.add('subcategory-expanded');
+      } else {
+        content.style.display = 'none';
+        toggle.textContent = '▶';
+        header.classList.remove('subcategory-expanded');
+      }
     }
 
     function checkLowStock() {
