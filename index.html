@@ -17,12 +17,6 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
-    .glass {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
     .card {
       background: white;
       border-radius: 16px;
@@ -43,7 +37,7 @@
       border: none;
       cursor: pointer;
       display: inline-flex;
-      items-center;
+      align-items: center;
       gap: 8px;
     }
 
@@ -245,11 +239,6 @@
         font-size: 20px !important;
       }
     }
-
-    /* Smooth animations */
-    * {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
   </style>
 </head>
 
@@ -361,15 +350,15 @@
             </div>
           </div>
 
-          <!-- Plywood Form -->
+          <!-- Plywood Form - NO INVOICE REQUIRED -->
           <div id="plywoodForm" class="card p-6 mb-6 hidden">
             <h3 class="font-bold text-lg mb-4 text-gray-800">➕ Add New Plywood Material</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″)" class="input-field">
-              <input type="number" id="plywoodSheets" placeholder="Sheets" class="input-field">
+              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″)" class="input-field" required>
+              <input type="number" id="plywoodSheets" placeholder="Sheets" class="input-field" required>
               <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input-field">
-              <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input-field">
-              <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field">
+              <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input-field" required>
+              <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field" required>
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mt-6">
               <button onclick="addPlywood()" class="btn btn-green flex-1">✅ Add Plywood</button>
@@ -486,7 +475,7 @@
   </div>
 
   <script>
-    // Data
+    // Global Variables
     let plywood = [];
     let cabinets = [];
     let activeTab = 'plywood';
@@ -512,51 +501,6 @@
       console.log('🔥 Firebase initialized successfully');
     } catch (error) {
       console.log('⚠️ Firebase initialization failed, using local storage only');
-    }
-
-    // Real-time listeners for live updates
-    function setupRealtimeListeners() {
-      if (!db) {
-        loadSampleData();
-        return;
-      }
-
-      try {
-        // Listen to plywood collection changes in real-time
-        db.collection('plywood').onSnapshot((snapshot) => {
-          plywood = [];
-          snapshot.forEach(doc => plywood.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderPlywood();
-          checkLowStock();
-          updateStats();
-          console.log('📦 Plywood updated in real-time');
-        });
-
-        // Listen to cabinets collection changes in real-time
-        db.collection('cabinets').onSnapshot((snapshot) => {
-          cabinets = [];
-          snapshot.forEach(doc => cabinets.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderCabinets();
-          updateStats();
-          console.log('🔨 Cabinets updated in real-time');
-        });
-
-        // Update connection status
-        document.getElementById('connectionStatus').innerHTML = `
-          <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          Real-time sync active - Live updates enabled!
-        `;
-        
-      } catch (e) {
-        console.log('Real-time listeners failed, loading sample data');
-        loadSampleData();
-      }
     }
 
     // Firebase functions
@@ -593,6 +537,42 @@
       }
     }
 
+    // Real-time listeners
+    function setupRealtimeListeners() {
+      if (!db) {
+        loadSampleData();
+        return;
+      }
+
+      try {
+        db.collection('plywood').onSnapshot((snapshot) => {
+          plywood = [];
+          snapshot.forEach(doc => plywood.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderPlywood();
+          checkLowStock();
+          updateStats();
+          console.log('📦 Plywood updated in real-time');
+        });
+
+        db.collection('cabinets').onSnapshot((snapshot) => {
+          cabinets = [];
+          snapshot.forEach(doc => cabinets.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderCabinets();
+          updateStats();
+          console.log('🔨 Cabinets updated in real-time');
+        });
+      } catch (e) {
+        console.log('Real-time listeners failed, loading sample data');
+        loadSampleData();
+      }
+    }
+
     async function loadData() {
       try {
         if (!db) {
@@ -600,7 +580,6 @@
           return;
         }
 
-        // First load existing data
         const [plywoodSnap, cabinetSnap] = await Promise.all([
           db.collection('plywood').get(),
           db.collection('cabinets').get()
@@ -624,7 +603,6 @@
         
         render();
         
-        // Then setup real-time listeners
         setTimeout(() => {
           setupRealtimeListeners();
         }, 1000);
@@ -652,14 +630,6 @@
           minStock: 8,
           supplier: 'Lumber Plus',
           cost: 38.50
-        },
-        {
-          id: 3,
-          type: 'Birch Plywood 3/4"',
-          sheets: 12,
-          minStock: 5,
-          supplier: 'Premium Woods',
-          cost: 52.75
         }
       ];
 
@@ -677,13 +647,6 @@
           quantity: 8,
           materials: 'Maple 1/2"',
           pricePerUnit: 280.00
-        },
-        {
-          id: 3,
-          type: 'Corner Cabinet',
-          quantity: 3,
-          materials: 'Birch Plywood 3/4"',
-          pricePerUnit: 425.00
         }
       ];
       render();
@@ -738,30 +701,31 @@
     }
 
     function updateStats() {
-      // Plywood Dashboard Stats
-      const totalSheets = plywood.reduce((sum, item) => sum + item.sheets, 0);
-      const plywoodTypesCount = plywood.length;
-      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
-      const plywoodValue = plywood.reduce((sum, item) => sum + (item.sheets * item.cost), 0);
+      try {
+        const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
+        const plywoodTypesCount = plywood.length;
+        const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
+        const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
 
-      // Cabinet Dashboard Stats
-      const totalCabinetCount = cabinets.reduce((sum, item) => sum + item.quantity, 0);
-      const cabinetTypesCount = cabinets.length;
-      const cabinetValue = cabinets.reduce((sum, item) => sum + (item.quantity * item.pricePerUnit), 0);
-      const avgCabinetPrice = cabinetTypesCount > 0 ? 
-        cabinets.reduce((sum, item) => sum + item.pricePerUnit, 0) / cabinetTypesCount : 0;
+        const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const cabinetTypesCount = cabinets.length;
+        const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
+        const avgCabinetPrice = cabinetTypesCount > 0 ? 
+          cabinets.reduce((sum, item) => sum + (item.pricePerUnit || 0), 0) / cabinetTypesCount : 0;
 
-      // Update Plywood Dashboard
-      document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
-      document.getElementById('plywoodTypes').textContent = plywoodTypesCount;
-      document.getElementById('lowStockPlywood').textContent = lowStockItems.length;
-      document.getElementById('plywoodValue').textContent = `${plywoodValue.toLocaleString()}`;
+        document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
+        document.getElementById('plywoodTypes').textContent = plywoodTypesCount.toString();
+        document.getElementById('lowStockPlywood').textContent = lowStockItems.length.toString();
+        document.getElementById('plywoodValue').textContent = `${Math.round(plywoodValue).toLocaleString()}`;
 
-      // Update Cabinet Dashboard
-      document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
-      document.getElementById('cabinetTypes').textContent = cabinetTypesCount;
-      document.getElementById('cabinetValue').textContent = `${cabinetValue.toLocaleString()}`;
-      document.getElementById('avgCabinetPrice').textContent = `${avgCabinetPrice.toLocaleString()}`;
+        document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
+        document.getElementById('cabinetTypes').textContent = cabinetTypesCount.toString();
+        document.getElementById('cabinetValue').textContent = `${Math.round(cabinetValue).toLocaleString()}`;
+        document.getElementById('avgCabinetPrice').textContent = `${Math.round(avgCabinetPrice).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating stats:', error);
+      }
     }
 
     function render() {
@@ -775,28 +739,22 @@
     function setActiveTab(tab) {
       activeTab = tab;
       if (tab === 'plywood') {
-        // Show plywood content and dashboard
         document.getElementById('plywoodContent').classList.remove('hidden');
         document.getElementById('cabinetContent').classList.add('hidden');
         document.getElementById('plywoodDashboard').classList.remove('hidden');
         document.getElementById('cabinetDashboard').classList.add('hidden');
         
-        // Update tab styles
         document.getElementById('plywoodTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-active';
         document.getElementById('cabinetTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
       } else {
-        // Show cabinet content and dashboard
         document.getElementById('plywoodContent').classList.add('hidden');
         document.getElementById('cabinetContent').classList.remove('hidden');
         document.getElementById('plywoodDashboard').classList.add('hidden');
         document.getElementById('cabinetDashboard').classList.remove('hidden');
         
-        // Update tab styles
         document.getElementById('plywoodTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-inactive';
         document.getElementById('cabinetTab').className = 'flex-1 py-3 px-6 text-center font-semibold flex items-center justify-center gap-2 rounded-xl tab-active';
       }
-      
-      // Update the stats for the active tab
       updateStats();
     }
 
@@ -831,7 +789,7 @@
       );
     }
 
-    // Add Functions (Real-time version)
+    // Add Functions - NO INVOICE REQUIRED FOR NEW PLYWOOD
     async function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value);
@@ -839,22 +797,38 @@
       const supplier = document.getElementById('plywoodSupplier').value.trim();
       const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
 
-      if (type && !isNaN(sheets) && sheets >= 0) {
-        const item = {
-          id: Date.now(),
-          type,
-          sheets,
-          minStock,
-          supplier,
-          cost
-        };
-        
-        // Only add to Firebase - real-time listener will update the UI
-        await saveData('plywood', item);
-        hidePlywoodForm();
-      } else {
-        alert('Please fill in all required fields with valid values.');
+      if (!type) {
+        alert('❌ Please enter the plywood type');
+        return;
       }
+      
+      if (!sheets || isNaN(sheets) || sheets < 0) {
+        alert('❌ Please enter a valid number of sheets');
+        return;
+      }
+      
+      if (!supplier) {
+        alert('❌ Please enter the supplier name');
+        return;
+      }
+      
+      if (!cost || isNaN(cost) || cost <= 0) {
+        alert('❌ Please enter a valid cost per sheet');
+        return;
+      }
+
+      const item = {
+        id: Date.now(),
+        type,
+        sheets,
+        minStock,
+        supplier,
+        cost,
+        dateAdded: new Date().toISOString()
+      };
+      
+      await saveData('plywood', item);
+      hidePlywoodForm();
     }
 
     async function addCabinet() {
@@ -863,35 +837,35 @@
       const materials = document.getElementById('cabinetMaterials').value.trim();
       const pricePerUnit = parseFloat(document.getElementById('cabinetPrice').value) || 0;
 
-      if (type && !isNaN(quantity) && quantity >= 0) {
-        const item = {
-          id: Date.now(),
-          type,
-          quantity,
-          materials,
-          pricePerUnit
-        };
-        
-        // Only add to Firebase - real-time listener will update the UI
-        await saveData('cabinets', item);
-        hideCabinetForm();
-      } else {
-        alert('Please fill in all required fields with valid values.');
+      if (!type) {
+        alert('❌ Please enter the cabinet type');
+        return;
       }
+      
+      if (!quantity || isNaN(quantity) || quantity < 0) {
+        alert('❌ Please enter a valid quantity');
+        return;
+      }
+
+      const item = {
+        id: Date.now(),
+        type,
+        quantity,
+        materials,
+        pricePerUnit
+      };
+      
+      await saveData('cabinets', item);
+      hideCabinetForm();
     }
 
-    // Update Functions (Real-time version)
+    // Update Functions - INVOICE REQUIRED FOR QTY UPDATES
     async function updatePlywoodQuantity(id, change) {
       const item = plywood.find(p => p.id === id);
       if (item) {
         const newQuantity = item.sheets + change;
         if (newQuantity >= 0) {
-          // Only update Firebase - real-time listener will update the UI
-          if (item.firebaseId) {
-            await updateData('plywood', item.firebaseId, {
-              sheets: newQuantity
-            });
-          }
+          showInvoiceModal(item, change);
         }
       }
     }
@@ -901,7 +875,6 @@
       if (item) {
         const newQuantity = item.quantity + change;
         if (newQuantity >= 0) {
-          // Only update Firebase - real-time listener will update the UI
           if (item.firebaseId) {
             await updateData('cabinets', item.firebaseId, {
               quantity: newQuantity
@@ -911,19 +884,93 @@
       }
     }
 
-    // Delete Functions (Real-time version)
+    // Invoice Modal for Quantity Updates
+    function showInvoiceModal(item, change) {
+      const actionText = change > 0 ? 'Adding' : 'Removing';
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.id = 'invoiceModal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3 class="text-xl font-bold mb-4">📋 ${actionText} ${Math.abs(change)} Sheet(s)</h3>
+          <div class="bg-blue-50 p-4 rounded-lg mb-4">
+            <h4 class="font-semibold">${item.type}</h4>
+            <p class="text-gray-600">Current: ${item.sheets} → New: ${item.sheets + change}</p>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Invoice/Reference Number <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="invoiceInput" placeholder="Enter invoice number" 
+                   class="input-field w-full" required>
+          </div>
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+            <p class="text-sm text-yellow-700">
+              <strong>Required:</strong> Invoice number needed for quantity changes.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <button onclick="confirmQuantityUpdate(${item.id}, ${change})" class="btn btn-green flex-1">
+              ✅ Confirm
+            </button>
+            <button onclick="closeInvoiceModal()" class="btn btn-gray flex-1">
+              ❌ Cancel
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function confirmQuantityUpdate(itemId, change) {
+      const invoiceNumber = document.getElementById('invoiceInput').value.trim();
+      
+      if (!invoiceNumber) {
+        alert('🚨 Invoice number required!');
+        return;
+      }
+
+      const item = plywood.find(p => p.id === itemId);
+      if (item && item.firebaseId) {
+        const newQuantity = item.sheets + change;
+        
+        await updateData('plywood', item.firebaseId, {
+          sheets: newQuantity,
+          lastInvoice: invoiceNumber,
+          lastUpdated: new Date().toISOString()
+        });
+
+        closeInvoiceModal();
+        
+        const msg = document.getElementById('successMessage');
+        msg.innerHTML = `
+          <div class="flex items-center">
+            <span class="text-green-600 mr-2">✅</span>
+            <div>
+              <strong>Updated ${item.type}!</strong><br>
+              <small>📋 Invoice: ${invoiceNumber} | Change: ${change > 0 ? '+' : ''}${change}</small>
+            </div>
+          </div>
+        `;
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+      }
+    }
+
+    function closeInvoiceModal() {
+      const modal = document.getElementById('invoiceModal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    // Delete Functions
     async function deletePlywood(id) {
       if (confirm('Are you sure you want to delete this plywood item?')) {
         const item = plywood.find(p => p.id === id);
         if (item?.firebaseId) {
-          // Only delete from Firebase - real-time listener will update the UI
           await deleteData('plywood', item.firebaseId);
-        } else {
-          // For local items without Firebase ID
-          plywood = plywood.filter(p => p.id !== id);
-          renderPlywood();
-          checkLowStock();
-          updateStats();
         }
       }
     }
@@ -932,13 +979,7 @@
       if (confirm('Are you sure you want to delete this cabinet item?')) {
         const item = cabinets.find(c => c.id === id);
         if (item?.firebaseId) {
-          // Only delete from Firebase - real-time listener will update the UI
           await deleteData('cabinets', item.firebaseId);
-        } else {
-          // For local items without Firebase ID
-          cabinets = cabinets.filter(c => c.id !== id);
-          renderCabinets();
-          updateStats();
         }
       }
     }
@@ -1027,17 +1068,24 @@
     // Render Functions
     function renderPlywood() {
       const list = document.getElementById('plywoodList');
+      if (!list) return;
+      
       list.innerHTML = '';
       plywood.forEach(item => {
         const div = document.createElement('div');
-        div.className = `card p-4 lg:p-6 ${item.sheets <= item.minStock ? 'low-stock' : ''}`;
+        const sheets = item.sheets || 0;
+        const minStock = item.minStock || 0;
+        const cost = item.cost || 0;
+        
+        div.className = `card p-4 lg:p-6 ${sheets <= minStock ? 'low-stock' : ''}`;
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
-              <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type}</h3>
-              <p class="text-gray-600 mt-1">📦 Supplier: ${item.supplier} | 💰 Cost: ${item.cost.toFixed(2)}/sheet</p>
-              <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${item.minStock} sheets</p>
-              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(item.sheets * item.cost).toFixed(2)}</p>
+              <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
+              <p class="text-gray-600 mt-1">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
+              <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
+              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
+              ${item.lastInvoice ? `<p class="text-xs text-green-600 mt-1">📋 Last Invoice: ${item.lastInvoice}</p>` : ''}
             </div>
             <div class="flex flex-row lg:flex-col items-center gap-4">
               <div class="text-center">
@@ -1045,7 +1093,7 @@
                 <div class="text-xs text-gray-500">ID: ${item.id}</div>
               </div>
               <div class="text-center">
-                <div class="text-3xl lg:text-4xl font-bold ${item.sheets <= item.minStock ? 'text-red-600' : 'text-blue-600'}">${item.sheets}</div>
+                <div class="text-3xl lg:text-4xl font-bold ${sheets <= minStock ? 'text-red-600' : 'text-blue-600'}">${sheets}</div>
                 <div class="text-gray-600 font-medium">sheets</div>
               </div>
               <div class="flex lg:flex-col gap-2">
@@ -1062,16 +1110,21 @@
 
     function renderCabinets() {
       const list = document.getElementById('cabinetList');
+      if (!list) return;
+      
       list.innerHTML = '';
       cabinets.forEach(item => {
         const div = document.createElement('div');
+        const quantity = item.quantity || 0;
+        const pricePerUnit = item.pricePerUnit || 0;
+        
         div.className = 'card p-4 lg:p-6';
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
-              <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type}</h3>
-              <p class="text-gray-600 mt-1">🔨 Materials: ${item.materials}</p>
-              <p class="text-gray-600 mt-1">💰 ${item.pricePerUnit.toFixed(2)}/unit | 💵 Total: ${(item.quantity * item.pricePerUnit).toFixed(2)}</p>
+              <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
+              <p class="text-gray-600 mt-1">🔨 Materials: ${item.materials || 'N/A'}</p>
+              <p class="text-gray-600 mt-1">💰 ${pricePerUnit.toFixed(2)}/unit | 💵 Total: ${(quantity * pricePerUnit).toFixed(2)}</p>
             </div>
             <div class="flex flex-row lg:flex-col items-center gap-4">
               <div class="text-center">
@@ -1079,7 +1132,7 @@
                 <div class="text-xs text-gray-500">ID: ${item.id}</div>
               </div>
               <div class="text-center">
-                <div class="text-3xl lg:text-4xl font-bold text-blue-600">${item.quantity}</div>
+                <div class="text-3xl lg:text-4xl font-bold text-blue-600">${quantity}</div>
                 <div class="text-gray-600 font-medium">units</div>
               </div>
               <div class="flex lg:flex-col gap-2">
