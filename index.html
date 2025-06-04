@@ -73,6 +73,25 @@
       color: white;
     }
 
+    /* Small Blue Edit Button Style */
+    .btn-edit {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
     .qr-icon {
       display: inline-flex;
       width: 40px;
@@ -1156,9 +1175,8 @@
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-2">
                 <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
-                <button onclick="editPlywoodName(${item.id})" 
-                        style="background: red; color: white; padding: 10px 20px; border: 3px solid yellow; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                  🔥 EDIT 🔥
+                <button onclick="editPlywoodName(${item.id})" class="btn-edit">
+                  ✏️ Edit
                 </button>
               </div>
               <p class="text-gray-600 mt-1">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
@@ -1211,9 +1229,8 @@
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-2">
                 <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
-                <button onclick="editCabinetName(${item.id})" 
-                        style="background: red; color: white; padding: 10px 20px; border: 3px solid yellow; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                  🔥 EDIT 🔥
+                <button onclick="editCabinetName(${item.id})" class="btn-edit">
+                  ✏️ Edit
                 </button>
               </div>
               <p class="text-gray-600 mt-1">🔨 Materials: ${item.materials || 'N/A'}</p>
