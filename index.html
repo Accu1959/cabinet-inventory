@@ -485,14 +485,55 @@
           <!-- Cabinet Form -->
           <div id="cabinetForm" class="card p-6 mb-6 hidden">
             <h3 class="font-bold text-lg mb-4 text-gray-800">🔨 Add New Cabinet Type</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <input type="text" id="cabinetType" placeholder="Cabinet Type" class="input-field">
-              <input type="number" id="cabinetQuantity" placeholder="Quantity" class="input-field">
-              <input type="text" id="cabinetMaterials" placeholder="Materials" class="input-field">
+            
+            <!-- Basic Cabinet Info -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <input type="text" id="cabinetType" placeholder="Cabinet Type" class="input-field" required>
+              <input type="number" id="cabinetQuantity" placeholder="Quantity to Make" class="input-field" required>
+              <input type="text" id="cabinetMaterials" placeholder="Primary Materials" class="input-field">
               <input type="number" id="cabinetPrice" placeholder="Price/Unit" step="0.01" class="input-field">
             </div>
-            <div class="flex flex-col sm:flex-row gap-3 mt-6">
-              <button onclick="addCabinet()" class="btn btn-green flex-1">✅ Add Cabinet</button>
+
+            <!-- Material Requirements Section -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+              <h4 class="font-semibold text-blue-800 mb-3">📦 Material Requirements (per cabinet)</h4>
+              
+              <!-- Plywood Selection -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Plywood Required:</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select id="cabinetPlywoodType" class="input-field">
+                    <option value="">Select Plywood Type</option>
+                  </select>
+                  <input type="number" id="cabinetPlywoodSheets" placeholder="Sheets per cabinet" 
+                         step="0.1" class="input-field">
+                </div>
+              </div>
+
+              <!-- MDF Selection -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">MDF Required (for doors):</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select id="cabinetMDFType" class="input-field">
+                    <option value="">Select MDF Type</option>
+                  </select>
+                  <input type="number" id="cabinetMDFSheets" placeholder="Sheets per cabinet" 
+                         step="0.1" class="input-field">
+                </div>
+              </div>
+
+              <!-- Material Summary -->
+              <div id="materialSummary" class="bg-white p-3 rounded border hidden">
+                <h5 class="font-medium text-gray-800 mb-2">📋 Total Material Requirements:</h5>
+                <div id="materialSummaryContent"></div>
+              </div>
+            </div>
+
+            <!-- Warning Messages -->
+            <div id="materialWarnings" class="hidden mb-4"></div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="addCabinet()" class="btn btn-green flex-1">✅ Make Cabinets</button>
               <button onclick="hideCabinetForm()" class="btn btn-gray flex-1">❌ Cancel</button>
             </div>
           </div>
@@ -977,11 +1018,120 @@
 
     function showCabinetForm() {
       document.getElementById('cabinetForm').classList.remove('hidden');
+      populateMaterialSelects();
+      setupMaterialCalculation();
     }
 
     function hideCabinetForm() {
       document.getElementById('cabinetForm').classList.add('hidden');
       clearCabinetForm();
+    }
+
+    function populateMaterialSelects() {
+      const plywoodSelect = document.getElementById('cabinetPlywoodType');
+      const mdfSelect = document.getElementById('cabinetMDFType');
+      
+      // Clear existing options
+      plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
+      mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
+      
+      // Populate with available plywood materials
+      plywood.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = `${item.type} (${item.sheets} sheets available)`;
+        
+        // Add to both selects - users can choose what to use for what
+        const plywoodOption = option.cloneNode(true);
+        const mdfOption = option.cloneNode(true);
+        
+        plywoodSelect.appendChild(plywoodOption);
+        mdfSelect.appendChild(mdfOption);
+      });
+    }
+
+    function setupMaterialCalculation() {
+      const inputs = ['cabinetQuantity', 'cabinetPlywoodSheets', 'cabinetMDFSheets'];
+      const selects = ['cabinetPlywoodType', 'cabinetMDFType'];
+      
+      inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updateMaterialSummary);
+      });
+      
+      selects.forEach(id => {
+        document.getElementById(id).addEventListener('change', updateMaterialSummary);
+      });
+    }
+
+    function updateMaterialSummary() {
+      const quantity = parseInt(document.getElementById('cabinetQuantity').value) || 0;
+      const plywoodId = document.getElementById('cabinetPlywoodType').value;
+      const plywoodSheets = parseFloat(document.getElementById('cabinetPlywoodSheets').value) || 0;
+      const mdfId = document.getElementById('cabinetMDFType').value;
+      const mdfSheets = parseFloat(document.getElementById('cabinetMDFSheets').value) || 0;
+      
+      const summary = document.getElementById('materialSummary');
+      const content = document.getElementById('materialSummaryContent');
+      const warnings = document.getElementById('materialWarnings');
+      
+      if (quantity > 0 && (plywoodSheets > 0 || mdfSheets > 0)) {
+        summary.classList.remove('hidden');
+        
+        let summaryHTML = '';
+        let warningsHTML = '';
+        
+        // Plywood calculations
+        if (plywoodId && plywoodSheets > 0) {
+          const plywoodItem = plywood.find(p => p.id == plywoodId);
+          const totalPlywoodNeeded = quantity * plywoodSheets;
+          
+          summaryHTML += `
+            <div class="flex justify-between items-center py-1">
+              <span>📦 ${plywoodItem?.type}:</span>
+              <span class="font-semibold">${totalPlywoodNeeded} sheets</span>
+            </div>
+          `;
+          
+          if (plywoodItem && totalPlywoodNeeded > plywoodItem.sheets) {
+            warningsHTML += `
+              <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
+                <span class="text-red-600">⚠️ Insufficient ${plywoodItem.type}!</span><br>
+                <small>Need: ${totalPlywoodNeeded} sheets | Available: ${plywoodItem.sheets} sheets</small>
+              </div>
+            `;
+          }
+        }
+        
+        // MDF calculations
+        if (mdfId && mdfSheets > 0) {
+          const mdfItem = plywood.find(p => p.id == mdfId);
+          const totalMDFNeeded = quantity * mdfSheets;
+          
+          summaryHTML += `
+            <div class="flex justify-between items-center py-1">
+              <span>🚪 ${mdfItem?.type} (Doors):</span>
+              <span class="font-semibold">${totalMDFNeeded} sheets</span>
+            </div>
+          `;
+          
+          if (mdfItem && totalMDFNeeded > mdfItem.sheets) {
+            warningsHTML += `
+              <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
+                <span class="text-red-600">⚠️ Insufficient ${mdfItem.type} for doors!</span><br>
+                <small>Need: ${totalMDFNeeded} sheets | Available: ${mdfItem.sheets} sheets</small>
+              </div>
+            `;
+          }
+        }
+        
+        content.innerHTML = summaryHTML;
+        warnings.innerHTML = warningsHTML;
+        warnings.classList.toggle('hidden', warningsHTML === '');
+        
+      } else {
+        summary.classList.add('hidden');
+        warnings.classList.add('hidden');
+      }
     }
 
     function clearPlywoodForm() {
@@ -991,9 +1141,17 @@
     }
 
     function clearCabinetForm() {
-      ['cabinetType', 'cabinetQuantity', 'cabinetMaterials', 'cabinetPrice'].forEach(id =>
+      ['cabinetType', 'cabinetQuantity', 'cabinetMaterials', 'cabinetPrice', 
+       'cabinetPlywoodSheets', 'cabinetMDFSheets'].forEach(id =>
         document.getElementById(id).value = ''
       );
+      
+      ['cabinetPlywoodType', 'cabinetMDFType'].forEach(id =>
+        document.getElementById(id).selectedIndex = 0
+      );
+      
+      document.getElementById('materialSummary').classList.add('hidden');
+      document.getElementById('materialWarnings').classList.add('hidden');
     }
 
     // Add Functions - NOW WITH INVOICE REQUIRED FOR NEW PLYWOOD
@@ -1075,27 +1233,139 @@
       const quantity = parseInt(document.getElementById('cabinetQuantity').value);
       const materials = document.getElementById('cabinetMaterials').value.trim();
       const pricePerUnit = parseFloat(document.getElementById('cabinetPrice').value) || 0;
+      
+      // Material requirements
+      const plywoodId = document.getElementById('cabinetPlywoodType').value;
+      const plywoodSheets = parseFloat(document.getElementById('cabinetPlywoodSheets').value) || 0;
+      const mdfId = document.getElementById('cabinetMDFType').value;
+      const mdfSheets = parseFloat(document.getElementById('cabinetMDFSheets').value) || 0;
 
+      // Validation
       if (!type) {
         alert('❌ Please enter the cabinet type');
         return;
       }
       
-      if (!quantity || isNaN(quantity) || quantity < 0) {
+      if (!quantity || isNaN(quantity) || quantity < 1) {
         alert('❌ Please enter a valid quantity');
         return;
       }
 
-      const item = {
+      // Check if any materials are specified
+      if (plywoodSheets === 0 && mdfSheets === 0) {
+        if (!confirm('⚠️ No materials specified. Continue without deducting materials?')) {
+          return;
+        }
+      }
+
+      // Validate material availability
+      const materialChecks = [];
+      
+      if (plywoodId && plywoodSheets > 0) {
+        const plywoodItem = plywood.find(p => p.id == plywoodId);
+        const totalPlywoodNeeded = quantity * plywoodSheets;
+        
+        if (!plywoodItem) {
+          alert('❌ Selected plywood type not found');
+          return;
+        }
+        
+        if (totalPlywoodNeeded > plywoodItem.sheets) {
+          alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${totalPlywoodNeeded} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
+          return;
+        }
+        
+        materialChecks.push({
+          item: plywoodItem,
+          needed: totalPlywoodNeeded,
+          type: 'plywood'
+        });
+      }
+      
+      if (mdfId && mdfSheets > 0) {
+        const mdfItem = plywood.find(p => p.id == mdfId);
+        const totalMDFNeeded = quantity * mdfSheets;
+        
+        if (!mdfItem) {
+          alert('❌ Selected MDF type not found');
+          return;
+        }
+        
+        if (totalMDFNeeded > mdfItem.sheets) {
+          alert(`❌ Insufficient ${mdfItem.type} for doors!\nNeed: ${totalMDFNeeded} sheets\nAvailable: ${mdfItem.sheets} sheets`);
+          return;
+        }
+        
+        materialChecks.push({
+          item: mdfItem,
+          needed: totalMDFNeeded,
+          type: 'mdf'
+        });
+      }
+
+      // Create cabinet record
+      const cabinet = {
         id: Date.now(),
         type,
         quantity,
-        materials,
-        pricePerUnit
+        materials: materials || 'Custom materials',
+        pricePerUnit,
+        materialRequirements: {
+          plywood: plywoodId ? {
+            id: plywoodId,
+            sheetsPerUnit: plywoodSheets,
+            totalUsed: quantity * plywoodSheets
+          } : null,
+          mdf: mdfId ? {
+            id: mdfId,
+            sheetsPerUnit: mdfSheets,
+            totalUsed: quantity * mdfSheets
+          } : null
+        },
+        dateCreated: new Date().toISOString()
       };
-      
-      await saveData('cabinets', item);
-      hideCabinetForm();
+
+      try {
+        // Deduct materials from inventory
+        for (const check of materialChecks) {
+          const newQuantity = check.item.sheets - check.needed;
+          
+          await updateData('plywood', check.item.firebaseId, {
+            sheets: newQuantity,
+            lastUpdated: new Date().toISOString()
+          });
+          
+          console.log(`Deducted ${check.needed} sheets of ${check.item.type}`);
+        }
+
+        // Add cabinet to inventory
+        await saveData('cabinets', cabinet);
+        
+        hideCabinetForm();
+        
+        // Show success message
+        const msg = document.getElementById('successMessage');
+        const materialInfo = materialChecks.length > 0 ? 
+          `<br><small>Materials deducted: ${materialChecks.map(c => 
+            `${c.needed} sheets of ${c.item.type}`
+          ).join(', ')}</small>` : '';
+        
+        msg.innerHTML = `
+          <div class="flex items-center">
+            <span class="text-green-600 mr-2">✅</span>
+            <div>
+              <strong>${quantity} ${type}(s) manufactured successfully!</strong>
+              ${materialInfo}
+            </div>
+          </div>
+        `;
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 5000);
+        
+      } catch (error) {
+        console.error('Error adding cabinet:', error);
+        alert('❌ Error manufacturing cabinet. Please try again.');
+      }
     }
 
     // Update Functions - NO INVOICE REQUIRED FOR QTY UPDATES
@@ -1852,7 +2122,7 @@
       
       if (lowStockItems.length > 0) {
         alert.classList.remove('hidden');
-        list.innerHTML = '';A
+        list.innerHTML = '';
         lowStockItems.forEach(item => {
           const li = document.createElement('li');
           li.className = 'font-semibold';
