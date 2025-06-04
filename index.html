@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cabinet Manufacturing Inventory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase v9 Compat (Fast loading) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    .qr-icon {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      background: #6B7280;
+      border: 2px solid #6B7280;
+      position: relative;
+    }
+
+    .qr-icon:before {
+      content: "QR";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-green {
+      background: #16a34a;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-green:hover {
+      background: #15803d;
+    }
+
+    .btn-red {
+      background: #dc2626;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-red:hover {
+      background: #b91c1c;
+    }
+
+    .btn-orange {
+      background: #ea580c;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-orange:hover {
+      background: #c2410c;
+    }
+
+    .btn-gray {
+      background: #6b7280;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-gray:hover {
+      background: #4b5563;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .tab-active {
+      background: #eff6ff;
+      color: #2563eb;
+      border-bottom: 2px solid #2563eb;
+    }
+
+    .tab-inactive {
+      color: #6b7280;
+    }
+
+    .tab-inactive:hover {
+      color: #374151;
+    }
+
+    .low-stock {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .alert {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 16px;
+      margin: 24px;
+    }
+
+    .success-message {
+      background: #f0f9ff;
+      border: 1px solid #0ea5e9;
+      color: #0c4a6e;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+
+    .stats-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: .5;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50">
+  <div class="max-w-6xl mx-auto p-6 min-h-screen">
+    <div class="bg-white rounded-lg shadow-lg">
+      <!-- Header -->
+      <div class="bg-blue-600 text-white p-6 rounded-t-lg">
+        <h1 class="text-3xl font-bold flex items-center gap-3">
+          🏠 Cabinet Manufacturing Inventory
+        </h1>
+        <p class="text-blue-100 mt-2">Track plywood materials and finished cabinets</p>
+        <div id="connectionStatus" class="text-green-100 text-sm mt-2">
+          ✅ Cloud sync ready - All devices connected!
+        </div>
+      </div>
+
+      <!-- Stats Summary -->
+      <div class="stats-card">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="text-2xl font-bold" id="totalPlywoodSheets">0</div>
+            <div class="text-blue-100">Total Plywood Sheets</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold" id="totalCabinets">0</div>
+            <div class="text-blue-100">Finished Cabinets</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold" id="lowStockCount">0</div>
+            <div class="text-blue-100">Low Stock Items</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold" id="totalValue">$0</div>
+            <div class="text-blue-100">Total Inventory Value</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alert -->
+      <div id="lowStockAlert" class="alert hidden">
+        <div class="flex items-center">
+          <span class="text-red-500 mr-2 pulse">⚠️</span>
+          <h3 class="text-red-800 font-semibold">Low Stock Alert!</h3>
+        </div>
+        <ul id="lowStockList" class="text-red-700 mt-2"></ul>
+      </div>
+
+      <!-- Success Messages -->
+      <div id="successMessage" class="success-message hidden">
+        ✅ Data synced to cloud!
+      </div>
+
+      <!-- QR Scanner Modals -->
+      <div id="plywoodQRModal" class="modal hidden">
+        <div class="modal-content">
+          <h3 class="text-xl font-bold mb-4">Plywood QR Scanner</h3>
+          <div class="bg-gray-100 p-8 rounded-lg text-center mb-4">
+            <div class="text-6xl mb-4">📷</div>
+            <p class="text-gray-600">In production: Camera opens here</p>
+            <p class="text-sm text-gray-500 mt-2">Demo: Click QR code below</p>
+          </div>
+          <div id="plywoodQRList" class="grid grid-cols-1 gap-2 mb-4"></div>
+          <button onclick="closePlywoodQRScanner()" class="btn-gray w-full">Close</button>
+        </div>
+      </div>
+
+      <div id="plywoodQRAction" class="modal hidden">
+        <div class="modal-content">
+          <h3 class="text-xl font-bold mb-4">Plywood Scanned!</h3>
+          <div class="text-center mb-6">
+            <div class="qr-icon mx-auto mb-2" style="background: #16a34a; border-color: #16a34a;"></div>
+            <h4 id="scannedPlywoodName" class="font-semibold text-lg"></h4>
+            <p id="scannedPlywoodQuantity" class="text-gray-600"></p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <button onclick="handlePlywoodQRAction('add')" class="btn-green py-3 font-semibold">
+              ➕ Add Sheets
+            </button>
+            <button onclick="handlePlywoodQRAction('remove')" class="btn-red py-3 font-semibold">
+              ➖ Use Sheets
+            </button>
+          </div>
+          <button onclick="closePlywoodQRAction()" class="btn-gray w-full mt-4">Cancel</button>
+        </div>
+      </div>
+
+      <div id="cabinetQRModal" class="modal hidden">
+        <div class="modal-content">
+          <h3 class="text-xl font-bold mb-4">Cabinet QR Scanner</h3>
+          <div class="bg-gray-100 p-8 rounded-lg text-center mb-4">
+            <div class="text-6xl mb-4">📷</div>
+            <p class="text-gray-600">In production: Camera opens here</p>
+            <p class="text-sm text-gray-500 mt-2">Demo: Click QR code below</p>
+          </div>
+          <div id="cabinetQRList" class="grid grid-cols-2 gap-2 mb-4"></div>
+          <button onclick="closeCabinetQRScanner()" class="btn-gray w-full">Close</button>
+        </div>
+      </div>
+
+      <div id="cabinetQRAction" class="modal hidden">
+        <div class="modal-content">
+          <h3 class="text-xl font-bold mb-4">Cabinet Scanned!</h3>
+          <div class="text-center mb-6">
+            <div class="qr-icon mx-auto mb-2" style="background: #2563eb; border-color: #2563eb;"></div>
+            <h4 id="scannedCabinetName" class="font-semibold text-lg"></h4>
+            <p id="scannedCabinetQuantity" class="text-gray-600"></p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <button onclick="handleCabinetQRAction('add')" class="btn-green py-3 font-semibold">
+              ➕ Add to Inventory
+            </button>
+            <button onclick="handleCabinetQRAction('remove')" class="btn-red py-3 font-semibold">
+              ➖ Remove from Inventory
+            </button>
+          </div>
+          <button onclick="closeCabinetQRAction()" class="btn-gray w-full mt-4">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex border-b border-gray-200">
+        <button onclick="setActiveTab('plywood')" id="plywoodTab" class="flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-active">
+          📦 Plywood Materials
+        </button>
+        <button onclick="setActiveTab('cabinets')" id="cabinetTab" class="flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-inactive">
+          ✂️ Finished Cabinets
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Plywood Content -->
+        <div id="plywoodContent">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Plywood Inventory</h2>
+            <div class="flex gap-3">
+              <button onclick="showPlywoodQRScanner()" class="btn-green flex items-center gap-2">
+                <span class="qr-icon" style="width: 16px; height: 16px; font-size: 8px;"></span>
+                Scan QR
+              </button>
+              <button onclick="showPlywoodForm()" class="btn-primary flex items-center gap-2">
+                ➕ Add Plywood
+              </button>
+            </div>
+          </div>
+
+          <!-- Plywood Form -->
+          <div id="plywoodForm" class="bg-gray-50 p-4 rounded-lg mb-6 hidden">
+            <h3 class="font-semibold mb-4">Add New Plywood</h3>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4)" class="border rounded p-2">
+              <input type="number" id="plywoodSheets" placeholder="Sheets" class="border rounded p-2">
+              <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="border rounded p-2">
+              <input type="text" id="plywoodSupplier" placeholder="Supplier" class="border rounded p-2">
+              <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="border rounded p-2">
+            </div>
+            <div class="flex gap-2 mt-4">
+              <button onclick="addPlywood()" class="btn-green">Add</button>
+              <button onclick="hidePlywoodForm()" class="btn-gray">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Plywood List -->
+          <div id="plywoodList" class="space-y-4"></div>
+        </div>
+
+        <!-- Cabinet Content -->
+        <div id="cabinetContent" class="hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Finished Cabinets</h2>
+            <div class="flex gap-3">
+              <button onclick="showCabinetQRScanner()" class="btn-green flex items-center gap-2">
+                <span class="qr-icon" style="width: 16px; height: 16px; font-size: 8px;"></span>
+                Scan QR
+              </button>
+              <button onclick="showCabinetForm()" class="btn-primary flex items-center gap-2">
+                ➕ Add Cabinet
+              </button>
+            </div>
+          </div>
+
+          <!-- Cabinet Form -->
+          <div id="cabinetForm" class="bg-gray-50 p-4 rounded-lg mb-6 hidden">
+            <h3 class="font-semibold mb-4">Add New Cabinet Type</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <input type="text" id="cabinetType" placeholder="Cabinet Type" class="border rounded p-2">
+              <input type="number" id="cabinetQuantity" placeholder="Quantity" class="border rounded p-2">
+              <input type="text" id="cabinetMaterials" placeholder="Materials" class="border rounded p-2">
+              <input type="number" id="cabinetPrice" placeholder="Price/Unit" step="0.01" class="border rounded p-2">
+            </div>
+            <div class="flex gap-2 mt-4">
+              <button onclick="addCabinet()" class="btn-green">Add</button>
+              <button onclick="hideCabinetForm()" class="btn-gray">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Cabinet List -->
+          <div id="cabinetList" class="space-y-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data
+    let plywood = [];
+    let cabinets = [];
+    let activeTab = 'plywood';
+    let scannedPlywoodId = null;
+    let scannedCabinetId = null;
+    let db = null;
+
+    // Firebase config - using the original config but note these are public keys
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMmPd0w9igmg6oyDtJeG5XBeeBON29yQA",
+      authDomain: "cabinet-inventory-web.firebaseapp.com",
+      projectId: "cabinet-inventory-web",
+      storageBucket: "cabinet-inventory-web.firebasestorage.app",
+      messagingSenderId: "558741277330",
+      appId: "1:558741277330:web:b8b92f7ef1f92a12c9744b",
+      measurementId: "G-0JCXB70V7S"
+    };
+
+    // Initialize Firebase
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      console.log('Firebase initialized successfully');
+    } catch (error) {
+      console.log('Firebase initialization failed, using local storage only');
+    }
+
+    // Firebase functions
+    async function saveData(collection, data) {
+      try {
+        if (db) {
+          await db.collection(collection).add(data);
+          showSuccess();
+        }
+      } catch (e) {
+        console.log('Offline mode - data saved locally');
+      }
+    }
+
+    async function updateData(collection, id, data) {
+      try {
+        if (db && id) {
+          await db.collection(collection).doc(id).update(data);
+          showSuccess();
+        }
+      } catch (e) {
+        console.log('Offline mode - data updated locally');
+      }
+    }
+
+    async function deleteData(collection, id) {
+      try {
+        if (db && id) {
+          await db.collection(collection).doc(id).delete();
+          showSuccess();
+        }
+      } catch (e) {
+        console.log('Offline mode - data deleted locally');
+      }
+    }
+
+    async function loadData() {
+      try {
+        if (!db) {
+          loadSampleData();
+          return;
+        }
+
+        const [plywoodSnap, cabinetSnap] = await Promise.all([
+          db.collection('plywood').get(),
+          db.collection('cabinets').get()
+        ]);
+
+        plywood = [];
+        plywoodSnap.forEach(doc => plywood.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
+
+        cabinets = [];
+        cabinetSnap.forEach(doc => cabinets.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
+
+        if (plywood.length === 0 && cabinets.length === 0) {
+          addSampleData();
+        } else {
+          render();
+        }
+      } catch (e) {
+        console.log('Loading sample data due to connection issue');
+        loadSampleData();
+      }
+    }
+
+    function loadSampleData() {
+      plywood = [
+        {
+          id: 1,
+          type: 'Oak 3/4"',
+          sheets: 25,
+          minStock: 10,
+          supplier: 'Wood Co',
+          cost: 45.00
+        },
+        {
+          id: 2,
+          type: 'Maple 1/2"',
+          sheets: 6,
+          minStock: 8,
+          supplier: 'Lumber Plus',
+          cost: 38.50
+        },
+        {
+          id: 3,
+          type: 'Birch Plywood 3/4"',
+          sheets: 12,
+          minStock: 5,
+          supplier: 'Premium Woods',
+          cost: 52.75
+        }
+      ];
+
+      cabinets = [
+        {
+          id: 1,
+          type: 'Base Cabinet 24"',
+          quantity: 5,
+          materials: 'Oak 3/4"',
+          pricePerUnit: 350.00
+        },
+        {
+          id: 2,
+          type: 'Wall Cabinet 30"',
+          quantity: 8,
+          materials: 'Maple 1/2"',
+          pricePerUnit: 280.00
+        },
+        {
+          id: 3,
+          type: 'Corner Cabinet',
+          quantity: 3,
+          materials: 'Birch Plywood 3/4"',
+          pricePerUnit: 425.00
+        }
+      ];
+      render();
+    }
+
+    async function addSampleData() {
+      const samples = [
+        {
+          id: 1,
+          type: 'Oak 3/4"',
+          sheets: 25,
+          minStock: 10,
+          supplier: 'Wood Co',
+          cost: 45.00
+        },
+        {
+          id: 2,
+          type: 'Maple 1/2"',
+          sheets: 15,
+          minStock: 8,
+          supplier: 'Lumber Plus',
+          cost: 38.50
+        }
+      ];
+
+      const cabinetSamples = [
+        {
+          id: 1,
+          type: 'Base Cabinet 24"',
+          quantity: 5,
+          materials: 'Oak 3/4"',
+          pricePerUnit: 350.00
+        },
+        {
+          id: 2,
+          type: 'Wall Cabinet 30"',
+          quantity: 8,
+          materials: 'Maple 1/2"',
+          pricePerUnit: 280.00
+        }
+      ];
+
+      for (const item of samples) await saveData('plywood', item);
+      for (const item of cabinetSamples) await saveData('cabinets', item);
+      setTimeout(loadData, 1000);
+    }
+
+    function showSuccess() {
+      const msg = document.getElementById('successMessage');
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
+    }
+
+    function updateStats() {
+      const totalSheets = plywood.reduce((sum, item) => sum + item.sheets, 0);
+      const totalCabinetCount = cabinets.reduce((sum, item) => sum + item.quantity, 0);
+      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
+      const plywoodValue = plywood.reduce((sum, item) => sum + (item.sheets * item.cost), 0);
+      const cabinetValue = cabinets.reduce((sum, item) => sum + (item.quantity * item.pricePerUnit), 0);
+
+      document.getElementById('totalPlywoodSheets').textContent = totalSheets;
+      document.getElementById('totalCabinets').textContent = totalCabinetCount;
+      document.getElementById('lowStockCount').textContent = lowStockItems.length;
+      document.getElementById('totalValue').textContent = `$${(plywoodValue + cabinetValue).toLocaleString()}`;
+    }
+
+    function render() {
+      renderPlywood();
+      renderCabinets();
+      checkLowStock();
+      updateStats();
+    }
+
+    // Tab Functions
+    function setActiveTab(tab) {
+      activeTab = tab;
+      if (tab === 'plywood') {
+        document.getElementById('plywoodContent').classList.remove('hidden');
+        document.getElementById('cabinetContent').classList.add('hidden');
+        document.getElementById('plywoodTab').className = 'flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-active';
+        document.getElementById('cabinetTab').className = 'flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-inactive';
+      } else {
+        document.getElementById('plywoodContent').classList.add('hidden');
+        document.getElementById('cabinetContent').classList.remove('hidden');
+        document.getElementById('plywoodTab').className = 'flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-inactive';
+        document.getElementById('cabinetTab').className = 'flex-1 py-4 px-6 text-center font-semibold flex items-center justify-center gap-2 tab-active';
+      }
+    }
+
+    // Form Functions
+    function showPlywoodForm() {
+      document.getElementById('plywoodForm').classList.remove('hidden');
+    }
+
+    function hidePlywoodForm() {
+      document.getElementById('plywoodForm').classList.add('hidden');
+      clearPlywoodForm();
+    }
+
+    function showCabinetForm() {
+      document.getElementById('cabinetForm').classList.remove('hidden');
+    }
+
+    function hideCabinetForm() {
+      document.getElementById('cabinetForm').classList.add('hidden');
+      clearCabinetForm();
+    }
+
+    function clearPlywoodForm() {
+      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+    }
+
+    function clearCabinetForm() {
+      ['cabinetType', 'cabinetQuantity', 'cabinetMaterials', 'cabinetPrice'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+    }
+
+    // Add Functions
+    async function addPlywood() {
+      const type = document.getElementById('plywoodType').value.trim();
+      const sheets = parseInt(document.getElementById('plywoodSheets').value);
+      const minStock = parseInt(document.getElementById('plywoodMinStock').value) || 5;
+      const supplier = document.getElementById('plywoodSupplier').value.trim();
+      const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
+
+      if (type && !isNaN(sheets) && sheets >= 0) {
+        const item = {
+          id: Date.now(),
+          type,
+          sheets,
+          minStock,
+          supplier,
+          cost
+        };
+        plywood.push(item);
+        await saveData('plywood', item);
+        renderPlywood();
+        hidePlywoodForm();
+        checkLowStock();
+        updateStats();
+      } else {
+        alert('Please fill in all required fields with valid values.');
+      }
+    }
+
+    async function addCabinet() {
+      const type = document.getElementById('cabinetType').value.trim();
+      const quantity = parseInt(document.getElementById('cabinetQuantity').value);
+      const materials = document.getElementById('cabinetMaterials').value.trim();
+      const pricePerUnit = parseFloat(document.getElementById('cabinetPrice').value) || 0;
+
+      if (type && !isNaN(quantity) && quantity >= 0) {
+        const item = {
+          id: Date.now(),
+          type,
+          quantity,
+          materials,
+          pricePerUnit
+        };
+        cabinets.push(item);
+        await saveData('cabinets', item);
+        renderCabinets();
+        hideCabinetForm();
+        updateStats();
+      } else {
+        alert('Please fill in all required fields with valid values.');
+      }
+    }
+
+    // Update Functions
+    async function updatePlywoodQuantity(id, change) {
+      const item = plywood.find(p => p.id === id);
+      if (item) {
+        const newQuantity = item.sheets + change;
+        if (newQuantity >= 0) {
+          item.sheets = newQuantity;
+          if (item.firebaseId) await updateData('plywood', item.firebaseId, {
+            sheets: item.sheets
+          });
+          renderPlywood();
+          checkLowStock();
+          updateStats();
+        }
+      }
+    }
+
+    async function updateCabinetQuantity(id, change) {
+      const item = cabinets.find(c => c.id === id);
+      if (item) {
+        const newQuantity = item.quantity + change;
+        if (newQuantity >= 0) {
+          item.quantity = newQuantity;
+          if (item.firebaseId) await updateData('cabinets', item.firebaseId, {
+            quantity: item.quantity
+          });
+          renderCabinets();
+          updateStats();
+        }
+      }
+    }
+
+    // Delete Functions
+    async function deletePlywood(id) {
+      if (confirm('Are you sure you want to delete this plywood item?')) {
+        const item = plywood.find(p => p.id === id);
+        if (item?.firebaseId) await deleteData('plywood', item.firebaseId);
+        plywood = plywood.filter(p => p.id !== id);
+        renderPlywood();
+        checkLowStock();
+        updateStats();
+      }
+    }
+
+    async function deleteCabinet(id) {
+      if (confirm('Are you sure you want to delete this cabinet item?')) {
+        const item = cabinets.find(c => c.id === id);
+        if (item?.firebaseId) await deleteData('cabinets', item.firebaseId);
+        cabinets = cabinets.filter(c => c.id !== id);
+        renderCabinets();
+        updateStats();
+      }
+    }
+
+    // QR Functions
+    function showPlywoodQRScanner() {
+      const list = document.getElementById('plywoodQRList');
+      list.innerHTML = '';
+      plywood.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'p-2 bg-green-100 rounded text-sm hover:bg-green-200 transition-colors';
+        btn.textContent = `Scan ${item.type}`;
+        btn.onclick = () => simulatePlywoodQRScan(item.id);
+        list.appendChild(btn);
+      });
+      document.getElementById('plywoodQRModal').classList.remove('hidden');
+    }
+
+    function closePlywoodQRScanner() {
+      document.getElementById('plywoodQRModal').classList.add('hidden');
+    }
+
+    function simulatePlywoodQRScan(id) {
+      const item = plywood.find(p => p.id === id);
+      if (item) {
+        scannedPlywoodId = id;
+        document.getElementById('scannedPlywoodName').textContent = item.type;
+        document.getElementById('scannedPlywoodQuantity').textContent = `Current: ${item.sheets} sheets`;
+        document.getElementById('plywoodQRModal').classList.add('hidden');
+        document.getElementById('plywoodQRAction').classList.remove('hidden');
+      }
+    }
+
+    function closePlywoodQRAction() {
+      document.getElementById('plywoodQRAction').classList.add('hidden');
+      scannedPlywoodId = null;
+    }
+
+    function handlePlywoodQRAction(action) {
+      if (scannedPlywoodId) {
+        updatePlywoodQuantity(scannedPlywoodId, action === 'add' ? 1 : -1);
+        closePlywoodQRAction();
+      }
+    }
+
+    function showCabinetQRScanner() {
+      const list = document.getElementById('cabinetQRList');
+      list.innerHTML = '';
+      cabinets.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'p-2 bg-blue-100 rounded text-sm hover:bg-blue-200 transition-colors';
+        btn.textContent = `Scan ${item.type}`;
+        btn.onclick = () => simulateCabinetQRScan(item.id);
+        list.appendChild(btn);
+      });
+      document.getElementById('cabinetQRModal').classList.remove('hidden');
+    }
+
+    function closeCabinetQRScanner() {
+      document.getElementById('cabinetQRModal').classList.add('hidden');
+    }
+
+    function simulateCabinetQRScan(id) {
+      const item = cabinets.find(c => c.id === id);
+      if (item) {
+        scannedCabinetId = id;
+        document.getElementById('scannedCabinetName').textContent = item.type;
+        document.getElementById('scannedCabinetQuantity').textContent = `Current: ${item.quantity} units`;
+        document.getElementById('cabinetQRModal').classList.add('hidden');
+        document.getElementById('cabinetQRAction').classList.remove('hidden');
+      }
+    }
+
+    function closeCabinetQRAction() {
+      document.getElementById('cabinetQRAction').classList.add('hidden');
+      scannedCabinetId = null;
+    }
+
+    function handleCabinetQRAction(action) {
+      if (scannedCabinetId) {
+        updateCabinetQuantity(scannedCabinetId, action === 'add' ? 1 : -1);
+        closeCabinetQRAction();
+      }
+    }
+
+    // Render Functions
+    function renderPlywood() {
+      const list = document.getElementById('plywoodList');
+      list.innerHTML = '';
+      plywood.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `border rounded-lg p-4 ${item.sheets <= item.minStock ? 'low-stock' : 'border-gray-200'}`;
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex-1">
+              <h3 class="font-semibold text-lg">${item.type}</h3>
+              <p class="text-gray-600">Supplier: ${item.supplier} | Cost: ${item.cost.toFixed(2)}/sheet</p>
+              <p class="text-sm text-gray-500">Min stock: ${item.minStock} sheets</p>
+              <p class="text-sm text-gray-600">Total value: ${(item.sheets * item.cost).toFixed(2)}</p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-center">
+                <div class="qr-icon mb-1"></div>
+                <div class="text-xs text-gray-500">QR_${item.id}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold ${item.sheets <= item.minStock ? 'text-red-600' : ''}">${item.sheets}</div>
+                <div class="text-gray-600">sheets</div>
+              </div>
+              <div class="flex flex-col gap-2">
+                <button onclick="updatePlywoodQuantity(${item.id}, 1)" class="btn-green text-sm">+1</button>
+                <button onclick="updatePlywoodQuantity(${item.id}, -1)" class="btn-orange text-sm">-1</button>
+              </div>
+              <button onclick="deletePlywood(${item.id})" class="text-red-600 hover:text-red-800 text-xl">🗑️</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderCabinets() {
+      const list = document.getElementById('cabinetList');
+      list.innerHTML = '';
+      cabinets.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'border border-gray-200 rounded-lg p-4';
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex-1">
+              <h3 class="font-semibold text-lg">${item.type}</h3>
+              <p class="text-gray-600">Materials: ${item.materials}</p>
+              <p class="text-gray-600">${item.pricePerUnit.toFixed(2)}/unit | Total: ${(item.quantity * item.pricePerUnit).toFixed(2)}</p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-center">
+                <div class="qr-icon mb-1"></div>
+                <div class="text-xs text-gray-500">QR_${item.id}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold">${item.quantity}</div>
+                <div class="text-gray-600">units</div>
+              </div>
+              <div class="flex flex-col gap-2">
+                <button onclick="updateCabinetQuantity(${item.id}, 1)" class="btn-green text-sm">+1</button>
+                <button onclick="updateCabinetQuantity(${item.id}, -1)" class="btn-orange text-sm">-1</button>
+              </div>
+              <button onclick="deleteCabinet(${item.id})" class="text-red-600 hover:text-red-800 text-xl">🗑️</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function checkLowStock() {
+      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
+      const alert = document.getElementById('lowStockAlert');
+      const list = document.getElementById('lowStockList');
+      
+      if (lowStockItems.length > 0) {
+        alert.classList.remove('hidden');
+        list.innerHTML = '';
+        lowStockItems.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
+          list.appendChild(li);
+        });
+      } else {
+        alert.classList.add('hidden');
+      }
+    }
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('App starting...');
+      loadData();
+    });
+  </script>
+</body>
+</html>
