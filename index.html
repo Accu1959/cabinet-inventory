@@ -444,6 +444,48 @@
       }
     }
 
+    // Real-time listeners for live updates
+    function setupRealtimeListeners() {
+      if (!db) {
+        loadSampleData();
+        return;
+      }
+
+      try {
+        // Listen to plywood collection changes in real-time
+        db.collection('plywood').onSnapshot((snapshot) => {
+          plywood = [];
+          snapshot.forEach(doc => plywood.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderPlywood();
+          checkLowStock();
+          updateStats();
+          console.log('📦 Plywood updated in real-time');
+        });
+
+        // Listen to cabinets collection changes in real-time
+        db.collection('cabinets').onSnapshot((snapshot) => {
+          cabinets = [];
+          snapshot.forEach(doc => cabinets.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderCabinets();
+          updateStats();
+          console.log('🔨 Cabinets updated in real-time');
+        });
+
+        // Update connection status
+        document.getElementById('connectionStatus').innerHTML = '🔴 Real-time sync active - Live updates enabled!';
+        
+      } catch (e) {
+        console.log('Real-time listeners failed, loading sample data');
+        loadSampleData();
+      }
+    }
+
     async function loadData() {
       try {
         if (!db) {
@@ -451,6 +493,7 @@
           return;
         }
 
+        // First load existing data
         const [plywoodSnap, cabinetSnap] = await Promise.all([
           db.collection('plywood').get(),
           db.collection('cabinets').get()
@@ -469,10 +512,16 @@
         }));
 
         if (plywood.length === 0 && cabinets.length === 0) {
-          addSampleData();
-        } else {
-          render();
+          await addSampleData();
         }
+        
+        render();
+        
+        // Then setup real-time listeners
+        setTimeout(() => {
+          setupRealtimeListeners();
+        }, 1000);
+        
       } catch (e) {
         console.log('Loading sample data due to connection issue');
         loadSampleData();
@@ -648,7 +697,7 @@
       );
     }
 
-    // Add Functions
+    // Add Functions (Real-time version)
     async function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value);
@@ -665,12 +714,10 @@
           supplier,
           cost
         };
-        plywood.push(item);
+        
+        // Only add to Firebase - real-time listener will update the UI
         await saveData('plywood', item);
-        renderPlywood();
         hidePlywoodForm();
-        checkLowStock();
-        updateStats();
       } else {
         alert('Please fill in all required fields with valid values.');
       }
@@ -690,29 +737,27 @@
           materials,
           pricePerUnit
         };
-        cabinets.push(item);
+        
+        // Only add to Firebase - real-time listener will update the UI
         await saveData('cabinets', item);
-        renderCabinets();
         hideCabinetForm();
-        updateStats();
       } else {
         alert('Please fill in all required fields with valid values.');
       }
     }
 
-    // Update Functions
+    // Update Functions (Real-time version)
     async function updatePlywoodQuantity(id, change) {
       const item = plywood.find(p => p.id === id);
       if (item) {
         const newQuantity = item.sheets + change;
         if (newQuantity >= 0) {
-          item.sheets = newQuantity;
-          if (item.firebaseId) await updateData('plywood', item.firebaseId, {
-            sheets: item.sheets
-          });
-          renderPlywood();
-          checkLowStock();
-          updateStats();
+          // Only update Firebase - real-time listener will update the UI
+          if (item.firebaseId) {
+            await updateData('plywood', item.firebaseId, {
+              sheets: newQuantity
+            });
+          }
         }
       }
     }
@@ -722,12 +767,12 @@
       if (item) {
         const newQuantity = item.quantity + change;
         if (newQuantity >= 0) {
-          item.quantity = newQuantity;
-          if (item.firebaseId) await updateData('cabinets', item.firebaseId, {
-            quantity: item.quantity
-          });
-          renderCabinets();
-          updateStats();
+          // Only update Firebase - real-time listener will update the UI
+          if (item.firebaseId) {
+            await updateData('cabinets', item.firebaseId, {
+              quantity: newQuantity
+            });
+          }
         }
       }
     }
