@@ -11,6 +11,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     /* Custom Styles */
     .gradient-bg {
@@ -251,6 +254,30 @@
       min-height: 600px;
     }
 
+    .dispatch-card {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border: 2px solid #0284c7;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 12px 0;
+      transition: all 0.3s ease;
+    }
+
+    .dispatch-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(2, 132, 199, 0.15);
+    }
+
+    .pending-dispatch {
+      background: linear-gradient(135deg, #fefce8, #fef3c7);
+      border-color: #f59e0b;
+    }
+
+    .completed-dispatch {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-color: #22c55e;
+    }
+
     /* Mobile Optimizations */
     @media (max-width: 768px) {
       .modal-content {
@@ -296,7 +323,7 @@
         <h1 class="text-2xl lg:text-4xl font-bold flex items-center gap-3">
           🏠 Cabinet Manufacturing System
         </h1>
-        <p class="text-blue-100 mt-2 text-sm lg:text-base">Professional inventory & production management</p>
+        <p class="text-blue-100 mt-2 text-sm lg:text-base">Professional inventory, dispatch & shipping management</p>
         <div id="connectionStatus" class="text-green-200 text-sm mt-3 flex items-center gap-2">
           <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           Real-time sync active - Live updates enabled!
@@ -336,7 +363,7 @@
           <!-- Stats Dashboard -->
           <div class="stats-card">
             <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📊 Manufacturing Overview</h3>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <div class="stat-item">
                 <div class="text-2xl lg:text-3xl font-bold" id="totalPlywoodSheets">0</div>
                 <div class="text-blue-100 text-sm lg:text-base mt-2">Plywood Sheets</div>
@@ -350,6 +377,10 @@
                 <div class="text-blue-100 text-sm lg:text-base mt-2">Product Lines</div>
               </div>
               <div class="stat-item">
+                <div class="text-2xl lg:text-3xl font-bold" id="totalDispatches">0</div>
+                <div class="text-blue-100 text-sm lg:text-base mt-2">Total Dispatches</div>
+              </div>
+              <div class="stat-item">
                 <div class="text-2xl lg:text-3xl font-bold" id="totalValue">$0</div>
                 <div class="text-blue-100 text-sm lg:text-base mt-2">Total Inventory Value</div>
               </div>
@@ -357,7 +388,7 @@
           </div>
 
           <!-- Quick Actions -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="card p-6 text-center">
               <div class="text-4xl mb-4">📦</div>
               <h3 class="font-bold text-lg mb-2">Plywood Materials</h3>
@@ -366,10 +397,17 @@
             </div>
             
             <div class="card p-6 text-center">
+              <div class="text-4xl mb-4">🚚</div>
+              <h3 class="font-bold text-lg mb-2">Dispatch & Shipping</h3>
+              <p class="text-gray-600 mb-4">Manage dispatches and deliveries</p>
+              <button onclick="showDispatchPage()" class="btn btn-green w-full">View Dispatches</button>
+            </div>
+            
+            <div class="card p-6 text-center">
               <div class="text-4xl mb-4">📋</div>
               <h3 class="font-bold text-lg mb-2">Invoice History</h3>
               <p class="text-gray-600 mb-4">Track purchases and deliveries</p>
-              <button onclick="showInvoicePage()" class="btn btn-green w-full">View Invoices</button>
+              <button onclick="showInvoicePage()" class="btn btn-orange w-full">View Invoices</button>
             </div>
             
             <div class="card p-6 text-center">
@@ -424,6 +462,42 @@
             <div id="subcategoriesList">
               <!-- Subcategories will be populated here -->
             </div>
+          </div>
+        </div>
+
+        <!-- DISPATCH PAGE -->
+        <div id="dispatchPage" class="page-content hidden">
+          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🚚 Dispatch & Shipping Management</h2>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="undoLastDispatch()" class="btn btn-red">↩️ Undo Last Dispatch</button>
+              <button onclick="exportAllDispatches()" class="btn btn-green">📄 Export All Dispatches</button>
+            </div>
+          </div>
+
+          <!-- Dispatch Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="card p-4 text-center">
+              <div class="text-2xl font-bold text-blue-600" id="totalDispatchCount">0</div>
+              <div class="text-sm text-gray-600">Total Dispatches</div>
+            </div>
+            <div class="card p-4 text-center">
+              <div class="text-2xl font-bold text-yellow-600" id="pendingDispatchCount">0</div>
+              <div class="text-sm text-gray-600">Pending Delivery</div>
+            </div>
+            <div class="card p-4 text-center">
+              <div class="text-2xl font-bold text-green-600" id="completedDispatchCount">0</div>
+              <div class="text-sm text-gray-600">Completed</div>
+            </div>
+            <div class="card p-4 text-center">
+              <div class="text-2xl font-bold text-purple-600" id="dispatchedValue">$0</div>
+              <div class="text-sm text-gray-600">Total Value</div>
+            </div>
+          </div>
+
+          <!-- Dispatch List -->
+          <div id="dispatchList" class="space-y-4">
+            <!-- Dispatches will be populated here -->
           </div>
         </div>
 
@@ -512,6 +586,10 @@
                 <div class="flex justify-between">
                   <span>Total Invoices:</span>
                   <span id="totalInvoicesCount">0</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Total Dispatches:</span>
+                  <span id="totalDispatchesCount">0</span>
                 </div>
               </div>
             </div>
@@ -621,6 +699,42 @@
     </div>
   </div>
 
+  <!-- DISPATCH ADDRESS MODAL -->
+  <div id="dispatchModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">🚚 Dispatch Cabinet</h3>
+      
+      <div id="dispatchDetails" class="mb-6">
+        <!-- Product details will be shown here -->
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Dispatch:</label>
+        <input type="number" id="dispatchQuantity" placeholder="1" min="1" class="input-field">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Destination Address: *</label>
+        <textarea id="dispatchAddress" placeholder="Enter complete delivery address..." class="input-field" rows="3" required></textarea>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Expected Delivery Date:</label>
+        <input type="date" id="dispatchDeliveryDate" class="input-field">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional):</label>
+        <textarea id="dispatchNotes" placeholder="Special delivery instructions, contact info, etc..." class="input-field" rows="2"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="processDispatch()" class="btn btn-green flex-1">🚚 Dispatch Cabinet</button>
+        <button onclick="closeDispatchModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MANUFACTURING MODAL -->
   <div id="manufacturingModal" class="modal hidden">
     <div class="modal-content">
@@ -684,8 +798,10 @@
     let subcategories = [];
     let cabinets = [];
     let invoices = [];
+    let dispatches = [];
     let currentCategoryId = null;
     let currentSubcategoryId = null;
+    let currentDispatchSubcategoryId = null;
     let db = null;
     let bulkMode = 'add';
     let bulkItems = {};
@@ -785,6 +901,14 @@
       renderPlywood();
     }
 
+    function showDispatchPage() {
+      hideAllPages();
+      document.getElementById('dispatchPage').classList.remove('hidden');
+      updateBreadcrumb('> 🚚 Dispatch & Shipping');
+      renderDispatches();
+      updateDispatchStats();
+    }
+
     function showInvoicePage() {
       hideAllPages();
       document.getElementById('invoicePage').classList.remove('hidden');
@@ -800,7 +924,7 @@
     }
 
     function hideAllPages() {
-      const pages = ['homePage', 'categoryPage', 'plywoodPage', 'invoicePage', 'settingsPage'];
+      const pages = ['homePage', 'categoryPage', 'plywoodPage', 'dispatchPage', 'invoicePage', 'settingsPage'];
       pages.forEach(page => {
         document.getElementById(page).classList.add('hidden');
       });
@@ -879,6 +1003,19 @@
           updateStats();
           console.log('📋 Invoices updated in real-time');
         });
+
+        db.collection('dispatches').onSnapshot((snapshot) => {
+          dispatches = [];
+          snapshot.forEach(doc => dispatches.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderDispatches();
+          updateDispatchStats();
+          updateStats();
+          console.log('🚚 Dispatches updated in real-time');
+        });
+
       } catch (e) {
         console.log('Real-time listeners failed, loading sample data');
         loadSampleData();
@@ -892,12 +1029,13 @@
           return;
         }
 
-        const [categoriesSnap, subcategoriesSnap, plywoodSnap, cabinetsSnap, invoicesSnap] = await Promise.all([
+        const [categoriesSnap, subcategoriesSnap, plywoodSnap, cabinetsSnap, invoicesSnap, dispatchesSnap] = await Promise.all([
           db.collection('categories').get(),
           db.collection('subcategories').get(),
           db.collection('plywood').get(),
           db.collection('cabinets').get(),
-          db.collection('invoices').get()
+          db.collection('invoices').get(),
+          db.collection('dispatches').get()
         ]);
 
         categories = [];
@@ -926,6 +1064,12 @@
 
         invoices = [];
         invoicesSnap.forEach(doc => invoices.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
+
+        dispatches = [];
+        dispatchesSnap.forEach(doc => dispatches.push({
           firebaseId: doc.id,
           ...doc.data()
         }));
@@ -1006,6 +1150,7 @@
 
       cabinets = [];
       invoices = [];
+      dispatches = [];
       
       renderCategoriesGrid();
       updateStats();
@@ -1056,6 +1201,471 @@
       for (const item of samplePlywood) await saveData('plywood', item);
       
       setTimeout(loadData, 1000);
+    }
+
+    // Dispatch Functions
+    function showDispatchModal(subcategoryId) {
+      currentDispatchSubcategoryId = subcategoryId;
+      const subcategory = subcategories.find(s => s.id === subcategoryId);
+      const category = categories.find(c => c.id === subcategory.categoryId);
+      const cabinet = cabinets.find(c => c.subcategoryId === subcategoryId);
+      
+      if (!cabinet || cabinet.quantity <= 0) {
+        alert('❌ No cabinets available for dispatch!');
+        return;
+      }
+      
+      document.getElementById('dispatchModal').classList.remove('hidden');
+      
+      const details = document.getElementById('dispatchDetails');
+      details.innerHTML = `
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+          <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
+          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
+          <p class="text-blue-700 text-sm">Available: ${cabinet.quantity} units</p>
+          <p class="text-blue-700 text-sm">Price: $${subcategory.pricePerUnit.toFixed(2)} per unit</p>
+        </div>
+      `;
+      
+      document.getElementById('dispatchQuantity').value = '1';
+      document.getElementById('dispatchQuantity').max = cabinet.quantity;
+      document.getElementById('dispatchAddress').value = '';
+      document.getElementById('dispatchDeliveryDate').value = '';
+      document.getElementById('dispatchNotes').value = '';
+      
+      // Set default delivery date to 3 days from now
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 3);
+      document.getElementById('dispatchDeliveryDate').value = defaultDate.toISOString().split('T')[0];
+    }
+
+    function closeDispatchModal() {
+      document.getElementById('dispatchModal').classList.add('hidden');
+      currentDispatchSubcategoryId = null;
+    }
+
+    async function processDispatch() {
+      const quantity = parseInt(document.getElementById('dispatchQuantity').value) || 1;
+      const address = document.getElementById('dispatchAddress').value.trim();
+      const deliveryDate = document.getElementById('dispatchDeliveryDate').value;
+      const notes = document.getElementById('dispatchNotes').value.trim();
+      
+      if (!address) {
+        alert('❌ Please enter a destination address');
+        return;
+      }
+      
+      if (quantity <= 0) {
+        alert('❌ Please enter a valid quantity');
+        return;
+      }
+
+      const subcategory = subcategories.find(s => s.id === currentDispatchSubcategoryId);
+      const category = categories.find(c => c.id === subcategory.categoryId);
+      const cabinet = cabinets.find(c => c.subcategoryId === currentDispatchSubcategoryId);
+      
+      if (quantity > cabinet.quantity) {
+        alert(`❌ Insufficient cabinets available!\nRequested: ${quantity}\nAvailable: ${cabinet.quantity}`);
+        return;
+      }
+
+      // Check if there's an existing dispatch to the same address (within last 24 hours)
+      const addressKey = address.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const recentDispatch = dispatches.find(d => {
+        const dispatchAddressKey = d.address.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const dispatchTime = new Date(d.createdAt);
+        const timeDiff = Date.now() - dispatchTime.getTime();
+        return dispatchAddressKey === addressKey && timeDiff < 24 * 60 * 60 * 1000; // 24 hours
+      });
+
+      let dispatchId;
+      let folderName;
+
+      if (recentDispatch) {
+        // Add to existing dispatch
+        dispatchId = recentDispatch.id;
+        folderName = recentDispatch.folderName;
+        
+        // Update existing dispatch
+        const updatedItems = [...recentDispatch.items, {
+          subcategoryId: currentDispatchSubcategoryId,
+          categoryId: subcategory.categoryId,
+          productName: subcategory.name,
+          categoryName: category.name,
+          quantity: quantity,
+          pricePerUnit: subcategory.pricePerUnit,
+          totalValue: quantity * subcategory.pricePerUnit
+        }];
+        
+        const updatedTotalValue = updatedItems.reduce((sum, item) => sum + item.totalValue, 0);
+        const updatedTotalQuantity = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+        
+        await updateData('dispatches', recentDispatch.firebaseId, {
+          items: updatedItems,
+          totalValue: updatedTotalValue,
+          totalQuantity: updatedTotalQuantity,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        showSuccess(`Added to existing dispatch #${dispatchId} (${folderName})`);
+      } else {
+        // Create new dispatch
+        dispatchId = Date.now();
+        folderName = `DISPATCH_${dispatchId}_${addressKey.substring(0, 10).toUpperCase()}`;
+        
+        const dispatch = {
+          id: dispatchId,
+          folderName: folderName,
+          address: address,
+          expectedDeliveryDate: deliveryDate,
+          notes: notes,
+          status: 'pending',
+          items: [{
+            subcategoryId: currentDispatchSubcategoryId,
+            categoryId: subcategory.categoryId,
+            productName: subcategory.name,
+            categoryName: category.name,
+            quantity: quantity,
+            pricePerUnit: subcategory.pricePerUnit,
+            totalValue: quantity * subcategory.pricePerUnit
+          }],
+          totalValue: quantity * subcategory.pricePerUnit,
+          totalQuantity: quantity,
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        };
+        
+        await saveData('dispatches', dispatch);
+        showSuccess(`New dispatch created: #${dispatchId} (${folderName})`);
+      }
+
+      // Update cabinet inventory
+      const newQuantity = cabinet.quantity - quantity;
+      await updateData('cabinets', cabinet.firebaseId, {
+        quantity: newQuantity,
+        lastDispatch: new Date().toISOString()
+      });
+
+      closeDispatchModal();
+    }
+
+    function renderDispatches() {
+      const list = document.getElementById('dispatchList');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      if (dispatches.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            🚚 No dispatches found.
+          </div>
+        `;
+        return;
+      }
+      
+      const sortedDispatches = [...dispatches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      sortedDispatches.forEach(dispatch => {
+        const div = document.createElement('div');
+        const statusClass = dispatch.status === 'completed' ? 'completed-dispatch' : 'pending-dispatch';
+        div.className = `dispatch-card ${statusClass}`;
+        
+        const statusIcon = dispatch.status === 'completed' ? '✅' : '🚛';
+        const statusText = dispatch.status === 'completed' ? 'Delivered' : 'Pending Delivery';
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-3">
+                <h3 class="font-bold text-lg text-gray-800">🚚 Dispatch #${dispatch.id}</h3>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${dispatch.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                  ${statusIcon} ${statusText}
+                </span>
+                <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-mono">${dispatch.folderName}</span>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
+                <div><strong>📍 Address:</strong> ${dispatch.address}</div>
+                <div><strong>📅 Expected Delivery:</strong> ${dispatch.expectedDeliveryDate ? new Date(dispatch.expectedDeliveryDate).toLocaleDateString() : 'Not set'}</div>
+                <div><strong>📦 Total Items:</strong> ${dispatch.totalQuantity} units</div>
+                <div><strong>💰 Total Value:</strong> $${dispatch.totalValue.toFixed(2)}</div>
+              </div>
+              
+              ${dispatch.notes ? `<p class="text-sm text-gray-600 mb-3"><strong>📝 Notes:</strong> ${dispatch.notes}</p>` : ''}
+              
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  ${dispatch.items.map(item => `
+                    <div class="text-xs bg-white bg-opacity-50 p-2 rounded border">
+                      <span class="font-semibold">${item.productName}</span><br>
+                      <span class="text-gray-600">${item.categoryName} • Qty: ${item.quantity} • $${item.totalValue.toFixed(2)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex lg:flex-col gap-2">
+              <button onclick="generatePackingSlip(${dispatch.id})" class="btn btn-primary text-sm">📄 Packing Slip</button>
+              <button onclick="exportDispatchToPDF(${dispatch.id})" class="btn btn-green text-sm">📋 Export PDF</button>
+              ${dispatch.status === 'pending' ? `
+                <button onclick="markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
+              ` : ''}
+              <button onclick="deleteDispatch(${dispatch.id})" class="btn btn-red text-sm">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    function updateDispatchStats() {
+      try {
+        const totalCount = dispatches.length;
+        const pendingCount = dispatches.filter(d => d.status === 'pending').length;
+        const completedCount = dispatches.filter(d => d.status === 'completed').length;
+        const totalValue = dispatches.reduce((sum, d) => sum + (d.totalValue || 0), 0);
+
+        document.getElementById('totalDispatchCount').textContent = totalCount.toString();
+        document.getElementById('pendingDispatchCount').textContent = pendingCount.toString();
+        document.getElementById('completedDispatchCount').textContent = completedCount.toString();
+        document.getElementById('dispatchedValue').textContent = `$${Math.round(totalValue).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating dispatch stats:', error);
+      }
+    }
+
+    async function markDelivered(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (dispatch && dispatch.firebaseId) {
+        await updateData('dispatches', dispatch.firebaseId, {
+          status: 'completed',
+          deliveredAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        });
+        showSuccess(`Dispatch #${dispatchId} marked as delivered!`);
+      }
+    }
+
+    async function deleteDispatch(dispatchId) {
+      if (!confirm('Are you sure you want to delete this dispatch? This will return the items to inventory.')) {
+        return;
+      }
+      
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (dispatch && dispatch.firebaseId) {
+        // Return items to inventory
+        for (const item of dispatch.items) {
+          const cabinet = cabinets.find(c => c.subcategoryId === item.subcategoryId);
+          if (cabinet && cabinet.firebaseId) {
+            const newQuantity = cabinet.quantity + item.quantity;
+            await updateData('cabinets', cabinet.firebaseId, {
+              quantity: newQuantity,
+              lastUpdated: new Date().toISOString()
+            });
+          }
+        }
+        
+        await deleteData('dispatches', dispatch.firebaseId);
+        showSuccess(`Dispatch #${dispatchId} deleted and ${dispatch.totalQuantity} items returned to inventory!`);
+      }
+    }
+
+    async function undoLastDispatch() {
+      if (dispatches.length === 0) {
+        alert('❌ No dispatches to undo');
+        return;
+      }
+      
+      const lastDispatch = dispatches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      
+      if (confirm(`Undo last dispatch #${lastDispatch.id}?\n\nThis will return ${lastDispatch.totalQuantity} items to inventory.`)) {
+        await deleteDispatch(lastDispatch.id);
+      }
+    }
+
+    // PDF and Export Functions
+    function generatePackingSlip(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (!dispatch) return;
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.text('PACKING SLIP', 20, 30);
+      
+      doc.setFontSize(12);
+      doc.text(`Dispatch #${dispatch.id}`, 20, 45);
+      doc.text(`Folder: ${dispatch.folderName}`, 20, 55);
+      doc.text(`Date: ${new Date(dispatch.createdAt).toLocaleDateString()}`, 20, 65);
+      
+      // Delivery Information
+      doc.setFontSize(14);
+      doc.text('DELIVERY ADDRESS:', 20, 85);
+      doc.setFontSize(11);
+      const addressLines = dispatch.address.split('\n');
+      addressLines.forEach((line, index) => {
+        doc.text(line, 20, 95 + (index * 10));
+      });
+      
+      // Expected Delivery
+      if (dispatch.expectedDeliveryDate) {
+        doc.text(`Expected Delivery: ${new Date(dispatch.expectedDeliveryDate).toLocaleDateString()}`, 20, 95 + (addressLines.length * 10) + 10);
+      }
+      
+      // Items Table
+      let yPos = 95 + (addressLines.length * 10) + 30;
+      doc.setFontSize(14);
+      doc.text('ITEMS:', 20, yPos);
+      yPos += 15;
+      
+      // Table Headers
+      doc.setFontSize(10);
+      doc.text('Product', 20, yPos);
+      doc.text('Category', 80, yPos);
+      doc.text('Qty', 140, yPos);
+      doc.text('Value', 170, yPos);
+      yPos += 10;
+      
+      // Draw line under headers
+      doc.line(20, yPos - 5, 200, yPos - 5);
+      
+      // Items
+      dispatch.items.forEach(item => {
+        doc.text(item.productName, 20, yPos);
+        doc.text(item.categoryName, 80, yPos);
+        doc.text(item.quantity.toString(), 140, yPos);
+        doc.text(`${item.totalValue.toFixed(2)}`, 170, yPos);
+        yPos += 10;
+      });
+      
+      // Total
+      yPos += 10;
+      doc.line(20, yPos - 5, 200, yPos - 5);
+      doc.setFontSize(12);
+      doc.text(`TOTAL: ${dispatch.totalQuantity} items`, 20, yPos);
+      doc.text(`TOTAL VALUE: ${dispatch.totalValue.toFixed(2)}`, 140, yPos);
+      
+      // Notes
+      if (dispatch.notes) {
+        yPos += 20;
+        doc.setFontSize(11);
+        doc.text('NOTES:', 20, yPos);
+        yPos += 10;
+        doc.text(dispatch.notes, 20, yPos);
+      }
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 20, 280);
+      
+      doc.save(`Packing_Slip_${dispatch.id}_${dispatch.folderName}.pdf`);
+      showSuccess(`Packing slip generated for dispatch #${dispatch.id}!`);
+    }
+
+    function exportDispatchToPDF(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (!dispatch) return;
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(18);
+      doc.text('DISPATCH RECORD', 20, 30);
+      
+      // Basic Info
+      doc.setFontSize(12);
+      doc.text(`Dispatch ID: ${dispatch.id}`, 20, 50);
+      doc.text(`Folder Name: ${dispatch.folderName}`, 20, 60);
+      doc.text(`Status: ${dispatch.status.toUpperCase()}`, 20, 70);
+      doc.text(`Created: ${new Date(dispatch.createdAt).toLocaleString()}`, 20, 80);
+      doc.text(`Last Updated: ${new Date(dispatch.lastUpdated).toLocaleString()}`, 20, 90);
+      
+      if (dispatch.deliveredAt) {
+        doc.text(`Delivered: ${new Date(dispatch.deliveredAt).toLocaleString()}`, 20, 100);
+      }
+      
+      // Address
+      doc.setFontSize(14);
+      doc.text('DELIVERY ADDRESS:', 20, 120);
+      doc.setFontSize(11);
+      const addressLines = dispatch.address.split('\n');
+      addressLines.forEach((line, index) => {
+        doc.text(line, 20, 130 + (index * 8));
+      });
+      
+      // Expected Delivery
+      if (dispatch.expectedDeliveryDate) {
+        doc.text(`Expected Delivery: ${new Date(dispatch.expectedDeliveryDate).toLocaleDateString()}`, 20, 130 + (addressLines.length * 8) + 10);
+      }
+      
+      // Items
+      let yPos = 130 + (addressLines.length * 8) + 30;
+      doc.setFontSize(14);
+      doc.text('DISPATCHED ITEMS:', 20, yPos);
+      yPos += 15;
+      
+      doc.setFontSize(10);
+      dispatch.items.forEach((item, index) => {
+        doc.text(`${index + 1}. ${item.productName}`, 25, yPos);
+        doc.text(`   Category: ${item.categoryName}`, 25, yPos + 8);
+        doc.text(`   Quantity: ${item.quantity} units`, 25, yPos + 16);
+        doc.text(`   Unit Price: ${item.pricePerUnit.toFixed(2)}`, 25, yPos + 24);
+        doc.text(`   Total Value: ${item.totalValue.toFixed(2)}`, 25, yPos + 32);
+        yPos += 45;
+      });
+      
+      // Summary
+      doc.setFontSize(12);
+      doc.text(`TOTAL QUANTITY: ${dispatch.totalQuantity} units`, 20, yPos + 10);
+      doc.text(`TOTAL VALUE: ${dispatch.totalValue.toFixed(2)}`, 20, yPos + 20);
+      
+      // Notes
+      if (dispatch.notes) {
+        yPos += 35;
+        doc.text('NOTES:', 20, yPos);
+        doc.setFontSize(10);
+        doc.text(dispatch.notes, 20, yPos + 10);
+      }
+      
+      doc.save(`Dispatch_${dispatch.id}_${dispatch.folderName}.pdf`);
+      showSuccess(`Dispatch record exported for #${dispatch.id}!`);
+    }
+
+    function exportAllDispatches() {
+      if (dispatches.length === 0) {
+        alert('No dispatch data to export');
+        return;
+      }
+      
+      let csvContent = 'Dispatch ID,Folder Name,Status,Created Date,Address,Expected Delivery,Total Items,Total Value,Items Detail,Notes\n';
+      
+      dispatches.forEach(dispatch => {
+        const itemsDetail = dispatch.items.map(item => 
+          `${item.productName} (${item.quantity}x @ ${item.pricePerUnit})`
+        ).join('; ');
+        
+        const addressOneLine = dispatch.address.replace(/\n/g, ' | ');
+        
+        csvContent += `"${dispatch.id}","${dispatch.folderName}","${dispatch.status}","${dispatch.createdAt}","${addressOneLine}","${dispatch.expectedDeliveryDate || ''}","${dispatch.totalQuantity}","${dispatch.totalValue}","${itemsDetail}","${dispatch.notes || ''}"\n`;
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dispatch_records_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      showSuccess(`Dispatch records exported! ${dispatches.length} dispatches exported to CSV`);
     }
 
     // Category Management
@@ -1225,7 +1835,7 @@
         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
           <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
           <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
-          <p class="text-blue-700 text-sm">Price: $${subcategory.pricePerUnit.toFixed(2)} per unit</p>
+          <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
           <p class="text-blue-700 text-sm">Materials: ${subcategory.materials}</p>
         </div>
       `;
@@ -1430,7 +2040,7 @@
       showSuccess(`Successfully manufactured ${quantity} units of ${subcategory.name}!`);
     }
 
-    // Plywood Management (same as before)
+    // Plywood Management
     function showPlywoodForm() {
       document.getElementById('plywoodForm').classList.remove('hidden');
       document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
@@ -1792,6 +2402,11 @@
                 <button onclick="showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
                   🔨 Manufacture
                 </button>
+                ${totalQuantity > 0 ? `
+                  <button onclick="showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
+                    🚚 Dispatch
+                  </button>
+                ` : ''}
                 <button onclick="editSubcategory(${subcategory.id})" class="btn btn-primary text-sm">
                   ✏️ Edit
                 </button>
@@ -1952,6 +2567,7 @@
       document.getElementById('totalSubcategoriesCount').textContent = subcategories.length;
       document.getElementById('totalMaterialsCount').textContent = plywood.length;
       document.getElementById('totalInvoicesCount').textContent = invoices.length;
+      document.getElementById('totalDispatchesCount').textContent = dispatches.length;
     }
 
     // Stats and Utility Functions
@@ -1961,10 +2577,12 @@
         const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
         const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
+        const totalDispatchCount = dispatches.length;
 
         document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
         document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
         document.getElementById('activeCategories').textContent = categories.length.toString();
+        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
         document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
 
       } catch (error) {
@@ -2108,10 +2726,11 @@
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Cabinet Manufacturing System Starting...');
+      console.log('🚀 Cabinet Manufacturing System with Dispatch Starting...');
       showHomePage();
       loadData();
     });
   </script>
 </body>
 </html>
+
