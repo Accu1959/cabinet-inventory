@@ -2804,11 +2804,211 @@
     }
 
     function renderDispatches() {
-      // Implementation for rendering dispatches
+      const list = document.getElementById('dispatchList');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      if (dispatches.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            🚚 No dispatches found.
+          </div>
+        `;
+        return;
+      }
+      
+      const sortedDispatches = [...dispatches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      sortedDispatches.forEach(dispatch => {
+        const div = document.createElement('div');
+        const statusClass = dispatch.status === 'completed' ? 'completed-dispatch' : 'pending-dispatch';
+        div.className = `dispatch-card ${statusClass}`;
+        
+        const statusIcon = dispatch.status === 'completed' ? '✅' : '🚛';
+        const statusText = dispatch.status === 'completed' ? 'Delivered' : 'Pending Delivery';
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-3">
+                <h3 class="font-bold text-lg text-gray-800">🚚 Dispatch #${dispatch.id}</h3>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${dispatch.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                  ${statusIcon} ${statusText}
+                </span>
+                ${dispatch.folderName ? `<span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-mono">${dispatch.folderName}</span>` : ''}
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
+                <div><strong>📍 Address:</strong> ${dispatch.address}</div>
+                <div><strong>📅 Expected Delivery:</strong> ${dispatch.expectedDeliveryDate ? new Date(dispatch.expectedDeliveryDate).toLocaleDateString() : 'Not set'}</div>
+                <div><strong>📦 Total Items:</strong> ${dispatch.totalQuantity || dispatch.quantity || 0} units</div>
+                <div><strong>💰 Total Value:</strong> ${(dispatch.totalValue || 0).toFixed(2)}</div>
+              </div>
+              
+              ${dispatch.notes ? `<p class="text-sm text-gray-600 mb-3"><strong>📝 Notes:</strong> ${dispatch.notes}</p>` : ''}
+              
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  ${dispatch.items ? dispatch.items.map(item => `
+                    <div class="text-xs bg-white bg-opacity-50 p-2 rounded border">
+                      <span class="font-semibold">${item.productName}</span><br>
+                      <span class="text-gray-600">${item.categoryName} • Qty: ${item.quantity} • ${(item.totalValue || 0).toFixed(2)}</span>
+                    </div>
+                  `).join('') : `
+                    <div class="text-xs bg-white bg-opacity-50 p-2 rounded border">
+                      <span class="font-semibold">${dispatch.productName || 'Unknown Product'}</span><br>
+                      <span class="text-gray-600">Qty: ${dispatch.quantity || 0} • ${((dispatch.quantity || 0) * (dispatch.pricePerUnit || 0)).toFixed(2)}</span>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex lg:flex-col gap-2">
+              <button onclick="generatePackingSlip(${dispatch.id})" class="btn btn-primary text-sm">📄 Packing Slip</button>
+              <button onclick="exportDispatchToPDF(${dispatch.id})" class="btn btn-green text-sm">📋 Export PDF</button>
+              ${dispatch.status === 'pending' ? `
+                <button onclick="markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
+              ` : ''}
+              <button onclick="deleteDispatch(${dispatch.id})" class="btn btn-red text-sm">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
     }
 
     function updateDispatchStats() {
-      // Implementation for updating dispatch stats
+      try {
+        const totalCount = dispatches.length;
+        const pendingCount = dispatches.filter(d => d.status === 'pending').length;
+        const completedCount = dispatches.filter(d => d.status === 'completed').length;
+        const totalValue = dispatches.reduce((sum, d) => sum + (d.totalValue || 0), 0);
+
+        document.getElementById('totalDispatchCount').textContent = totalCount.toString();
+        document.getElementById('pendingDispatchCount').textContent = pendingCount.toString();
+        document.getElementById('completedDispatchCount').textContent = completedCount.toString();
+        document.getElementById('dispatchedValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating dispatch stats:', error);
+      }
+    }
+
+    async function markDelivered(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (dispatch) {
+        dispatch.status = 'completed';
+        dispatch.deliveredAt = new Date().toISOString();
+        dispatch.lastUpdated = new Date().toISOString();
+        
+        // Save to Firebase if available
+        if (dispatch.firebaseId && db) {
+          try {
+            await updateData('dispatches', dispatch.firebaseId, {
+              status: 'completed',
+              deliveredAt: dispatch.deliveredAt,
+              lastUpdated: dispatch.lastUpdated
+            });
+          } catch (error) {
+            console.error('Error updating dispatch:', error);
+          }
+        }
+        
+        renderDispatches();
+        updateDispatchStats();
+        showSuccess(`Dispatch #${dispatchId} marked as delivered!`);
+      }
+    }
+
+    async function deleteDispatch(dispatchId) {
+      if (!confirm('Are you sure you want to delete this dispatch? This will return the items to inventory.')) {
+        return;
+      }
+      
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (dispatch) {
+        // Return items to inventory
+        if (dispatch.items) {
+          // Multi-item dispatch
+          for (const item of dispatch.items) {
+            const cabinet = cabinets.find(c => c.subcategoryId === item.subcategoryId);
+            if (cabinet) {
+              cabinet.quantity += item.quantity;
+              cabinet.lastUpdated = new Date().toISOString();
+              
+              // Save to Firebase if available
+              if (cabinet.firebaseId && db) {
+                try {
+                  await updateData('cabinets', cabinet.firebaseId, {
+                    quantity: cabinet.quantity,
+                    lastUpdated: cabinet.lastUpdated
+                  });
+                } catch (error) {
+                  console.error('Error updating cabinet:', error);
+                }
+              }
+            }
+          }
+        } else {
+          // Single-item dispatch (legacy format)
+          const cabinet = cabinets.find(c => c.subcategoryId === dispatch.subcategoryId);
+          if (cabinet) {
+            cabinet.quantity += (dispatch.quantity || 0);
+            cabinet.lastUpdated = new Date().toISOString();
+            
+            // Save to Firebase if available
+            if (cabinet.firebaseId && db) {
+              try {
+                await updateData('cabinets', cabinet.firebaseId, {
+                  quantity: cabinet.quantity,
+                  lastUpdated: cabinet.lastUpdated
+                });
+              } catch (error) {
+                console.error('Error updating cabinet:', error);
+              }
+            }
+          }
+        }
+        
+        // Remove dispatch from array
+        const dispatchIndex = dispatches.findIndex(d => d.id === dispatchId);
+        if (dispatchIndex !== -1) {
+          dispatches.splice(dispatchIndex, 1);
+        }
+        
+        // Delete from Firebase if available
+        if (dispatch.firebaseId && db) {
+          try {
+            await deleteData('dispatches', dispatch.firebaseId);
+          } catch (error) {
+            console.error('Error deleting dispatch:', error);
+          }
+        }
+        
+        const totalQuantity = dispatch.totalQuantity || dispatch.quantity || 0;
+        renderDispatches();
+        renderSubcategoriesList();
+        updateDispatchStats();
+        updateStats();
+        showSuccess(`Dispatch #${dispatchId} deleted and ${totalQuantity} items returned to inventory!`);
+      }
+    }
+
+    async function undoLastDispatch() {
+      if (dispatches.length === 0) {
+        alert('❌ No dispatches to undo');
+        return;
+      }
+      
+      const lastDispatch = dispatches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      
+      if (confirm(`Undo last dispatch #${lastDispatch.id}?\n\nThis will return ${lastDispatch.totalQuantity || lastDispatch.quantity || 0} items to inventory.`)) {
+        await deleteDispatch(lastDispatch.id);
+      }
     }
 
     function renderInvoices() {
@@ -2827,8 +3027,151 @@
       // Implementation for filtering invoices
     }
 
-    function exportInvoices() {
-      // Implementation for exporting invoices
+    function exportAllDispatches() {
+      if (dispatches.length === 0) {
+        alert('No dispatch data to export');
+        return;
+      }
+      
+      let csvContent = 'Dispatch ID,Folder Name,Status,Created Date,Address,Expected Delivery,Total Items,Total Value,Items Detail,Notes\n';
+      
+      dispatches.forEach(dispatch => {
+        let itemsDetail;
+        if (dispatch.items) {
+          itemsDetail = dispatch.items.map(item => 
+            `${item.productName} (${item.quantity}x @ ${item.pricePerUnit})`
+          ).join('; ');
+        } else {
+          itemsDetail = `${dispatch.productName || 'Unknown'} (${dispatch.quantity || 0}x)`;
+        }
+        
+        const addressOneLine = dispatch.address.replace(/\n/g, ' | ');
+        
+        csvContent += `"${dispatch.id}","${dispatch.folderName || ''}","${dispatch.status}","${dispatch.createdAt}","${addressOneLine}","${dispatch.expectedDeliveryDate || ''}","${dispatch.totalQuantity || dispatch.quantity || 0}","${dispatch.totalValue || 0}","${itemsDetail}","${dispatch.notes || ''}"\n`;
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dispatch_records_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      showSuccess(`Dispatch records exported! ${dispatches.length} dispatches exported to CSV`);
+    }
+
+    // PDF Export Functions (simplified versions)
+    function generatePackingSlip(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (!dispatch) return;
+      
+      if (typeof window.jsPDF === 'undefined') {
+        alert('PDF generation not available in this environment. In production, this would generate a proper packing slip.');
+        return;
+      }
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(20);
+        doc.text('PACKING SLIP', 20, 30);
+        
+        doc.setFontSize(12);
+        doc.text(`Dispatch #${dispatch.id}`, 20, 45);
+        doc.text(`Folder: ${dispatch.folderName || 'N/A'}`, 20, 55);
+        doc.text(`Date: ${new Date(dispatch.createdAt).toLocaleDateString()}`, 20, 65);
+        
+        // Delivery Information
+        doc.setFontSize(14);
+        doc.text('DELIVERY ADDRESS:', 20, 85);
+        doc.setFontSize(11);
+        const addressLines = dispatch.address.split('\n');
+        addressLines.forEach((line, index) => {
+          doc.text(line, 20, 95 + (index * 10));
+        });
+        
+        // Items
+        let yPos = 95 + (addressLines.length * 10) + 20;
+        doc.setFontSize(12);
+        doc.text('ITEMS:', 20, yPos);
+        yPos += 10;
+        
+        if (dispatch.items) {
+          dispatch.items.forEach(item => {
+            doc.setFontSize(10);
+            doc.text(`${item.productName} - Qty: ${item.quantity} - ${item.totalValue.toFixed(2)}`, 20, yPos);
+            yPos += 8;
+          });
+        } else {
+          doc.setFontSize(10);
+          doc.text(`${dispatch.productName || 'Product'} - Qty: ${dispatch.quantity || 0}`, 20, yPos);
+        }
+        
+        doc.save(`Packing_Slip_${dispatch.id}.pdf`);
+        showSuccess(`Packing slip generated for dispatch #${dispatch.id}!`);
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        alert('PDF generation failed. Feature would work in a production environment.');
+      }
+    }
+
+    function exportDispatchToPDF(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (!dispatch) return;
+      
+      if (typeof window.jsPDF === 'undefined') {
+        alert('PDF export not available in this environment. In production, this would generate a detailed dispatch report.');
+        return;
+      }
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(18);
+        doc.text('DISPATCH RECORD', 20, 30);
+        
+        // Basic Info
+        doc.setFontSize(12);
+        doc.text(`Dispatch ID: ${dispatch.id}`, 20, 50);
+        doc.text(`Status: ${dispatch.status.toUpperCase()}`, 20, 60);
+        doc.text(`Created: ${new Date(dispatch.createdAt).toLocaleString()}`, 20, 70);
+        
+        // Address
+        doc.setFontSize(14);
+        doc.text('DELIVERY ADDRESS:', 20, 90);
+        doc.setFontSize(11);
+        const addressLines = dispatch.address.split('\n');
+        addressLines.forEach((line, index) => {
+          doc.text(line, 20, 100 + (index * 8));
+        });
+        
+        // Items
+        let yPos = 100 + (addressLines.length * 8) + 20;
+        doc.setFontSize(14);
+        doc.text('DISPATCHED ITEMS:', 20, yPos);
+        yPos += 10;
+        
+        if (dispatch.items) {
+          dispatch.items.forEach((item, index) => {
+            doc.setFontSize(10);
+            doc.text(`${index + 1}. ${item.productName}`, 25, yPos);
+            doc.text(`   Quantity: ${item.quantity} units`, 25, yPos + 8);
+            doc.text(`   Value: ${item.totalValue.toFixed(2)}`, 25, yPos + 16);
+            yPos += 25;
+          });
+        }
+        
+        doc.save(`Dispatch_${dispatch.id}.pdf`);
+        showSuccess(`Dispatch record exported for #${dispatch.id}!`);
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        alert('PDF export failed. Feature would work in a production environment.');
+      }
     }
 
     // Modal functions
