@@ -702,6 +702,10 @@
                     <span id="totalCategoriesCount" class="font-semibold">0</span>
                   </div>
                   <div class="flex justify-between">
+                    <span>Hidden Categories:</span>
+                    <span id="hiddenCategoriesCount" class="font-semibold text-orange-600">0</span>
+                  </div>
+                  <div class="flex justify-between">
                     <span>Total Product Types:</span>
                     <span id="totalSubcategoriesCount" class="font-semibold">0</span>
                   </div>
@@ -1182,21 +1186,30 @@
         const hiddenSubcategories = categorySubcategories.filter(sub => sub.hidden);
         
         const div = document.createElement('div');
-        div.className = 'item-card';
+        div.className = `item-card ${category.hidden ? 'hidden-item' : ''}`;
+        
+        const hiddenIcon = category.hidden ? '👁️‍🗨️' : '👁️';
+        const hiddenText = category.hidden ? 'Show' : 'Hide';
         
         div.innerHTML = `
           <div class="flex justify-between items-start">
             <div class="flex-1">
-              <h4 class="font-semibold text-gray-800 flex items-center gap-2 mb-2">
+              <h4 class="font-semibold text-gray-800 flex items-center gap-2 mb-2 ${category.hidden ? 'item-name' : ''}">
                 ${category.icon} ${category.name}
                 <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${visibleSubcategories.length} visible</span>
                 ${hiddenSubcategories.length > 0 ? `<span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">${hiddenSubcategories.length} hidden</span>` : ''}
+                ${category.hidden ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Category Hidden</span>' : ''}
               </h4>
               <p class="text-sm text-gray-600">${category.description || 'No description'}</p>
               ${category.dateCreated ? `<p class="text-xs text-gray-400 mt-1">Created: ${new Date(category.dateCreated).toLocaleDateString()}</p>` : ''}
             </div>
             <div class="flex gap-2 ml-4">
               <button onclick="editCategory(${category.id})" class="btn-edit">✏️ Edit</button>
+              <button onclick="toggleCategoryVisibility(${category.id})" 
+                      class="btn-edit ${category.hidden ? 'bg-green-500' : 'bg-orange-500'}" 
+                      title="${hiddenText} category">
+                ${hiddenIcon}
+              </button>
               <button onclick="deleteCategory(${category.id})" class="text-red-500 hover:text-red-700 text-sm px-2">🗑️</button>
             </div>
           </div>
@@ -1409,6 +1422,19 @@
         });
         
         showSuccess(`Material "${material.type}" ${newHiddenState ? 'hidden' : 'shown'} successfully!`);
+      }
+    }
+
+    async function toggleCategoryVisibility(categoryId) {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category && category.firebaseId) {
+        const newHiddenState = !category.hidden;
+        await updateData('categories', category.firebaseId, {
+          hidden: newHiddenState,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        showSuccess(`Category "${category.name}" ${newHiddenState ? 'hidden' : 'shown'} successfully!`);
       }
     }
 
@@ -1663,6 +1689,7 @@
           populateMaterialSelects();
           if (currentSettingsTab === 'categories') renderSettingsCategories();
           if (currentSettingsTab === 'products') populateProductCategoryFilter();
+          if (currentSettingsTab === 'system') renderSystemInfo();
           console.log('📂 Categories updated in real-time');
         });
 
@@ -2821,16 +2848,19 @@
       
       grid.innerHTML = '';
       
-      if (categories.length === 0) {
+      // Filter categories to only show visible ones
+      const visibleCategories = categories.filter(cat => !cat.hidden);
+      
+      if (visibleCategories.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center text-gray-500 py-8">
-            📂 No categories found. Create your first category to get started!
+            📂 No visible categories found. ${categories.length > 0 ? 'Check settings to unhide categories or create a new one!' : 'Create your first category to get started!'}
           </div>
         `;
         return;
       }
       
-      categories.forEach(category => {
+      visibleCategories.forEach(category => {
         const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id && !sub.hidden);
         const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
         const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
