@@ -228,6 +228,35 @@
       border-color: #3b82f6;
     }
 
+    .folder-card {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border: 3px solid #94a3b8;
+      border-radius: 20px;
+      padding: 24px;
+      margin: 16px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .folder-card:hover {
+      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      border-color: #64748b;
+    }
+
+    .folder-card.expanded {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-color: #f59e0b;
+    }
+
+    .folder-content {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px dashed #cbd5e1;
+    }
+
     .subcategory-card {
       background: white;
       border: 1px solid #e5e7eb;
@@ -373,8 +402,8 @@
                 <div class="text-blue-100 text-sm lg:text-base mt-2">Finished Cabinets</div>
               </div>
               <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="activeCategories">0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Product Lines</div>
+                <div class="text-2xl lg:text-3xl font-bold" id="activeFolders">0</div>
+                <div class="text-blue-100 text-sm lg:text-base mt-2">Category Folders</div>
               </div>
               <div class="stat-item">
                 <div class="text-2xl lg:text-3xl font-bold" id="totalDispatches">0</div>
@@ -418,13 +447,51 @@
             </div>
           </div>
 
-          <!-- Categories Grid -->
+          <!-- Category Folders Section -->
           <div class="mb-6">
             <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🔨 Production Categories</h2>
-              <button onclick="showCategoryModal()" class="btn btn-primary">➕ Add Category</button>
+              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📂 Production Categories</h2>
+              <div class="flex gap-3">
+                <button onclick="showFolderModal()" class="btn btn-purple">📁 Add Folder</button>
+                <button onclick="showCategoryModal()" class="btn btn-primary">➕ Add Category</button>
+              </div>
             </div>
-            <div id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div id="foldersGrid">
+              <!-- Folders and categories will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- FOLDER PAGE -->
+        <div id="folderPage" class="page-content hidden">
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h2 id="folderPageTitle" class="text-xl lg:text-2xl font-bold text-gray-800"></h2>
+              <button onclick="showCategoryModal()" class="btn btn-primary">➕ Add Category to Folder</button>
+            </div>
+            
+            <!-- Folder Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="folderTotalCategories">0</div>
+                <div class="text-sm text-gray-600">Categories</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="folderTotalProducts">0</div>
+                <div class="text-sm text-gray-600">Product Types</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="folderTotalUnits">0</div>
+                <div class="text-sm text-gray-600">Total Units</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="folderTotalValue">$0</div>
+                <div class="text-sm text-gray-600">Total Value</div>
+              </div>
+            </div>
+            
+            <!-- Categories in Folder -->
+            <div id="folderCategoriesList">
               <!-- Categories will be populated here -->
             </div>
           </div>
@@ -557,12 +624,23 @@
         <div id="settingsPage" class="page-content hidden">
           <h2 class="text-xl lg:text-2xl font-bold text-gray-800 mb-6">⚙️ System Settings</h2>
           
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Folders Management -->
+            <div class="card p-6">
+              <h3 class="font-bold text-lg mb-4">📁 Folders Management</h3>
+              <div id="settingsFoldersList" class="space-y-3 max-h-96 overflow-y-auto mb-4">
+                <!-- Folders will be listed here -->
+              </div>
+              <button onclick="showFolderModal()" class="btn btn-purple w-full">Add New Folder</button>
+            </div>
+
             <!-- Categories Management -->
             <div class="card p-6">
               <h3 class="font-bold text-lg mb-4">📂 Categories Management</h3>
-              <div id="settingsCategoriesList" class="space-y-3 max-h-60 overflow-y-auto mb-4">
-                <!-- Categories will be listed here -->
+              
+              <!-- Folder Sections -->
+              <div id="settingsCategoriesList" class="space-y-4 max-h-96 overflow-y-auto mb-4">
+                <!-- Categories organized by folder will be listed here -->
               </div>
               <button onclick="showCategoryModal()" class="btn btn-primary w-full">Add New Category</button>
             </div>
@@ -571,6 +649,10 @@
             <div class="card p-6">
               <h3 class="font-bold text-lg mb-4">📊 System Information</h3>
               <div class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                  <span>Total Folders:</span>
+                  <span id="totalFoldersCount">0</span>
+                </div>
                 <div class="flex justify-between">
                   <span>Total Categories:</span>
                   <span id="totalCategoriesCount">0</span>
@@ -600,12 +682,69 @@
     </div>
   </div>
 
+  <!-- ADD FOLDER MODAL -->
+  <div id="folderModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">📁 Add New Folder</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Folder Name:</label>
+          <input type="text" id="newFolderName" placeholder="e.g., Kitchen Cabinets" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
+          <input type="text" id="newFolderIcon" placeholder="📁" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
+          <textarea id="newFolderDescription" placeholder="Brief description of this folder..." class="input-field" rows="3"></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Color Theme:</label>
+          <select id="newFolderColor" class="input-field">
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="purple">Purple</option>
+            <option value="orange">Orange</option>
+            <option value="red">Red</option>
+            <option value="yellow">Yellow</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Visibility:</label>
+          <select id="newFolderVisibility" class="input-field">
+            <option value="visible">👁️ Visible - Show in main view</option>
+            <option value="hidden">🙈 Hidden - Only visible in settings</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="addFolder()" class="btn btn-green flex-1">✅ Create Folder</button>
+        <button onclick="closeFolderModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADD CATEGORY MODAL -->
   <div id="categoryModal" class="modal hidden">
     <div class="modal-content">
       <h3 class="text-xl font-bold mb-6 text-center">➕ Add New Category</h3>
       
       <div class="space-y-4">
+        <div id="categoryFolderSection">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Folder:</label>
+          <select id="categoryFolderId" class="input-field">
+            <option value="">No Folder (Root Level)</option>
+            <!-- Folders will be populated here -->
+          </select>
+        </div>
+        
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Category Name:</label>
           <input type="text" id="newCategoryName" placeholder="e.g., Base Cabinets" class="input-field">
@@ -620,6 +759,14 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
           <textarea id="newCategoryDescription" placeholder="Brief description of this category..." class="input-field" rows="3"></textarea>
         </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Visibility:</label>
+          <select id="newCategoryVisibility" class="input-field">
+            <option value="visible">👁️ Visible - Show in main view</option>
+            <option value="hidden">🙈 Hidden - Only visible in settings</option>
+          </select>
+        </div>
       </div>
 
       <div class="flex gap-3 mt-6">
@@ -629,6 +776,7 @@
     </div>
   </div>
 
+  <!-- Other modals remain the same as original -->
   <!-- ADD SUBCATEGORY/PRODUCT TYPE MODAL -->
   <div id="subcategoryModal" class="modal hidden">
     <div class="modal-content-large">
@@ -651,9 +799,17 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
         <textarea id="subcategoryDescription" placeholder="Product description..." class="input-field" rows="2"></textarea>
       </div>
+      
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Product Type:</label>
+        <select id="subcategoryProductType" class="input-field" onchange="toggleMaterialRequirements()">
+          <option value="cabinet">🏠 Cabinet - Requires materials</option>
+          <option value="hardware">🔧 Hardware - No material requirements</option>
+        </select>
+      </div>
 
       <!-- Cabinet Configuration -->
-      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+      <div id="cabinetConfiguration" class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
         <h4 class="font-semibold text-blue-800 mb-3">🔨 Cabinet Configuration</h4>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -669,9 +825,9 @@
         </div>
 
         <!-- Material Requirements -->
-        <h5 class="font-medium text-blue-700 mb-3">📦 Material Requirements (per cabinet)</h5>
+        <h5 id="materialRequirementsTitle" class="font-medium text-blue-700 mb-3">📦 Material Requirements (per cabinet)</h5>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="materialRequirementsSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Plywood Type:</label>
             <select id="subcategoryPlywoodType" class="input-field">
@@ -763,7 +919,109 @@
     </div>
   </div>
 
-  <!-- BULK OPERATIONS MODAL -->
+  <!-- EDIT FOLDER MODAL -->
+  <div id="editFolderModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">✏️ Edit Folder</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Folder Name:</label>
+          <input type="text" id="editFolderName" placeholder="e.g., Kitchen Cabinets" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
+          <input type="text" id="editFolderIcon" placeholder="📁" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
+          <textarea id="editFolderDescription" placeholder="Brief description of this folder..." class="input-field" rows="3"></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Color Theme:</label>
+          <select id="editFolderColor" class="input-field">
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="purple">Purple</option>
+            <option value="orange">Orange</option>
+            <option value="red">Red</option>
+            <option value="yellow">Yellow</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="updateFolder()" class="btn btn-green flex-1">✅ Update Folder</button>
+        <button onclick="closeEditFolderModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT CATEGORY MODAL -->
+  <div id="editCategoryModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">✏️ Edit Category</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Move to Folder:</label>
+          <select id="editCategoryFolderId" class="input-field">
+            <option value="">No Folder (Root Level)</option>
+            <!-- Folders will be populated here -->
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Category Name:</label>
+          <input type="text" id="editCategoryName" placeholder="e.g., Base Cabinets" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
+          <input type="text" id="editCategoryIcon" placeholder="🏠" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
+          <textarea id="editCategoryDescription" placeholder="Brief description of this category..." class="input-field" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="updateCategory()" class="btn btn-green flex-1">✅ Update Category</button>
+        <button onclick="closeEditCategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOVE CATEGORY MODAL -->
+  <div id="moveCategoryModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">📁 Move Category</h3>
+      
+      <div id="moveCategoryDetails" class="mb-6">
+        <!-- Category details will be shown here -->
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Move to Folder:</label>
+          <select id="moveCategoryFolderId" class="input-field">
+            <option value="">No Folder (Root Level)</option>
+            <!-- Folders will be populated here -->
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="processMoveCategory()" class="btn btn-green flex-1">📁 Move Category</button>
+        <button onclick="closeMoveCategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
   <div id="bulkModal" class="modal hidden">
     <div class="modal-content-large">
       <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📦 Bulk Operations</h3>
@@ -794,11 +1052,13 @@
   <script>
     // Global Variables
     let plywood = [];
+    let folders = [];
     let categories = [];
     let subcategories = [];
     let cabinets = [];
     let invoices = [];
     let dispatches = [];
+    let currentFolderId = null;
     let currentCategoryId = null;
     let currentSubcategoryId = null;
     let currentDispatchSubcategoryId = null;
@@ -877,8 +1137,21 @@
       hideAllPages();
       document.getElementById('homePage').classList.remove('hidden');
       updateBreadcrumb('');
-      renderCategoriesGrid();
+      renderFoldersAndCategories();
       updateStats();
+    }
+
+    function showFolderPage(folderId) {
+      hideAllPages();
+      currentFolderId = folderId;
+      const folder = folders.find(f => f.id === folderId);
+      
+      document.getElementById('folderPage').classList.remove('hidden');
+      document.getElementById('folderPageTitle').textContent = `${folder.icon} ${folder.name}`;
+      updateBreadcrumb(`> ${folder.icon} ${folder.name}`);
+      
+      renderFolderCategories();
+      updateFolderStats();
     }
 
     function showCategoryPage(categoryId) {
@@ -888,7 +1161,14 @@
       
       document.getElementById('categoryPage').classList.remove('hidden');
       document.getElementById('categoryPageTitle').textContent = `${category.icon} ${category.name}`;
-      updateBreadcrumb(`> ${category.icon} ${category.name}`);
+      
+      // Update breadcrumb with folder path if category is in a folder
+      if (category.folderId) {
+        const folder = folders.find(f => f.id === category.folderId);
+        updateBreadcrumb(`> ${folder.icon} ${folder.name} > ${category.icon} ${category.name}`);
+      } else {
+        updateBreadcrumb(`> ${category.icon} ${category.name}`);
+      }
       
       renderSubcategoriesList();
       updateCategoryStats();
@@ -924,7 +1204,7 @@
     }
 
     function hideAllPages() {
-      const pages = ['homePage', 'categoryPage', 'plywoodPage', 'dispatchPage', 'invoicePage', 'settingsPage'];
+      const pages = ['homePage', 'folderPage', 'categoryPage', 'plywoodPage', 'dispatchPage', 'invoicePage', 'settingsPage'];
       pages.forEach(page => {
         document.getElementById(page).classList.add('hidden');
       });
@@ -932,6 +1212,147 @@
 
     function updateBreadcrumb(path) {
       document.getElementById('breadcrumbPath').textContent = path;
+    }
+
+    // Folder Management Functions
+    function showFolderModal() {
+      document.getElementById('folderModal').classList.remove('hidden');
+    }
+
+    function closeFolderModal() {
+      document.getElementById('folderModal').classList.add('hidden');
+      clearFolderForm();
+    }
+
+    function clearFolderForm() {
+      ['newFolderName', 'newFolderIcon', 'newFolderDescription'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+      document.getElementById('newFolderColor').selectedIndex = 0;
+      document.getElementById('newFolderVisibility').selectedIndex = 0;
+    }
+
+    async function addFolder() {
+      const name = document.getElementById('newFolderName').value.trim();
+      const icon = document.getElementById('newFolderIcon').value.trim() || '📁';
+      const description = document.getElementById('newFolderDescription').value.trim();
+      const color = document.getElementById('newFolderColor').value;
+      const visibility = document.getElementById('newFolderVisibility').value;
+      
+      if (!name) {
+        alert('❌ Please enter a folder name');
+        return;
+      }
+      
+      if (folders.find(folder => folder.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Folder name already exists');
+        return;
+      }
+      
+      const folder = {
+        id: Date.now(),
+        name,
+        icon,
+        description,
+        color,
+        visibility,
+        dateCreated: new Date().toISOString()
+      };
+      
+      await saveData('folders', folder);
+      closeFolderModal();
+    }
+
+    async function deleteFolder(folderId) {
+      if (!confirm('Are you sure you want to delete this folder? All categories in this folder will be moved to root level.')) {
+        return;
+      }
+      
+      const folder = folders.find(f => f.id === folderId);
+      const folderCategories = categories.filter(cat => cat.folderId === folderId);
+      
+      // Move categories to root level (remove folderId)
+      for (const category of folderCategories) {
+        if (category.firebaseId) {
+          await updateData('categories', category.firebaseId, {
+            folderId: null
+          });
+        }
+      }
+      
+      if (folder?.firebaseId) {
+        await deleteData('folders', folder.firebaseId);
+        showSuccess(`Folder "${folder.name}" deleted successfully! ${folderCategories.length} categories moved to root level.`);
+      }
+    }
+
+    // Category Management
+    function showCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('hidden');
+      populateFolderSelect();
+      
+      // If we're currently viewing a folder, pre-select it
+      if (currentFolderId) {
+        document.getElementById('categoryFolderId').value = currentFolderId;
+      }
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+      clearCategoryForm();
+    }
+
+    function clearCategoryForm() {
+      ['newCategoryName', 'newCategoryIcon', 'newCategoryDescription'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+      document.getElementById('categoryFolderId').selectedIndex = 0;
+      document.getElementById('newCategoryVisibility').selectedIndex = 0;
+    }
+
+    function populateFolderSelect() {
+      const select = document.getElementById('categoryFolderId');
+      select.innerHTML = '<option value="">No Folder (Root Level)</option>';
+      
+      // Only show visible folders in the dropdown
+      const visibleFolders = folders.filter(folder => folder.visibility !== 'hidden');
+      visibleFolders.forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = `${folder.icon} ${folder.name}`;
+        select.appendChild(option);
+      });
+    }
+
+    async function addCategory() {
+      const name = document.getElementById('newCategoryName').value.trim();
+      const icon = document.getElementById('newCategoryIcon').value.trim() || '📂';
+      const description = document.getElementById('newCategoryDescription').value.trim();
+      const folderId = document.getElementById('categoryFolderId').value || null;
+      const visibility = document.getElementById('newCategoryVisibility').value;
+      
+      if (!name) {
+        alert('❌ Please enter a category name');
+        return;
+      }
+      
+      if (categories.find(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Category name already exists');
+        return;
+      }
+      
+      const category = {
+        id: Date.now(),
+        name,
+        icon,
+        description,
+        folderId: folderId ? parseInt(folderId) : null,
+        visibility,
+        dateCreated: new Date().toISOString()
+      };
+      
+      await saveData('categories', category);
+      closeCategoryModal();
     }
 
     // Data Loading and Real-time Setup
@@ -942,13 +1363,29 @@
       }
 
       try {
+        db.collection('folders').onSnapshot((snapshot) => {
+          folders = [];
+          snapshot.forEach(doc => folders.push({
+            firebaseId: doc.id,
+            ...doc.data()
+          }));
+          renderFoldersAndCategories();
+          updateStats();
+          populateFolderSelect();
+          console.log('📁 Folders updated in real-time');
+        });
+
         db.collection('categories').onSnapshot((snapshot) => {
           categories = [];
           snapshot.forEach(doc => categories.push({
             firebaseId: doc.id,
             ...doc.data()
           }));
-          renderCategoriesGrid();
+          renderFoldersAndCategories();
+          if (currentFolderId) {
+            renderFolderCategories();
+            updateFolderStats();
+          }
           updateStats();
           populateMaterialSelects();
           console.log('📂 Categories updated in real-time');
@@ -990,6 +1427,9 @@
           if (currentCategoryId) {
             updateCategoryStats();
           }
+          if (currentFolderId) {
+            updateFolderStats();
+          }
           console.log('🔨 Cabinets updated in real-time');
         });
 
@@ -1029,7 +1469,8 @@
           return;
         }
 
-        const [categoriesSnap, subcategoriesSnap, plywoodSnap, cabinetsSnap, invoicesSnap, dispatchesSnap] = await Promise.all([
+        const [foldersSnap, categoriesSnap, subcategoriesSnap, plywoodSnap, cabinetsSnap, invoicesSnap, dispatchesSnap] = await Promise.all([
+          db.collection('folders').get(),
           db.collection('categories').get(),
           db.collection('subcategories').get(),
           db.collection('plywood').get(),
@@ -1037,6 +1478,12 @@
           db.collection('invoices').get(),
           db.collection('dispatches').get()
         ]);
+
+        folders = [];
+        foldersSnap.forEach(doc => folders.push({
+          firebaseId: doc.id,
+          ...doc.data()
+        }));
 
         categories = [];
         categoriesSnap.forEach(doc => categories.push({
@@ -1074,11 +1521,11 @@
           ...doc.data()
         }));
 
-        if (categories.length === 0) {
+        if (folders.length === 0 && categories.length === 0) {
           await addSampleData();
         }
         
-        renderCategoriesGrid();
+        renderFoldersAndCategories();
         updateStats();
         
         setTimeout(() => {
@@ -1092,24 +1539,44 @@
     }
 
     function loadSampleData() {
+      folders = [
+        {
+          id: 1,
+          name: 'Kitchen Cabinets',
+          icon: '🍳',
+          description: 'All kitchen cabinet categories',
+          color: 'blue'
+        },
+        {
+          id: 2,
+          name: 'Bathroom Cabinets',
+          icon: '🚿',
+          description: 'Bathroom vanities and storage',
+          color: 'green'
+        }
+      ];
+
       categories = [
         {
           id: 1,
           name: 'Base Cabinets',
           icon: '🏠',
-          description: 'Floor-mounted cabinets for kitchens and bathrooms'
+          description: 'Floor-mounted cabinets for kitchens and bathrooms',
+          folderId: 1
         },
         {
           id: 2,
           name: 'Wall Cabinets',
           icon: '🔲',
-          description: 'Wall-mounted cabinets for storage'
+          description: 'Wall-mounted cabinets for storage',
+          folderId: 1
         },
         {
           id: 3,
-          name: 'Tall Cabinets',
-          icon: '🏢',
-          description: 'Full-height pantry and utility cabinets'
+          name: 'Vanity Cabinets',
+          icon: '🪞',
+          description: 'Bathroom vanity cabinets',
+          folderId: 2
         }
       ];
 
@@ -1152,29 +1619,49 @@
       invoices = [];
       dispatches = [];
       
-      renderCategoriesGrid();
+      renderFoldersAndCategories();
       updateStats();
     }
 
     async function addSampleData() {
+      const sampleFolders = [
+        {
+          id: 1,
+          name: 'Kitchen Cabinets',
+          icon: '🍳',
+          description: 'All kitchen cabinet categories',
+          color: 'blue'
+        },
+        {
+          id: 2,
+          name: 'Bathroom Cabinets',
+          icon: '🚿',
+          description: 'Bathroom vanities and storage',
+          color: 'green'
+        }
+      ];
+
       const sampleCategories = [
         {
           id: 1,
           name: 'Base Cabinets',
           icon: '🏠',
-          description: 'Floor-mounted cabinets for kitchens and bathrooms'
+          description: 'Floor-mounted cabinets for kitchens and bathrooms',
+          folderId: 1
         },
         {
           id: 2,
           name: 'Wall Cabinets',
           icon: '🔲',
-          description: 'Wall-mounted cabinets for storage'
+          description: 'Wall-mounted cabinets for storage',
+          folderId: 1
         },
         {
           id: 3,
-          name: 'Tall Cabinets',
-          icon: '🏢',
-          description: 'Full-height pantry and utility cabinets'
+          name: 'Vanity Cabinets',
+          icon: '🪞',
+          description: 'Bathroom vanity cabinets',
+          folderId: 2
         }
       ];
 
@@ -1197,13 +1684,1184 @@
         }
       ];
 
+      for (const item of sampleFolders) await saveData('folders', item);
       for (const item of sampleCategories) await saveData('categories', item);
       for (const item of samplePlywood) await saveData('plywood', item);
       
       setTimeout(loadData, 1000);
     }
 
-    // Dispatch Functions
+    // Render Functions
+    function renderFoldersAndCategories() {
+      const grid = document.getElementById('foldersGrid');
+      if (!grid) return;
+      
+      grid.innerHTML = '';
+      
+      // Only show visible folders and categories
+      const visibleFolders = folders.filter(folder => folder.visibility !== 'hidden');
+      const visibleCategories = categories.filter(cat => cat.visibility !== 'hidden');
+      
+      // Group categories by folder
+      const rootCategories = visibleCategories.filter(cat => !cat.folderId);
+      const folderGroups = {};
+      
+      visibleFolders.forEach(folder => {
+        folderGroups[folder.id] = visibleCategories.filter(cat => cat.folderId === folder.id);
+      });
+      
+      // Render folders with their categories
+      visibleFolders.forEach(folder => {
+        const folderCategories = folderGroups[folder.id] || [];
+        const totalUnits = folderCategories.reduce((sum, cat) => {
+          const catCabinets = cabinets.filter(cab => cab.categoryId === cat.id);
+          return sum + catCabinets.reduce((cabSum, cab) => cabSum + (cab.quantity || 0), 0);
+        }, 0);
+        
+        const div = document.createElement('div');
+        div.className = 'folder-card';
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="text-3xl">${folder.icon}</div>
+                <h3 class="font-bold text-xl text-gray-800">${folder.name}</h3>
+                <span class="bg-white bg-opacity-70 text-gray-700 text-xs px-2 py-1 rounded-full">${folderCategories.length} categories</span>
+              </div>
+              <p class="text-gray-600 mb-3">${folder.description || 'No description'}</p>
+              
+              <div class="grid grid-cols-3 gap-3 text-sm">
+                <div class="bg-white bg-opacity-50 rounded-lg p-2 text-center">
+                  <div class="font-bold text-blue-600">${folderCategories.length}</div>
+                  <div class="text-gray-600">Categories</div>
+                </div>
+                <div class="bg-white bg-opacity-50 rounded-lg p-2 text-center">
+                  <div class="font-bold text-green-600">${totalUnits}</div>
+                  <div class="text-gray-600">Total Units</div>
+                </div>
+                <div class="bg-white bg-opacity-50 rounded-lg p-2 text-center">
+                  <div class="font-bold text-purple-600">${folderCategories.reduce((sum, cat) => {
+                    const catSubcategories = subcategories.filter(sub => sub.categoryId === cat.id);
+                    return sum + catSubcategories.length;
+                  }, 0)}</div>
+                  <div class="text-gray-600">Product Types</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <button onclick="showFolderPage(${folder.id})" class="btn btn-primary text-sm">
+                📂 Open Folder
+              </button>
+              <button onclick="deleteFolder(${folder.id})" class="text-red-500 hover:text-red-700 text-sm">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+          
+          <div class="folder-content">
+            <h4 class="font-semibold text-gray-700 mb-3">📋 Categories in this folder:</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${folderCategories.map(category => {
+                const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
+                const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
+                const catTotalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+                
+                return `
+                  <div class="bg-white bg-opacity-70 border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-opacity-90 transition-all" onclick="showCategoryPage(${category.id})">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-lg">${category.icon}</span>
+                      <span class="font-semibold text-gray-800">${category.name}</span>
+                    </div>
+                    <div class="text-xs text-gray-600 grid grid-cols-2 gap-2">
+                      <div>${categorySubcategories.length} types</div>
+                      <div>${catTotalUnits} units</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              ${folderCategories.length === 0 ? '<div class="text-gray-500 text-sm italic col-span-2">No categories in this folder yet</div>' : ''}
+            </div>
+          </div>
+        `;
+        
+        grid.appendChild(div);
+      });
+
+      // Render root-level categories (not in any folder)
+      if (rootCategories.length > 0) {
+        const rootDiv = document.createElement('div');
+        rootDiv.innerHTML = `
+          <div class="mt-8 mb-4">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">📂 Root Level Categories</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${rootCategories.map(category => {
+                const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
+                const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
+                const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+                
+                return `
+                  <div class="category-card" onclick="showCategoryPage(${category.id})">
+                    <div class="text-center">
+                      <div class="text-4xl mb-3">${category.icon}</div>
+                      <h4 class="font-bold text-lg text-gray-800 mb-2">${category.name}</h4>
+                      <p class="text-gray-600 text-sm mb-4">${category.description || 'No description'}</p>
+                      
+                      <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-white rounded-lg p-2">
+                          <div class="font-bold text-blue-600">${categorySubcategories.length}</div>
+                          <div class="text-gray-500">Product Types</div>
+                        </div>
+                        <div class="bg-white rounded-lg p-2">
+                          <div class="font-bold text-green-600">${totalUnits}</div>
+                          <div class="text-gray-500">Total Units</div>
+                        </div>
+                      </div>
+                      
+                      <div class="mt-4 text-xs text-gray-500">
+                        Click to manage products →
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+        grid.appendChild(rootDiv);
+      }
+
+      if (visibleFolders.length === 0 && rootCategories.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center text-gray-500 py-8">
+            📁 No visible folders or categories found. Check settings to manage visibility or create new items.
+          </div>
+        `;
+      }
+    }
+
+    function renderFolderCategories() {
+      const list = document.getElementById('folderCategoriesList');
+      if (!list || !currentFolderId) return;
+      
+      const folderCategories = categories.filter(cat => cat.folderId === currentFolderId);
+      
+      list.innerHTML = '';
+      
+      if (folderCategories.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            📂 No categories found in this folder.<br>
+            <span class="text-sm">Add categories to organize your products!</span>
+          </div>
+        `;
+        return;
+      }
+      
+      folderCategories.forEach(category => {
+        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
+        const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
+        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+        const totalValue = categoryCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
+        
+        const div = document.createElement('div');
+        div.className = 'category-card';
+        div.onclick = () => showCategoryPage(category.id);
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="text-3xl">${category.icon}</div>
+                <h3 class="font-bold text-xl text-gray-800">${category.name}</h3>
+              </div>
+              <p class="text-gray-600 mb-3">${category.description || 'No description'}</p>
+              
+              <div class="grid grid-cols-3 gap-3 text-sm">
+                <div class="bg-white rounded-lg p-2 text-center">
+                  <div class="font-bold text-blue-600">${categorySubcategories.length}</div>
+                  <div class="text-gray-500">Product Types</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 text-center">
+                  <div class="font-bold text-green-600">${totalUnits}</div>
+                  <div class="text-gray-500">Total Units</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 text-center">
+                  <div class="font-bold text-purple-600">${Math.round(totalValue).toLocaleString()}</div>
+                  <div class="text-gray-500">Total Value</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <button onclick="event.stopPropagation(); showCategoryPage(${category.id})" class="btn btn-primary text-sm">
+                📂 Open Category
+              </button>
+              <button onclick="event.stopPropagation(); deleteCategory(${category.id})" class="text-red-500 hover:text-red-700 text-sm">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    function renderSubcategoriesList() {
+      const list = document.getElementById('subcategoriesList');
+      if (!list || !currentCategoryId) return;
+      
+      const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
+      
+      list.innerHTML = '';
+      
+      if (categorySubcategories.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            📦 No product types found in this category.<br>
+            <span class="text-sm">Create your first product type to start manufacturing!</span>
+          </div>
+        `;
+        return;
+      }
+      
+      categorySubcategories.forEach(subcategory => {
+        const subcategoryCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
+        const totalQuantity = subcategoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+        const totalValue = totalQuantity * subcategory.pricePerUnit;
+        
+        const div = document.createElement('div');
+        div.className = 'subcategory-card';
+        
+        const hasMaterialRequirements = subcategory.materialRequirements && 
+          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf);
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                  ${subcategory.icon} ${subcategory.name}
+                </h3>
+                ${hasMaterialRequirements ? 
+                  '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">📋 Materials Configured</span>' : 
+                  '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">⚠️ No Materials Set</span>'
+                }
+              </div>
+              <p class="text-gray-600 text-sm mb-2">${subcategory.description || 'No description'}</p>
+              <p class="text-gray-600 text-sm">
+                🔨 Materials: ${subcategory.materials} | 
+                💰 Price: ${subcategory.pricePerUnit.toFixed(2)}/unit
+              </p>
+              ${hasMaterialRequirements ? `
+                <p class="text-xs text-blue-600 mt-1">
+                  📦 ${subcategory.materialRequirements.plywood ? 
+                    `${subcategory.materialRequirements.plywood.type} (${subcategory.materialRequirements.plywood.sheetsPerUnit}/unit)` : ''} 
+                  ${subcategory.materialRequirements.mdf ? 
+                    `| 🚪 ${subcategory.materialRequirements.mdf.type} (${subcategory.materialRequirements.mdf.sheetsPerUnit}/unit)` : ''}
+                </p>
+              ` : ''}
+            </div>
+            
+            <div class="flex flex-row lg:flex-col items-center gap-4">
+              <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600">${totalQuantity}</div>
+                <div class="text-gray-600 font-medium text-sm">units</div>
+                <div class="text-gray-500 text-xs">${totalValue.toFixed(0)} value</div>
+              </div>
+              
+              <div class="flex lg:flex-col gap-2">
+                <button onclick="showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
+                  🔨 Manufacture
+                </button>
+                ${totalQuantity > 0 ? `
+                  <button onclick="showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
+                    🚚 Dispatch
+                  </button>
+                ` : ''}
+                <button onclick="editSubcategory(${subcategory.id})" class="btn btn-primary text-sm">
+                  ✏️ Edit
+                </button>
+              </div>
+              
+              <button onclick="deleteSubcategory(${subcategory.id})" class="text-red-600 hover:text-red-800 text-xl" title="Delete product type">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    function renderSettingsPage() {
+      const foldersList = document.getElementById('settingsFoldersList');
+      const categoriesList = document.getElementById('settingsCategoriesList');
+      
+      if (!foldersList || !categoriesList) return;
+      
+      // Render Folders List
+      foldersList.innerHTML = '';
+      
+      folders.forEach(folder => {
+        const folderCategories = categories.filter(cat => cat.folderId === folder.id);
+        
+        const div = document.createElement('div');
+        div.className = 'bg-gray-50 border border-gray-200 rounded-lg p-4';
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-800 flex items-center gap-2 mb-2">
+                ${folder.icon} ${folder.name}
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${folderCategories.length} categories</span>
+                ${folder.visibility === 'hidden' ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">🙈 Hidden</span>' : ''}
+              </h4>
+              <p class="text-sm text-gray-600 mb-2">${folder.description || 'No description'}</p>
+              <div class="text-xs text-gray-500">
+                Color: <span class="capitalize">${folder.color}</span> | 
+                Visibility: <span class="capitalize">${folder.visibility || 'visible'}</span> |
+                Created: ${new Date(folder.dateCreated).toLocaleDateString()}
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 ml-4">
+              <button onclick="showEditFolderModal(${folder.id})" class="btn btn-primary text-xs px-3 py-1">
+                ✏️ Edit
+              </button>
+              <button onclick="deleteFolder(${folder.id})" class="btn btn-red text-xs px-3 py-1">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        `;
+        
+        foldersList.appendChild(div);
+      });
+      
+      // Render Categories List organized by folders
+      categoriesList.innerHTML = '';
+      
+      // Create sections for each folder
+      folders.forEach(folder => {
+        const folderCategories = categories.filter(cat => cat.folderId === folder.id);
+        
+        if (folderCategories.length > 0) {
+          const folderSection = document.createElement('div');
+          folderSection.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4';
+          
+          folderSection.innerHTML = `
+            <h4 class="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              ${folder.icon} ${folder.name} Folder
+              <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">${folderCategories.length} categories</span>
+            </h4>
+            <div class="space-y-2">
+              ${folderCategories.map(category => {
+                const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
+                const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
+                const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+                
+                return `
+                  <div class="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-start">
+                    <div class="flex-1">
+                      <h5 class="font-semibold text-gray-800 flex items-center gap-2 mb-1">
+                        ${category.icon} ${category.name}
+                        <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">${totalUnits} units</span>
+                      </h5>
+                      <p class="text-sm text-gray-600">${category.description || 'No description'}</p>
+                      <div class="text-xs text-gray-500 mt-1">
+                        Created: ${new Date(category.dateCreated).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div class="flex flex-col gap-1 ml-4">
+                      <button onclick="showMoveCategoryModal(${category.id})" class="btn btn-purple text-xs px-2 py-1">
+                        📁 Move
+                      </button>
+                      <button onclick="showEditCategoryModal(${category.id})" class="btn btn-primary text-xs px-2 py-1">
+                        ✏️ Edit
+                      </button>
+                      <button onclick="deleteCategory(${category.id})" class="btn btn-red text-xs px-2 py-1">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+          
+          categoriesList.appendChild(folderSection);
+        }
+      });
+      
+      // Add root level categories section
+      const rootCategories = categories.filter(cat => !cat.folderId);
+      
+      if (rootCategories.length > 0) {
+        const rootSection = document.createElement('div');
+        rootSection.className = 'bg-gray-50 border border-gray-200 rounded-lg p-4';
+        
+        rootSection.innerHTML = `
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            📂 Root Level Categories
+            <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${rootCategories.length} categories</span>
+          </h4>
+          <div class="space-y-2">
+            ${rootCategories.map(category => {
+              const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
+              const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
+              const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+              
+              return `
+                <div class="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-start">
+                  <div class="flex-1">
+                    <h5 class="font-semibold text-gray-800 flex items-center gap-2 mb-1">
+                      ${category.icon} ${category.name}
+                      <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
+                      <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">${totalUnits} units</span>
+                    </h5>
+                    <p class="text-sm text-gray-600">${category.description || 'No description'}</p>
+                    <div class="text-xs text-gray-500 mt-1">
+                      Created: ${new Date(category.dateCreated).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1 ml-4">
+                    <button onclick="showMoveCategoryModal(${category.id})" class="btn btn-purple text-xs px-2 py-1">
+                      📁 Move
+                    </button>
+                    <button onclick="showEditCategoryModal(${category.id})" class="btn btn-primary text-xs px-2 py-1">
+                      ✏️ Edit
+                    </button>
+                    <button onclick="deleteCategory(${category.id})" class="btn btn-red text-xs px-2 py-1">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        
+        categoriesList.appendChild(rootSection);
+      }
+      
+      // Update system info
+      document.getElementById('totalFoldersCount').textContent = folders.length;
+      document.getElementById('totalCategoriesCount').textContent = categories.length;
+      document.getElementById('totalSubcategoriesCount').textContent = subcategories.length;
+      document.getElementById('totalMaterialsCount').textContent = plywood.length;
+      document.getElementById('totalInvoicesCount').textContent = invoices.length;
+      document.getElementById('totalDispatchesCount').textContent = dispatches.length;
+    }
+
+    // Edit Folder Functions
+    let currentEditingFolderId = null;
+
+    function showEditFolderModal(folderId) {
+      currentEditingFolderId = folderId;
+      const folder = folders.find(f => f.id === folderId);
+      
+      if (!folder) return;
+      
+      document.getElementById('editFolderName').value = folder.name;
+      document.getElementById('editFolderIcon').value = folder.icon;
+      document.getElementById('editFolderDescription').value = folder.description || '';
+      document.getElementById('editFolderColor').value = folder.color || 'blue';
+      document.getElementById('editFolderVisibility').value = folder.visibility || 'visible';
+      
+      document.getElementById('editFolderModal').classList.remove('hidden');
+    }
+
+    function closeEditFolderModal() {
+      document.getElementById('editFolderModal').classList.add('hidden');
+      currentEditingFolderId = null;
+    }
+
+    async function updateFolder() {
+      if (!currentEditingFolderId) return;
+      
+      const name = document.getElementById('editFolderName').value.trim();
+      const icon = document.getElementById('editFolderIcon').value.trim() || '📁';
+      const description = document.getElementById('editFolderDescription').value.trim();
+      const color = document.getElementById('editFolderColor').value;
+      const visibility = document.getElementById('editFolderVisibility').value;
+      
+      if (!name) {
+        alert('❌ Please enter a folder name');
+        return;
+      }
+      
+      // Check for duplicate names (excluding current folder)
+      if (folders.find(folder => folder.id !== currentEditingFolderId && folder.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Folder name already exists');
+        return;
+      }
+      
+      const folder = folders.find(f => f.id === currentEditingFolderId);
+      if (folder?.firebaseId) {
+        await updateData('folders', folder.firebaseId, {
+          name,
+          icon,
+          description,
+          color,
+          visibility,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        showSuccess(`Folder "${name}" updated successfully!`);
+        closeEditFolderModal();
+      }
+    }
+
+    // Edit Category Functions
+    let currentEditingCategoryId = null;
+
+    function showEditCategoryModal(categoryId) {
+      currentEditingCategoryId = categoryId;
+      const category = categories.find(c => c.id === categoryId);
+      
+      if (!category) return;
+      
+      // Populate folder select
+      const folderSelect = document.getElementById('editCategoryFolderId');
+      folderSelect.innerHTML = '<option value="">No Folder (Root Level)</option>';
+      folders.forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = `${folder.icon} ${folder.name}`;
+        folderSelect.appendChild(option);
+      });
+      
+      document.getElementById('editCategoryFolderId').value = category.folderId || '';
+      document.getElementById('editCategoryName').value = category.name;
+      document.getElementById('editCategoryIcon').value = category.icon;
+      document.getElementById('editCategoryDescription').value = category.description || '';
+      document.getElementById('editCategoryVisibility').value = category.visibility || 'visible';
+      
+      document.getElementById('editCategoryModal').classList.remove('hidden');
+    }
+
+    function closeEditCategoryModal() {
+      document.getElementById('editCategoryModal').classList.add('hidden');
+      currentEditingCategoryId = null;
+    }
+
+    async function updateCategory() {
+      if (!currentEditingCategoryId) return;
+      
+      const name = document.getElementById('editCategoryName').value.trim();
+      const icon = document.getElementById('editCategoryIcon').value.trim() || '📂';
+      const description = document.getElementById('editCategoryDescription').value.trim();
+      const folderId = document.getElementById('editCategoryFolderId').value || null;
+      const visibility = document.getElementById('editCategoryVisibility').value;
+      
+      if (!name) {
+        alert('❌ Please enter a category name');
+        return;
+      }
+      
+      // Check for duplicate names (excluding current category)
+      if (categories.find(cat => cat.id !== currentEditingCategoryId && cat.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Category name already exists');
+        return;
+      }
+      
+      const category = categories.find(c => c.id === currentEditingCategoryId);
+      if (category?.firebaseId) {
+        await updateData('categories', category.firebaseId, {
+          name,
+          icon,
+          description,
+          folderId: folderId ? parseInt(folderId) : null,
+          visibility,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        showSuccess(`Category "${name}" updated successfully!`);
+        closeEditCategoryModal();
+      }
+    }
+
+    // Move Category Functions
+    let currentMovingCategoryId = null;
+
+    function showMoveCategoryModal(categoryId) {
+      currentMovingCategoryId = categoryId;
+      const category = categories.find(c => c.id === categoryId);
+      
+      if (!category) return;
+      
+      // Show current category details
+      const currentFolder = category.folderId ? folders.find(f => f.id === category.folderId) : null;
+      const details = document.getElementById('moveCategoryDetails');
+      details.innerHTML = `
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+          <h4 class="font-bold text-lg text-blue-800">${category.icon} ${category.name}</h4>
+          <p class="text-blue-700 text-sm mt-1">
+            Currently in: ${currentFolder ? `${currentFolder.icon} ${currentFolder.name}` : 'Root Level (No Folder)'}
+          </p>
+          <p class="text-blue-700 text-sm">${category.description || 'No description'}</p>
+        </div>
+      `;
+      
+      // Populate folder select
+      const folderSelect = document.getElementById('moveCategoryFolderId');
+      folderSelect.innerHTML = '<option value="">No Folder (Root Level)</option>';
+      folders.forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = `${folder.icon} ${folder.name}`;
+        folderSelect.appendChild(option);
+      });
+      
+      // Set current folder as selected
+      folderSelect.value = category.folderId || '';
+      
+      document.getElementById('moveCategoryModal').classList.remove('hidden');
+    }
+
+    function closeMoveCategoryModal() {
+      document.getElementById('moveCategoryModal').classList.add('hidden');
+      currentMovingCategoryId = null;
+    }
+
+    async function processMoveCategory() {
+      if (!currentMovingCategoryId) return;
+      
+      const newFolderId = document.getElementById('moveCategoryFolderId').value || null;
+      const category = categories.find(c => c.id === currentMovingCategoryId);
+      
+      if (!category) return;
+      
+      // Check if it's actually a move
+      const currentFolderId = category.folderId;
+      if ((currentFolderId || null) === (newFolderId ? parseInt(newFolderId) : null)) {
+        alert('❌ Category is already in the selected location');
+        return;
+      }
+      
+      if (category.firebaseId) {
+        await updateData('categories', category.firebaseId, {
+          folderId: newFolderId ? parseInt(newFolderId) : null,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        const targetFolder = newFolderId ? folders.find(f => f.id == newFolderId) : null;
+        const targetLocation = targetFolder ? `${targetFolder.icon} ${targetFolder.name}` : 'Root Level';
+        
+        showSuccess(`Category "${category.name}" moved to ${targetLocation}!`);
+        closeMoveCategoryModal();
+      }
+    }
+
+    // Stats Functions
+    function updateStats() {
+      try {
+        const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
+        const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
+        const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
+        const totalDispatchCount = dispatches.length;
+
+        document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
+        document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
+        document.getElementById('activeFolders').textContent = folders.length.toString();
+        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
+        document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating stats:', error);
+      }
+    }
+
+    function updateFolderStats() {
+      if (!currentFolderId) return;
+      
+      try {
+        const folderCategories = categories.filter(cat => cat.folderId === currentFolderId);
+        const folderSubcategories = subcategories.filter(sub => 
+          folderCategories.some(cat => cat.id === sub.categoryId)
+        );
+        const folderCabinets = cabinets.filter(cab => 
+          folderCategories.some(cat => cat.id === cab.categoryId)
+        );
+        
+        const totalUnits = folderCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+        const totalValue = folderCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
+
+        document.getElementById('folderTotalCategories').textContent = folderCategories.length.toString();
+        document.getElementById('folderTotalProducts').textContent = folderSubcategories.length.toString();
+        document.getElementById('folderTotalUnits').textContent = totalUnits.toLocaleString();
+        document.getElementById('folderTotalValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating folder stats:', error);
+      }
+    }
+
+    function updateCategoryStats() {
+      if (!currentCategoryId) return;
+      
+      try {
+        const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
+        const categoryCabinets = cabinets.filter(cab => cab.categoryId === currentCategoryId);
+        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+        const totalValue = categoryCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
+        const avgPrice = categoryCabinets.length > 0 ? 
+          categoryCabinets.reduce((sum, cab) => sum + (cab.pricePerUnit || 0), 0) / categoryCabinets.length : 0;
+
+        document.getElementById('categoryTotalCabinets').textContent = totalUnits.toLocaleString();
+        document.getElementById('categoryProductTypes').textContent = categorySubcategories.length.toString();
+        document.getElementById('categoryValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
+        document.getElementById('categoryAvgPrice').textContent = `${Math.round(avgPrice).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating category stats:', error);
+      }
+    }
+
+    async function deleteCategory(categoryId) {
+      if (!confirm('Are you sure you want to delete this category? This will also delete all product types and cabinet inventory in this category.')) {
+        return;
+      }
+      
+      const category = categories.find(cat => cat.id === categoryId);
+      const categorySubcategories = subcategories.filter(sub => sub.categoryId === categoryId);
+      
+      // Delete all subcategories and related cabinets
+      for (const subcategory of categorySubcategories) {
+        if (subcategory.firebaseId) {
+          const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
+          for (const cabinet of relatedCabinets) {
+            if (cabinet.firebaseId) {
+              await deleteData('cabinets', cabinet.firebaseId);
+            }
+          }
+          await deleteData('subcategories', subcategory.firebaseId);
+        }
+      }
+      
+      if (category?.firebaseId) {
+        await deleteData('categories', category.firebaseId);
+        showSuccess(`Category "${category.name}" and all its contents deleted successfully!`);
+      }
+    }
+
+    // Subcategory Management Functions (Essential functions from original)
+    function showSubcategoryModal() {
+      if (!currentCategoryId) {
+        alert('❌ Please select a category first');
+        return;
+      }
+      
+      document.getElementById('subcategoryModal').classList.remove('hidden');
+      populateMaterialSelects();
+      toggleMaterialRequirements(); // Initialize the form based on default selection
+    }
+
+    function closeSubcategoryModal() {
+      document.getElementById('subcategoryModal').classList.add('hidden');
+      clearSubcategoryForm();
+    }
+
+    function clearSubcategoryForm() {
+      ['subcategoryName', 'subcategoryIcon', 'subcategoryDescription', 
+       'subcategoryMaterials', 'subcategoryPrice', 'subcategoryPlywoodSheets', 
+       'subcategoryMDFSheets'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+      
+      ['subcategoryPlywoodType', 'subcategoryMDFType'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.selectedIndex = 0;
+      });
+      
+      // Reset to cabinet type
+      document.getElementById('subcategoryProductType').selectedIndex = 0;
+      toggleMaterialRequirements();
+    }
+
+    function toggleMaterialRequirements() {
+      const productType = document.getElementById('subcategoryProductType').value;
+      const configSection = document.getElementById('cabinetConfiguration');
+      const materialTitle = document.getElementById('materialRequirementsTitle');
+      const materialSection = document.getElementById('materialRequirementsSection');
+      
+      if (productType === 'hardware') {
+        // Hardware - hide material requirements
+        configSection.innerHTML = `
+          <h4 class="font-semibold text-blue-800 mb-3">🔧 Hardware Configuration</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Default Materials/Components:</label>
+              <input type="text" id="subcategoryMaterials" placeholder="e.g., Stainless steel screws, hinges" class="input-field">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Price per Unit ($):</label>
+              <input type="number" id="subcategoryPrice" placeholder="25.00" step="0.01" class="input-field">
+            </div>
+          </div>
+          
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+            <p class="text-sm text-yellow-700">
+              <strong>ℹ️ Hardware Note:</strong> Material requirements are not needed for hardware items. 
+              Inventory will be managed manually without automatic material deduction.
+            </p>
+          </div>
+        `;
+      } else {
+        // Cabinet - show full material requirements
+        configSection.innerHTML = `
+          <h4 class="font-semibold text-blue-800 mb-3">🔨 Cabinet Configuration</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Default Materials:</label>
+              <input type="text" id="subcategoryMaterials" placeholder="e.g., Oak plywood, soft-close hinges" class="input-field">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Price per Unit ($):</label>
+              <input type="number" id="subcategoryPrice" placeholder="350.00" step="0.01" class="input-field">
+            </div>
+          </div>
+
+          <!-- Material Requirements -->
+          <h5 id="materialRequirementsTitle" class="font-medium text-blue-700 mb-3">📦 Material Requirements (per cabinet)</h5>
+          
+          <div id="materialRequirementsSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Plywood Type:</label>
+              <select id="subcategoryPlywoodType" class="input-field">
+                <option value="">Select Plywood Type</option>
+              </select>
+              <input type="number" id="subcategoryPlywoodSheets" placeholder="Sheets per cabinet" 
+                     step="0.1" class="input-field mt-2">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">MDF Type (for doors):</label>
+              <select id="subcategoryMDFType" class="input-field">
+                <option value="">Select MDF Type</option>
+              </select>
+              <input type="number" id="subcategoryMDFSheets" placeholder="Sheets per cabinet" 
+                     step="0.1" class="input-field mt-2">
+            </div>
+          </div>
+        `;
+        
+        // Repopulate material selects for cabinet type
+        populateMaterialSelects();
+      }
+    }
+
+    function populateMaterialSelects() {
+      const plywoodSelect = document.getElementById('subcategoryPlywoodType');
+      const mdfSelect = document.getElementById('subcategoryMDFType');
+      
+      if (plywoodSelect) {
+        plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
+        plywood.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.id;
+          option.textContent = `${item.type} (${item.sheets} sheets available)`;
+          
+          if (!item.type.toLowerCase().includes('mdf')) {
+            plywoodSelect.appendChild(option);
+          }
+        });
+      }
+      
+      if (mdfSelect) {
+        mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
+        plywood.forEach(item => {
+          if (item.type.toLowerCase().includes('mdf')) {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.type} (${item.sheets} sheets available)`;
+            mdfSelect.appendChild(option);
+          }
+        });
+      }
+    }
+
+    async function addSubcategory() {
+      const name = document.getElementById('subcategoryName').value.trim();
+      const icon = document.getElementById('subcategoryIcon').value.trim() || '📦';
+      const description = document.getElementById('subcategoryDescription').value.trim();
+      const materials = document.getElementById('subcategoryMaterials').value.trim();
+      const pricePerUnit = parseFloat(document.getElementById('subcategoryPrice').value) || 0;
+      const productType = document.getElementById('subcategoryProductType').value;
+      
+      // Material requirements (only for cabinets)
+      let materialRequirements = null;
+      
+      if (productType === 'cabinet') {
+        const plywoodId = document.getElementById('subcategoryPlywoodType').value;
+        const plywoodSheets = parseFloat(document.getElementById('subcategoryPlywoodSheets').value) || 0;
+        const mdfId = document.getElementById('subcategoryMDFType').value;
+        const mdfSheets = parseFloat(document.getElementById('subcategoryMDFSheets').value) || 0;
+
+        materialRequirements = {
+          plywood: plywoodId ? {
+            id: plywoodId,
+            sheetsPerUnit: plywoodSheets,
+            type: plywood.find(p => p.id == plywoodId)?.type || 'Unknown'
+          } : null,
+          mdf: mdfId ? {
+            id: mdfId,
+            sheetsPerUnit: mdfSheets,
+            type: plywood.find(p => p.id == mdfId)?.type || 'Unknown'
+          } : null
+        };
+      }
+
+      if (!name) {
+        alert('❌ Please enter a product name');
+        return;
+      }
+
+      // Check for duplicate names in this category
+      if (subcategories.find(sub => 
+        sub.categoryId === currentCategoryId && 
+        sub.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Product name already exists in this category');
+        return;
+      }
+
+      const subcategory = {
+        id: Date.now(),
+        categoryId: currentCategoryId,
+        name,
+        icon,
+        description,
+        materials: materials || (productType === 'cabinet' ? 'Standard materials' : 'Hardware components'),
+        pricePerUnit,
+        productType,
+        materialRequirements,
+        dateCreated: new Date().toISOString()
+      };
+
+      await saveData('subcategories', subcategory);
+      closeSubcategoryModal();
+    }
+
+    // Manufacturing Functions
+    function showManufacturingModal(subcategoryId) {
+      currentSubcategoryId = subcategoryId;
+      const subcategory = subcategories.find(s => s.id === subcategoryId);
+      const category = categories.find(c => c.id === subcategory.categoryId);
+      
+      document.getElementById('manufacturingModal').classList.remove('hidden');
+      
+      const details = document.getElementById('manufacturingDetails');
+      details.innerHTML = `
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+          <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
+          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
+          <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
+          <p class="text-blue-700 text-sm">Materials: ${subcategory.materials}</p>
+        </div>
+      `;
+      
+      // Show material requirements if they exist
+      if (subcategory.materialRequirements && 
+          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf)) {
+        document.getElementById('materialRequirements').classList.remove('hidden');
+        updateManufacturingMaterials();
+      } else {
+        document.getElementById('materialRequirements').classList.add('hidden');
+      }
+      
+      document.getElementById('manufacturingQuantity').value = '1';
+      updateManufacturingMaterials();
+    }
+
+    function closeManufacturingModal() {
+      document.getElementById('manufacturingModal').classList.add('hidden');
+      currentSubcategoryId = null;
+      document.getElementById('materialWarnings').classList.add('hidden');
+    }
+
+    function updateManufacturingMaterials() {
+      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
+      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
+      
+      if (!subcategory || !subcategory.materialRequirements) return;
+      
+      const materialsList = document.getElementById('materialRequirementsList');
+      const warnings = document.getElementById('materialWarnings');
+      
+      let materialsHTML = '';
+      let warningsHTML = '';
+      
+      // Check plywood requirements
+      if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
+        const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
+        const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
+        
+        materialsHTML += `
+          <div class="flex justify-between items-center py-1">
+            <span>📦 ${subcategory.materialRequirements.plywood.type}:</span>
+            <span class="font-semibold">${needed} sheets</span>
+          </div>
+        `;
+        
+        if (plywoodItem && needed > plywoodItem.sheets) {
+          warningsHTML += `
+            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
+              <span class="text-red-600">⚠️ Insufficient ${plywoodItem.type}!</span><br>
+              <small>Need: ${needed} sheets | Available: ${plywoodItem.sheets} sheets</small>
+            </div>
+          `;
+        }
+      }
+      
+      // Check MDF requirements
+      if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
+        const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
+        const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
+        
+        materialsHTML += `
+          <div class="flex justify-between items-center py-1">
+            <span>🚪 ${subcategory.materialRequirements.mdf.type}:</span>
+            <span class="font-semibold">${needed} sheets</span>
+          </div>
+        `;
+        
+        if (mdfItem && needed > mdfItem.sheets) {
+          warningsHTML += `
+            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
+              <span class="text-red-600">⚠️ Insufficient ${mdfItem.type}!</span><br>
+              <small>Need: ${needed} sheets | Available: ${mdfItem.sheets} sheets</small>
+            </div>
+          `;
+        }
+      }
+      
+      materialsList.innerHTML = materialsHTML;
+      warnings.innerHTML = warningsHTML;
+      warnings.classList.toggle('hidden', warningsHTML === '');
+    }
+
+    async function processManufacturing() {
+      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
+      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
+      const category = categories.find(c => c.id === subcategory.categoryId);
+      
+      if (quantity <= 0) {
+        alert('❌ Please enter a valid quantity');
+        return;
+      }
+
+      // Check and deduct materials if requirements exist
+      if (subcategory.materialRequirements) {
+        const materialChecks = [];
+        
+        // Check plywood requirements
+        if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
+          const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
+          const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
+          
+          if (plywoodItem && needed > plywoodItem.sheets) {
+            alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${needed} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
+            return;
+          }
+          
+          if (plywoodItem) {
+            materialChecks.push({
+              item: plywoodItem,
+              needed: needed,
+              type: 'plywood'
+            });
+          }
+        }
+        
+        // Check MDF requirements
+        if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
+          const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
+          const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
+          
+          if (mdfItem && needed > mdfItem.sheets) {
+            alert(`❌ Insufficient ${mdfItem.type}!\nNeed: ${needed} sheets\nAvailable: ${mdfItem.sheets} sheets`);
+            return;
+          }
+          
+          if (mdfItem) {
+            materialChecks.push({
+              item: mdfItem,
+              needed: needed,
+              type: 'mdf'
+            });
+          }
+        }
+        
+        // Deduct materials
+        try {
+          for (const check of materialChecks) {
+            const newMaterialQuantity = check.item.sheets - check.needed;
+            
+            await updateData('plywood', check.item.firebaseId, {
+              sheets: newMaterialQuantity,
+              lastUpdated: new Date().toISOString()
+            });
+          }
+          
+          if (materialChecks.length > 0) {
+            showSuccess(`Materials deducted: ${materialChecks.map(c => 
+              `${c.needed} sheets of ${c.item.type}`
+            ).join(', ')}`);
+          }
+          
+        } catch (error) {
+          console.error('Error deducting materials:', error);
+          alert('❌ Error deducting materials. Manufacturing cancelled.');
+          return;
+        }
+      }
+
+      // Create or update cabinet record
+      const existingCabinet = cabinets.find(c => 
+        c.subcategoryId === currentSubcategoryId
+      );
+
+      if (existingCabinet) {
+        // Update existing cabinet quantity
+        const newQuantity = existingCabinet.quantity + quantity;
+        await updateData('cabinets', existingCabinet.firebaseId, {
+          quantity: newQuantity,
+          lastManufactured: new Date().toISOString()
+        });
+      } else {
+        // Create new cabinet record
+        const cabinet = {
+          id: Date.now(),
+          subcategoryId: currentSubcategoryId,
+          categoryId: subcategory.categoryId,
+          type: subcategory.name,
+          category: category.name,
+          subcategory: subcategory.name,
+          quantity: quantity,
+          materials: subcategory.materials,
+          pricePerUnit: subcategory.pricePerUnit,
+          materialRequirements: subcategory.materialRequirements,
+          dateCreated: new Date().toISOString(),
+          lastManufactured: new Date().toISOString()
+        };
+        
+        await saveData('cabinets', cabinet);
+      }
+
+      closeManufacturingModal();
+      showSuccess(`Successfully manufactured ${quantity} units of ${subcategory.name}!`);
+    }
+
+    // Dispatch Modal Functions
     function showDispatchModal(subcategoryId) {
       currentDispatchSubcategoryId = subcategoryId;
       const subcategory = subcategories.find(s => s.id === subcategoryId);
@@ -1223,7 +2881,7 @@
           <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
           <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
           <p class="text-blue-700 text-sm">Available: ${cabinet.quantity} units</p>
-          <p class="text-blue-700 text-sm">Price: $${subcategory.pricePerUnit.toFixed(2)} per unit</p>
+          <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
         </div>
       `;
       
@@ -1269,25 +2927,19 @@
         return;
       }
 
-      // Check if there's an existing dispatch to the same address (within last 24 hours)
+      // Create dispatch record
+      const dispatchId = Date.now();
       const addressKey = address.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const recentDispatch = dispatches.find(d => {
-        const dispatchAddressKey = d.address.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const dispatchTime = new Date(d.createdAt);
-        const timeDiff = Date.now() - dispatchTime.getTime();
-        return dispatchAddressKey === addressKey && timeDiff < 24 * 60 * 60 * 1000; // 24 hours
-      });
-
-      let dispatchId;
-      let folderName;
-
-      if (recentDispatch) {
-        // Add to existing dispatch
-        dispatchId = recentDispatch.id;
-        folderName = recentDispatch.folderName;
-        
-        // Update existing dispatch
-        const updatedItems = [...recentDispatch.items, {
+      const folderName = `DISPATCH_${dispatchId}_${addressKey.substring(0, 10).toUpperCase()}`;
+      
+      const dispatch = {
+        id: dispatchId,
+        folderName: folderName,
+        address: address,
+        expectedDeliveryDate: deliveryDate,
+        notes: notes,
+        status: 'pending',
+        items: [{
           subcategoryId: currentDispatchSubcategoryId,
           categoryId: subcategory.categoryId,
           productName: subcategory.name,
@@ -1295,49 +2947,14 @@
           quantity: quantity,
           pricePerUnit: subcategory.pricePerUnit,
           totalValue: quantity * subcategory.pricePerUnit
-        }];
-        
-        const updatedTotalValue = updatedItems.reduce((sum, item) => sum + item.totalValue, 0);
-        const updatedTotalQuantity = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-        
-        await updateData('dispatches', recentDispatch.firebaseId, {
-          items: updatedItems,
-          totalValue: updatedTotalValue,
-          totalQuantity: updatedTotalQuantity,
-          lastUpdated: new Date().toISOString()
-        });
-        
-        showSuccess(`Added to existing dispatch #${dispatchId} (${folderName})`);
-      } else {
-        // Create new dispatch
-        dispatchId = Date.now();
-        folderName = `DISPATCH_${dispatchId}_${addressKey.substring(0, 10).toUpperCase()}`;
-        
-        const dispatch = {
-          id: dispatchId,
-          folderName: folderName,
-          address: address,
-          expectedDeliveryDate: deliveryDate,
-          notes: notes,
-          status: 'pending',
-          items: [{
-            subcategoryId: currentDispatchSubcategoryId,
-            categoryId: subcategory.categoryId,
-            productName: subcategory.name,
-            categoryName: category.name,
-            quantity: quantity,
-            pricePerUnit: subcategory.pricePerUnit,
-            totalValue: quantity * subcategory.pricePerUnit
-          }],
-          totalValue: quantity * subcategory.pricePerUnit,
-          totalQuantity: quantity,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        };
-        
-        await saveData('dispatches', dispatch);
-        showSuccess(`New dispatch created: #${dispatchId} (${folderName})`);
-      }
+        }],
+        totalValue: quantity * subcategory.pricePerUnit,
+        totalQuantity: quantity,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+      
+      await saveData('dispatches', dispatch);
 
       // Update cabinet inventory
       const newQuantity = cabinet.quantity - quantity;
@@ -1347,6 +2964,147 @@
       });
 
       closeDispatchModal();
+      showSuccess(`New dispatch created: #${dispatchId} (${folderName})`);
+    }
+
+    // Plywood management functions
+    function showPlywoodForm() {
+      document.getElementById('plywoodForm').classList.remove('hidden');
+      document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    function hidePlywoodForm() {
+      document.getElementById('plywoodForm').classList.add('hidden');
+      clearPlywoodForm();
+    }
+
+    function clearPlywoodForm() {
+      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost', 'plywoodInvoice', 'plywoodDate'].forEach(id =>
+        document.getElementById(id).value = ''
+      );
+    }
+
+    async function addPlywood() {
+      const type = document.getElementById('plywoodType').value.trim();
+      const sheets = parseInt(document.getElementById('plywoodSheets').value);
+      const minStock = parseInt(document.getElementById('plywoodMinStock').value) || 5;
+      const supplier = document.getElementById('plywoodSupplier').value.trim();
+      const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
+      const invoiceNumber = document.getElementById('plywoodInvoice').value.trim();
+      const date = document.getElementById('plywoodDate').value;
+
+      if (!type || !sheets || !supplier || !cost || !invoiceNumber || !date) {
+        alert('❌ Please fill in all required fields');
+        return;
+      }
+
+      const item = {
+        id: Date.now(),
+        type,
+        sheets,
+        minStock,
+        supplier,
+        cost,
+        dateAdded: new Date().toISOString(),
+        lastInvoice: invoiceNumber
+      };
+      
+      const invoice = {
+        id: Date.now() + 1,
+        invoiceNumber,
+        date,
+        supplier,
+        operation: 'ADD',
+        items: [{
+          type,
+          quantity: sheets,
+          unitCost: cost,
+          totalCost: sheets * cost
+        }],
+        totalValue: sheets * cost,
+        notes: `Material addition: ${type}`,
+        createdAt: new Date().toISOString()
+      };
+      
+      await saveData('plywood', item);
+      await saveData('invoices', invoice);
+      hidePlywoodForm();
+    }
+
+    function renderPlywood() {
+      const list = document.getElementById('plywoodList');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      if (plywood.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            📦 No materials found. Add your first material to get started!
+          </div>
+        `;
+        return;
+      }
+      
+      plywood.forEach(item => {
+        const div = document.createElement('div');
+        const sheets = item.sheets || 0;
+        const minStock = item.minStock || 0;
+        const cost = item.cost || 0;
+        
+        div.className = `card p-4 lg:p-6 ${sheets <= minStock ? 'low-stock' : ''}`;
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1">
+              <h3 class="font-bold text-lg lg:text-xl text-gray-800 mb-2">${item.type || 'Unknown Type'}</h3>
+              <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
+              <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
+              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
+              ${item.lastInvoice ? `<p class="text-xs text-green-600 mt-1">📋 Last Invoice: ${item.lastInvoice}</p>` : ''}
+            </div>
+            <div class="flex flex-row lg:flex-col items-center gap-4">
+              <div class="text-center">
+                <div class="text-3xl lg:text-4xl font-bold ${sheets <= minStock ? 'text-red-600' : 'text-blue-600'}">${sheets}</div>
+                <div class="text-gray-600 font-medium">sheets</div>
+              </div>
+              <div class="flex lg:flex-col gap-2">
+                <button onclick="updatePlywoodQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
+                <button onclick="updatePlywoodQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
+              </div>
+              <button onclick="deletePlywood(${item.id})" class="text-red-600 hover:text-red-800 text-2xl" title="Delete item">🗑️</button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    async function updatePlywoodQuantity(id, change) {
+      const item = plywood.find(p => p.id === id);
+      if (item) {
+        const newQuantity = item.sheets + change;
+        if (newQuantity >= 0) {
+          if (item.firebaseId) {
+            await updateData('plywood', item.firebaseId, {
+              sheets: newQuantity,
+              lastUpdated: new Date().toISOString()
+            });
+            
+            showSuccess(`Updated ${item.type}: ${change > 0 ? '+' : ''}${change} sheets`);
+          }
+        }
+      }
+    }
+
+    async function deletePlywood(id) {
+      if (confirm('Are you sure you want to delete this material?')) {
+        const item = plywood.find(p => p.id === id);
+        if (item?.firebaseId) {
+          await deleteData('plywood', item.firebaseId);
+        }
+      }
     }
 
     function renderDispatches() {
@@ -1389,7 +3147,7 @@
                 <div><strong>📍 Address:</strong> ${dispatch.address}</div>
                 <div><strong>📅 Expected Delivery:</strong> ${dispatch.expectedDeliveryDate ? new Date(dispatch.expectedDeliveryDate).toLocaleDateString() : 'Not set'}</div>
                 <div><strong>📦 Total Items:</strong> ${dispatch.totalQuantity} units</div>
-                <div><strong>💰 Total Value:</strong> $${dispatch.totalValue.toFixed(2)}</div>
+                <div><strong>💰 Total Value:</strong> ${dispatch.totalValue.toFixed(2)}</div>
               </div>
               
               ${dispatch.notes ? `<p class="text-sm text-gray-600 mb-3"><strong>📝 Notes:</strong> ${dispatch.notes}</p>` : ''}
@@ -1400,7 +3158,7 @@
                   ${dispatch.items.map(item => `
                     <div class="text-xs bg-white bg-opacity-50 p-2 rounded border">
                       <span class="font-semibold">${item.productName}</span><br>
-                      <span class="text-gray-600">${item.categoryName} • Qty: ${item.quantity} • $${item.totalValue.toFixed(2)}</span>
+                      <span class="text-gray-600">${item.categoryName} • Qty: ${item.quantity} • ${item.totalValue.toFixed(2)}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -1422,6 +3180,65 @@
       });
     }
 
+    function renderInvoices() {
+      const list = document.getElementById('invoiceList');
+      if (!list) return;
+      
+      if (invoices.length === 0) {
+        list.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            📋 No invoice records found.
+          </div>
+        `;
+        return;
+      }
+      
+      const sortedInvoices = [...invoices].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      list.innerHTML = '';
+      
+      sortedInvoices.forEach(invoice => {
+        const div = document.createElement('div');
+        div.className = 'border-b border-gray-200 py-4';
+        
+        const operationColor = invoice.operation === 'ADD' ? 'text-green-600' : 'text-red-600';
+        const operationIcon = invoice.operation === 'ADD' ? '➕' : '➖';
+        
+        div.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="${operationColor} text-xl">${operationIcon}</span>
+                <h3 class="font-bold text-lg text-gray-800">Invoice #${invoice.invoiceNumber}</h3>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${operationColor} bg-gray-100">
+                  ${invoice.operation}
+                </span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div><strong>📅 Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</div>
+                <div><strong>🏢 Supplier:</strong> ${invoice.supplier}</div>
+                <div><strong>💰 Total Value:</strong> ${invoice.totalValue.toFixed(2)}</div>
+              </div>
+              ${invoice.notes ? `<p class="text-sm text-gray-500 mt-2"><strong>📝 Notes:</strong> ${invoice.notes}</p>` : ''}
+            </div>
+            <div class="lg:w-80">
+              <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
+              <div class="space-y-1">
+                ${invoice.items.map(item => `
+                  <div class="text-xs bg-gray-50 p-2 rounded flex justify-between">
+                    <span>${item.type} (${item.quantity}x)</span>
+                    <span>${item.totalCost.toFixed(2)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
     function updateDispatchStats() {
       try {
         const totalCount = dispatches.length;
@@ -1432,7 +3249,7 @@
         document.getElementById('totalDispatchCount').textContent = totalCount.toString();
         document.getElementById('pendingDispatchCount').textContent = pendingCount.toString();
         document.getElementById('completedDispatchCount').textContent = completedCount.toString();
-        document.getElementById('dispatchedValue').textContent = `$${Math.round(totalValue).toLocaleString()}`;
+        document.getElementById('dispatchedValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
 
       } catch (error) {
         console.error('Error updating dispatch stats:', error);
@@ -1475,20 +3292,7 @@
       }
     }
 
-    async function undoLastDispatch() {
-      if (dispatches.length === 0) {
-        alert('❌ No dispatches to undo');
-        return;
-      }
-      
-      const lastDispatch = dispatches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
-      
-      if (confirm(`Undo last dispatch #${lastDispatch.id}?\n\nThis will return ${lastDispatch.totalQuantity} items to inventory.`)) {
-        await deleteDispatch(lastDispatch.id);
-      }
-    }
-
-    // PDF and Export Functions
+    // PDF Generation Functions
     function generatePackingSlip(dispatchId) {
       const dispatch = dispatches.find(d => d.id === dispatchId);
       if (!dispatch) return;
@@ -1639,498 +3443,51 @@
       showSuccess(`Dispatch record exported for #${dispatch.id}!`);
     }
 
-    function exportAllDispatches() {
-      if (dispatches.length === 0) {
-        alert('No dispatch data to export');
-        return;
-      }
+    function checkLowStock() {
+      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
+      const alert = document.getElementById('lowStockAlert');
+      const list = document.getElementById('lowStockList');
       
-      let csvContent = 'Dispatch ID,Folder Name,Status,Created Date,Address,Expected Delivery,Total Items,Total Value,Items Detail,Notes\n';
-      
-      dispatches.forEach(dispatch => {
-        const itemsDetail = dispatch.items.map(item => 
-          `${item.productName} (${item.quantity}x @ ${item.pricePerUnit})`
-        ).join('; ');
-        
-        const addressOneLine = dispatch.address.replace(/\n/g, ' | ');
-        
-        csvContent += `"${dispatch.id}","${dispatch.folderName}","${dispatch.status}","${dispatch.createdAt}","${addressOneLine}","${dispatch.expectedDeliveryDate || ''}","${dispatch.totalQuantity}","${dispatch.totalValue}","${itemsDetail}","${dispatch.notes || ''}"\n`;
-      });
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dispatch_records_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      showSuccess(`Dispatch records exported! ${dispatches.length} dispatches exported to CSV`);
-    }
-
-    // Category Management
-    function showCategoryModal() {
-      document.getElementById('categoryModal').classList.remove('hidden');
-    }
-
-    function closeCategoryModal() {
-      document.getElementById('categoryModal').classList.add('hidden');
-      clearCategoryForm();
-    }
-
-    function clearCategoryForm() {
-      ['newCategoryName', 'newCategoryIcon', 'newCategoryDescription'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
-    }
-
-    async function addCategory() {
-      const name = document.getElementById('newCategoryName').value.trim();
-      const icon = document.getElementById('newCategoryIcon').value.trim() || '📂';
-      const description = document.getElementById('newCategoryDescription').value.trim();
-      
-      if (!name) {
-        alert('❌ Please enter a category name');
-        return;
-      }
-      
-      if (categories.find(cat => cat.name.toLowerCase() === name.toLowerCase())) {
-        alert('❌ Category name already exists');
-        return;
-      }
-      
-      const category = {
-        id: Date.now(),
-        name,
-        icon,
-        description,
-        dateCreated: new Date().toISOString()
-      };
-      
-      await saveData('categories', category);
-      closeCategoryModal();
-    }
-
-    // Subcategory Management
-    function showSubcategoryModal() {
-      if (!currentCategoryId) {
-        alert('❌ Please select a category first');
-        return;
-      }
-      
-      document.getElementById('subcategoryModal').classList.remove('hidden');
-      populateMaterialSelects();
-    }
-
-    function closeSubcategoryModal() {
-      document.getElementById('subcategoryModal').classList.add('hidden');
-      clearSubcategoryForm();
-    }
-
-    function clearSubcategoryForm() {
-      ['subcategoryName', 'subcategoryIcon', 'subcategoryDescription', 
-       'subcategoryMaterials', 'subcategoryPrice', 'subcategoryPlywoodSheets', 
-       'subcategoryMDFSheets'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
-      
-      ['subcategoryPlywoodType', 'subcategoryMDFType'].forEach(id =>
-        document.getElementById(id).selectedIndex = 0
-      );
-    }
-
-    function populateMaterialSelects() {
-      const plywoodSelect = document.getElementById('subcategoryPlywoodType');
-      const mdfSelect = document.getElementById('subcategoryMDFType');
-      
-      if (plywoodSelect) {
-        plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
-        plywood.forEach(item => {
-          const option = document.createElement('option');
-          option.value = item.id;
-          option.textContent = `${item.type} (${item.sheets} sheets available)`;
-          
-          if (!item.type.toLowerCase().includes('mdf')) {
-            plywoodSelect.appendChild(option);
-          }
-        });
-      }
-      
-      if (mdfSelect) {
-        mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
-        plywood.forEach(item => {
-          if (item.type.toLowerCase().includes('mdf')) {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = `${item.type} (${item.sheets} sheets available)`;
-            mdfSelect.appendChild(option);
-          }
-        });
-      }
-    }
-
-    async function addSubcategory() {
-      const name = document.getElementById('subcategoryName').value.trim();
-      const icon = document.getElementById('subcategoryIcon').value.trim() || '📦';
-      const description = document.getElementById('subcategoryDescription').value.trim();
-      const materials = document.getElementById('subcategoryMaterials').value.trim();
-      const pricePerUnit = parseFloat(document.getElementById('subcategoryPrice').value) || 0;
-      
-      // Material requirements
-      const plywoodId = document.getElementById('subcategoryPlywoodType').value;
-      const plywoodSheets = parseFloat(document.getElementById('subcategoryPlywoodSheets').value) || 0;
-      const mdfId = document.getElementById('subcategoryMDFType').value;
-      const mdfSheets = parseFloat(document.getElementById('subcategoryMDFSheets').value) || 0;
-
-      if (!name) {
-        alert('❌ Please enter a product name');
-        return;
-      }
-
-      // Check for duplicate names in this category
-      if (subcategories.find(sub => 
-        sub.categoryId === currentCategoryId && 
-        sub.name.toLowerCase() === name.toLowerCase())) {
-        alert('❌ Product name already exists in this category');
-        return;
-      }
-
-      const subcategory = {
-        id: Date.now(),
-        categoryId: currentCategoryId,
-        name,
-        icon,
-        description,
-        materials: materials || 'Standard materials',
-        pricePerUnit,
-        materialRequirements: {
-          plywood: plywoodId ? {
-            id: plywoodId,
-            sheetsPerUnit: plywoodSheets,
-            type: plywood.find(p => p.id == plywoodId)?.type || 'Unknown'
-          } : null,
-          mdf: mdfId ? {
-            id: mdfId,
-            sheetsPerUnit: mdfSheets,
-            type: plywood.find(p => p.id == mdfId)?.type || 'Unknown'
-          } : null
-        },
-        dateCreated: new Date().toISOString()
-      };
-
-      await saveData('subcategories', subcategory);
-      closeSubcategoryModal();
-    }
-
-    // Manufacturing Functions
-    function showManufacturingModal(subcategoryId) {
-      currentSubcategoryId = subcategoryId;
-      const subcategory = subcategories.find(s => s.id === subcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      
-      document.getElementById('manufacturingModal').classList.remove('hidden');
-      
-      const details = document.getElementById('manufacturingDetails');
-      details.innerHTML = `
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-          <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
-          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
-          <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
-          <p class="text-blue-700 text-sm">Materials: ${subcategory.materials}</p>
-        </div>
-      `;
-      
-      // Show material requirements if they exist
-      if (subcategory.materialRequirements && 
-          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf)) {
-        document.getElementById('materialRequirements').classList.remove('hidden');
-        updateManufacturingMaterials();
-      } else {
-        document.getElementById('materialRequirements').classList.add('hidden');
-      }
-      
-      document.getElementById('manufacturingQuantity').value = '1';
-      updateManufacturingMaterials();
-    }
-
-    function closeManufacturingModal() {
-      document.getElementById('manufacturingModal').classList.add('hidden');
-      currentSubcategoryId = null;
-      document.getElementById('materialWarnings').classList.add('hidden');
-    }
-
-    function updateManufacturingMaterials() {
-      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
-      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
-      
-      if (!subcategory || !subcategory.materialRequirements) return;
-      
-      const materialsList = document.getElementById('materialRequirementsList');
-      const warnings = document.getElementById('materialWarnings');
-      
-      let materialsHTML = '';
-      let warningsHTML = '';
-      
-      // Check plywood requirements
-      if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
-        const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
-        const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
-        
-        materialsHTML += `
-          <div class="flex justify-between items-center py-1">
-            <span>📦 ${subcategory.materialRequirements.plywood.type}:</span>
-            <span class="font-semibold">${needed} sheets</span>
-          </div>
-        `;
-        
-        if (plywoodItem && needed > plywoodItem.sheets) {
-          warningsHTML += `
-            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
-              <span class="text-red-600">⚠️ Insufficient ${plywoodItem.type}!</span><br>
-              <small>Need: ${needed} sheets | Available: ${plywoodItem.sheets} sheets</small>
-            </div>
-          `;
-        }
-      }
-      
-      // Check MDF requirements
-      if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
-        const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
-        const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
-        
-        materialsHTML += `
-          <div class="flex justify-between items-center py-1">
-            <span>🚪 ${subcategory.materialRequirements.mdf.type}:</span>
-            <span class="font-semibold">${needed} sheets</span>
-          </div>
-        `;
-        
-        if (mdfItem && needed > mdfItem.sheets) {
-          warningsHTML += `
-            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
-              <span class="text-red-600">⚠️ Insufficient ${mdfItem.type}!</span><br>
-              <small>Need: ${needed} sheets | Available: ${mdfItem.sheets} sheets</small>
-            </div>
-          `;
-        }
-      }
-      
-      materialsList.innerHTML = materialsHTML;
-      warnings.innerHTML = warningsHTML;
-      warnings.classList.toggle('hidden', warningsHTML === '');
-    }
-
-    // Add event listener for quantity changes
-    document.addEventListener('DOMContentLoaded', function() {
-      const quantityInput = document.getElementById('manufacturingQuantity');
-      if (quantityInput) {
-        quantityInput.addEventListener('input', updateManufacturingMaterials);
-      }
-    });
-
-    async function processManufacturing() {
-      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
-      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      
-      if (quantity <= 0) {
-        alert('❌ Please enter a valid quantity');
-        return;
-      }
-
-      // Check and deduct materials if requirements exist
-      if (subcategory.materialRequirements) {
-        const materialChecks = [];
-        
-        // Check plywood requirements
-        if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
-          const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
-          const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
-          
-          if (plywoodItem && needed > plywoodItem.sheets) {
-            alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${needed} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
-            return;
-          }
-          
-          if (plywoodItem) {
-            materialChecks.push({
-              item: plywoodItem,
-              needed: needed,
-              type: 'plywood'
-            });
-          }
-        }
-        
-        // Check MDF requirements
-        if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
-          const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
-          const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
-          
-          if (mdfItem && needed > mdfItem.sheets) {
-            alert(`❌ Insufficient ${mdfItem.type}!\nNeed: ${needed} sheets\nAvailable: ${mdfItem.sheets} sheets`);
-            return;
-          }
-          
-          if (mdfItem) {
-            materialChecks.push({
-              item: mdfItem,
-              needed: needed,
-              type: 'mdf'
-            });
-          }
-        }
-        
-        // Deduct materials
-        try {
-          for (const check of materialChecks) {
-            const newMaterialQuantity = check.item.sheets - check.needed;
-            
-            await updateData('plywood', check.item.firebaseId, {
-              sheets: newMaterialQuantity,
-              lastUpdated: new Date().toISOString()
-            });
-          }
-          
-          if (materialChecks.length > 0) {
-            showSuccess(`Materials deducted: ${materialChecks.map(c => 
-              `${c.needed} sheets of ${c.item.type}`
-            ).join(', ')}`);
-          }
-          
-        } catch (error) {
-          console.error('Error deducting materials:', error);
-          alert('❌ Error deducting materials. Manufacturing cancelled.');
-          return;
-        }
-      }
-
-      // Create or update cabinet record
-      const existingCabinet = cabinets.find(c => 
-        c.subcategoryId === currentSubcategoryId
-      );
-
-      if (existingCabinet) {
-        // Update existing cabinet quantity
-        const newQuantity = existingCabinet.quantity + quantity;
-        await updateData('cabinets', existingCabinet.firebaseId, {
-          quantity: newQuantity,
-          lastManufactured: new Date().toISOString()
+      if (lowStockItems.length > 0) {
+        alert.classList.remove('hidden');
+        list.innerHTML = '';
+        lowStockItems.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'font-semibold';
+          li.textContent = `📦 ${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
+          list.appendChild(li);
         });
       } else {
-        // Create new cabinet record
-        const cabinet = {
-          id: Date.now(),
-          subcategoryId: currentSubcategoryId,
-          categoryId: subcategory.categoryId,
-          type: subcategory.name,
-          category: category.name,
-          subcategory: subcategory.name,
-          quantity: quantity,
-          materials: subcategory.materials,
-          pricePerUnit: subcategory.pricePerUnit,
-          materialRequirements: subcategory.materialRequirements,
-          dateCreated: new Date().toISOString(),
-          lastManufactured: new Date().toISOString()
-        };
-        
-        await saveData('cabinets', cabinet);
+        alert.classList.add('hidden');
       }
-
-      closeManufacturingModal();
-      showSuccess(`Successfully manufactured ${quantity} units of ${subcategory.name}!`);
     }
 
-    // Plywood Management
-    function showPlywoodForm() {
-      document.getElementById('plywoodForm').classList.remove('hidden');
-      document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
+    // Edit functions placeholder
+    function editSubcategory(subcategoryId) {
+      alert('Edit functionality coming soon! For now, delete and recreate the product type.');
     }
 
-    function hidePlywoodForm() {
-      document.getElementById('plywoodForm').classList.add('hidden');
-      clearPlywoodForm();
-    }
-
-    function clearPlywoodForm() {
-      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost', 'plywoodInvoice', 'plywoodDate'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
-    }
-
-    async function addPlywood() {
-      const type = document.getElementById('plywoodType').value.trim();
-      const sheets = parseInt(document.getElementById('plywoodSheets').value);
-      const minStock = parseInt(document.getElementById('plywoodMinStock').value) || 5;
-      const supplier = document.getElementById('plywoodSupplier').value.trim();
-      const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
-      const invoiceNumber = document.getElementById('plywoodInvoice').value.trim();
-      const date = document.getElementById('plywoodDate').value;
-
-      if (!type || !sheets || !supplier || !cost || !invoiceNumber || !date) {
-        alert('❌ Please fill in all required fields');
+    async function deleteSubcategory(subcategoryId) {
+      if (!confirm('Are you sure you want to delete this product type? This will also delete all related cabinet inventory.')) {
         return;
       }
-
-      const item = {
-        id: Date.now(),
-        type,
-        sheets,
-        minStock,
-        supplier,
-        cost,
-        dateAdded: new Date().toISOString(),
-        lastInvoice: invoiceNumber
-      };
       
-      const invoice = {
-        id: Date.now() + 1,
-        invoiceNumber,
-        date,
-        supplier,
-        operation: 'ADD',
-        items: [{
-          type,
-          quantity: sheets,
-          unitCost: cost,
-          totalCost: sheets * cost
-        }],
-        totalValue: sheets * cost,
-        notes: `Material addition: ${type}`,
-        createdAt: new Date().toISOString()
-      };
-      
-      await saveData('plywood', item);
-      await saveData('invoices', invoice);
-      hidePlywoodForm();
-    }
-
-    async function updatePlywoodQuantity(id, change) {
-      const item = plywood.find(p => p.id === id);
-      if (item) {
-        const newQuantity = item.sheets + change;
-        if (newQuantity >= 0) {
-          if (item.firebaseId) {
-            await updateData('plywood', item.firebaseId, {
-              sheets: newQuantity,
-              lastUpdated: new Date().toISOString()
-            });
-            
-            showSuccess(`Updated ${item.type}: ${change > 0 ? '+' : ''}${change} sheets`);
+      const subcategory = subcategories.find(sub => sub.id === subcategoryId);
+      if (subcategory?.firebaseId) {
+        // Also delete related cabinets
+        const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategoryId);
+        for (const cabinet of relatedCabinets) {
+          if (cabinet.firebaseId) {
+            await deleteData('cabinets', cabinet.firebaseId);
           }
         }
+        
+        await deleteData('subcategories', subcategory.firebaseId);
+        showSuccess(`Product type "${subcategory.name}" deleted successfully!`);
       }
     }
 
-    async function deletePlywood(id) {
-      if (confirm('Are you sure you want to delete this material?')) {
-        const item = plywood.find(p => p.id === id);
-        if (item?.firebaseId) {
-          await deleteData('plywood', item.firebaseId);
-        }
-      }
-    }
-
-    // Bulk Operations
+    // Bulk Operations Functions
     function showBulkOperations() {
       document.getElementById('bulkModal').classList.remove('hidden');
       document.getElementById('bulkDate').value = new Date().toISOString().split('T')[0];
@@ -2283,350 +3640,46 @@
       }
     }
 
-    // Render Functions
-    function renderCategoriesGrid() {
-      const grid = document.getElementById('categoriesGrid');
-      if (!grid) return;
-      
-      grid.innerHTML = '';
-      
-      if (categories.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center text-gray-500 py-8">
-            📂 No categories found. Create your first category to get started!
-          </div>
-        `;
+    // Export Functions
+    function exportAllDispatches() {
+      if (dispatches.length === 0) {
+        alert('No dispatch data to export');
         return;
       }
       
-      categories.forEach(category => {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+      let csvContent = 'Dispatch ID,Folder Name,Status,Created Date,Address,Expected Delivery,Total Items,Total Value,Items Detail,Notes\n';
+      
+      dispatches.forEach(dispatch => {
+        const itemsDetail = dispatch.items.map(item => 
+          `${item.productName} (${item.quantity}x @ ${item.pricePerUnit})`
+        ).join('; ');
         
-        const div = document.createElement('div');
-        div.className = 'category-card';
-        div.onclick = () => showCategoryPage(category.id);
+        const addressOneLine = dispatch.address.replace(/\n/g, ' | ');
         
-        div.innerHTML = `
-          <div class="text-center">
-            <div class="text-4xl mb-3">${category.icon}</div>
-            <h3 class="font-bold text-lg text-gray-800 mb-2">${category.name}</h3>
-            <p class="text-gray-600 text-sm mb-4">${category.description || 'No description'}</p>
-            
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="bg-white rounded-lg p-2">
-                <div class="font-bold text-blue-600">${categorySubcategories.length}</div>
-                <div class="text-gray-500">Product Types</div>
-              </div>
-              <div class="bg-white rounded-lg p-2">
-                <div class="font-bold text-green-600">${totalUnits}</div>
-                <div class="text-gray-500">Total Units</div>
-              </div>
-            </div>
-            
-            <div class="mt-4 text-xs text-gray-500">
-              Click to manage products →
-            </div>
-          </div>
-        `;
-        
-        grid.appendChild(div);
+        csvContent += `"${dispatch.id}","${dispatch.folderName}","${dispatch.status}","${dispatch.createdAt}","${addressOneLine}","${dispatch.expectedDeliveryDate || ''}","${dispatch.totalQuantity}","${dispatch.totalValue}","${itemsDetail}","${dispatch.notes || ''}"\n`;
       });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dispatch_records_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      showSuccess(`Dispatch records exported! ${dispatches.length} dispatches exported to CSV`);
     }
 
-    function renderSubcategoriesList() {
-      const list = document.getElementById('subcategoriesList');
-      if (!list || !currentCategoryId) return;
-      
-      const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-      
-      list.innerHTML = '';
-      
-      if (categorySubcategories.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📦 No product types found in this category.<br>
-            <span class="text-sm">Create your first product type to start manufacturing!</span>
-          </div>
-        `;
+    async function undoLastDispatch() {
+      if (dispatches.length === 0) {
+        alert('❌ No dispatches to undo');
         return;
       }
       
-      categorySubcategories.forEach(subcategory => {
-        const subcategoryCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
-        const totalQuantity = subcategoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        const totalValue = totalQuantity * subcategory.pricePerUnit;
-        
-        const div = document.createElement('div');
-        div.className = 'subcategory-card';
-        
-        const hasMaterialRequirements = subcategory.materialRequirements && 
-          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf);
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                  ${subcategory.icon} ${subcategory.name}
-                </h3>
-                ${hasMaterialRequirements ? 
-                  '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">📋 Materials Configured</span>' : 
-                  '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">⚠️ No Materials Set</span>'
-                }
-              </div>
-              <p class="text-gray-600 text-sm mb-2">${subcategory.description || 'No description'}</p>
-              <p class="text-gray-600 text-sm">
-                🔨 Materials: ${subcategory.materials} | 
-                💰 Price: ${subcategory.pricePerUnit.toFixed(2)}/unit
-              </p>
-              ${hasMaterialRequirements ? `
-                <p class="text-xs text-blue-600 mt-1">
-                  📦 ${subcategory.materialRequirements.plywood ? 
-                    `${subcategory.materialRequirements.plywood.type} (${subcategory.materialRequirements.plywood.sheetsPerUnit}/unit)` : ''} 
-                  ${subcategory.materialRequirements.mdf ? 
-                    `| 🚪 ${subcategory.materialRequirements.mdf.type} (${subcategory.materialRequirements.mdf.sheetsPerUnit}/unit)` : ''}
-                </p>
-              ` : ''}
-            </div>
-            
-            <div class="flex flex-row lg:flex-col items-center gap-4">
-              <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600">${totalQuantity}</div>
-                <div class="text-gray-600 font-medium text-sm">units</div>
-                <div class="text-gray-500 text-xs">${totalValue.toFixed(0)} value</div>
-              </div>
-              
-              <div class="flex lg:flex-col gap-2">
-                <button onclick="showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
-                  🔨 Manufacture
-                </button>
-                ${totalQuantity > 0 ? `
-                  <button onclick="showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
-                    🚚 Dispatch
-                  </button>
-                ` : ''}
-                <button onclick="editSubcategory(${subcategory.id})" class="btn btn-primary text-sm">
-                  ✏️ Edit
-                </button>
-              </div>
-              
-              <button onclick="deleteSubcategory(${subcategory.id})" class="text-red-600 hover:text-red-800 text-xl" title="Delete product type">
-                🗑️
-              </button>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
-    }
-
-    function renderPlywood() {
-      const list = document.getElementById('plywoodList');
-      if (!list) return;
+      const lastDispatch = dispatches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
       
-      list.innerHTML = '';
-      
-      if (plywood.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📦 No materials found. Add your first material to get started!
-          </div>
-        `;
-        return;
-      }
-      
-      plywood.forEach(item => {
-        const div = document.createElement('div');
-        const sheets = item.sheets || 0;
-        const minStock = item.minStock || 0;
-        const cost = item.cost || 0;
-        
-        div.className = `card p-4 lg:p-6 ${sheets <= minStock ? 'low-stock' : ''}`;
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <h3 class="font-bold text-lg lg:text-xl text-gray-800 mb-2">${item.type || 'Unknown Type'}</h3>
-              <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
-              <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
-              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
-              ${item.lastInvoice ? `<p class="text-xs text-green-600 mt-1">📋 Last Invoice: ${item.lastInvoice}</p>` : ''}
-            </div>
-            <div class="flex flex-row lg:flex-col items-center gap-4">
-              <div class="text-center">
-                <div class="text-3xl lg:text-4xl font-bold ${sheets <= minStock ? 'text-red-600' : 'text-blue-600'}">${sheets}</div>
-                <div class="text-gray-600 font-medium">sheets</div>
-              </div>
-              <div class="flex lg:flex-col gap-2">
-                <button onclick="updatePlywoodQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
-                <button onclick="updatePlywoodQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
-              </div>
-              <button onclick="deletePlywood(${item.id})" class="text-red-600 hover:text-red-800 text-2xl" title="Delete item">🗑️</button>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
-    }
-
-    function renderInvoices() {
-      const list = document.getElementById('invoiceList');
-      if (!list) return;
-      
-      if (invoices.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📋 No invoice records found.
-          </div>
-        `;
-        return;
-      }
-      
-      const sortedInvoices = [...invoices].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      list.innerHTML = '';
-      
-      sortedInvoices.forEach(invoice => {
-        const div = document.createElement('div');
-        div.className = 'border-b border-gray-200 py-4';
-        
-        const operationColor = invoice.operation === 'ADD' ? 'text-green-600' : 'text-red-600';
-        const operationIcon = invoice.operation === 'ADD' ? '➕' : '➖';
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="${operationColor} text-xl">${operationIcon}</span>
-                <h3 class="font-bold text-lg text-gray-800">Invoice #${invoice.invoiceNumber}</h3>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${operationColor} bg-gray-100">
-                  ${invoice.operation}
-                </span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                <div><strong>📅 Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</div>
-                <div><strong>🏢 Supplier:</strong> ${invoice.supplier}</div>
-                <div><strong>💰 Total Value:</strong> ${invoice.totalValue.toFixed(2)}</div>
-              </div>
-              ${invoice.notes ? `<p class="text-sm text-gray-500 mt-2"><strong>📝 Notes:</strong> ${invoice.notes}</p>` : ''}
-            </div>
-            <div class="lg:w-80">
-              <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
-              <div class="space-y-1">
-                ${invoice.items.map(item => `
-                  <div class="text-xs bg-gray-50 p-2 rounded flex justify-between">
-                    <span>${item.type} (${item.quantity}x)</span>
-                    <span>${item.totalCost.toFixed(2)}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
-    }
-
-    function renderSettingsPage() {
-      const list = document.getElementById('settingsCategoriesList');
-      if (!list) return;
-      
-      list.innerHTML = '';
-      
-      categories.forEach(category => {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
-        
-        const div = document.createElement('div');
-        div.className = 'bg-gray-50 border border-gray-200 rounded-lg p-3';
-        
-        div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                ${category.icon} ${category.name}
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
-              </h4>
-              <p class="text-sm text-gray-600 mt-1">${category.description || 'No description'}</p>
-            </div>
-            <button onclick="deleteCategory(${category.id})" class="text-red-500 hover:text-red-700 text-sm">
-              🗑️ Delete
-            </button>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
-      
-      // Update system info
-      document.getElementById('totalCategoriesCount').textContent = categories.length;
-      document.getElementById('totalSubcategoriesCount').textContent = subcategories.length;
-      document.getElementById('totalMaterialsCount').textContent = plywood.length;
-      document.getElementById('totalInvoicesCount').textContent = invoices.length;
-      document.getElementById('totalDispatchesCount').textContent = dispatches.length;
-    }
-
-    // Stats and Utility Functions
-    function updateStats() {
-      try {
-        const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
-        const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
-        const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
-        const totalDispatchCount = dispatches.length;
-
-        document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
-        document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
-        document.getElementById('activeCategories').textContent = categories.length.toString();
-        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
-        document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
-
-      } catch (error) {
-        console.error('Error updating stats:', error);
-      }
-    }
-
-    function updateCategoryStats() {
-      if (!currentCategoryId) return;
-      
-      try {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === currentCategoryId);
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        const totalValue = categoryCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
-        const avgPrice = categoryCabinets.length > 0 ? 
-          categoryCabinets.reduce((sum, cab) => sum + (cab.pricePerUnit || 0), 0) / categoryCabinets.length : 0;
-
-        document.getElementById('categoryTotalCabinets').textContent = totalUnits.toLocaleString();
-        document.getElementById('categoryProductTypes').textContent = categorySubcategories.length.toString();
-        document.getElementById('categoryValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
-        document.getElementById('categoryAvgPrice').textContent = `${Math.round(avgPrice).toLocaleString()}`;
-
-      } catch (error) {
-        console.error('Error updating category stats:', error);
-      }
-    }
-
-    function checkLowStock() {
-      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
-      const alert = document.getElementById('lowStockAlert');
-      const list = document.getElementById('lowStockList');
-      
-      if (lowStockItems.length > 0) {
-        alert.classList.remove('hidden');
-        list.innerHTML = '';
-        lowStockItems.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'font-semibold';
-          li.textContent = `📦 ${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
-          list.appendChild(li);
-        });
-      } else {
-        alert.classList.add('hidden');
+      if (confirm(`Undo last dispatch #${lastDispatch.id}?\n\nThis will return ${lastDispatch.totalQuantity} items to inventory.`)) {
+        await deleteDispatch(lastDispatch.id);
       }
     }
 
@@ -2671,62 +3724,9 @@
       showSuccess(`Invoice History Exported! ${invoices.length} invoices exported to CSV`);
     }
 
-    // Edit and Delete Functions
-    function editSubcategory(subcategoryId) {
-      // TODO: Implement edit subcategory functionality
-      alert('Edit functionality coming soon! For now, delete and recreate the product type.');
-    }
-
-    async function deleteSubcategory(subcategoryId) {
-      if (!confirm('Are you sure you want to delete this product type? This will also delete all related cabinet inventory.')) {
-        return;
-      }
-      
-      const subcategory = subcategories.find(sub => sub.id === subcategoryId);
-      if (subcategory?.firebaseId) {
-        // Also delete related cabinets
-        const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategoryId);
-        for (const cabinet of relatedCabinets) {
-          if (cabinet.firebaseId) {
-            await deleteData('cabinets', cabinet.firebaseId);
-          }
-        }
-        
-        await deleteData('subcategories', subcategory.firebaseId);
-        showSuccess(`Product type "${subcategory.name}" deleted successfully!`);
-      }
-    }
-
-    async function deleteCategory(categoryId) {
-      if (!confirm('Are you sure you want to delete this category? This will also delete all product types and cabinet inventory in this category.')) {
-        return;
-      }
-      
-      const category = categories.find(cat => cat.id === categoryId);
-      const categorySubcategories = subcategories.filter(sub => sub.categoryId === categoryId);
-      
-      // Delete all subcategories and related cabinets
-      for (const subcategory of categorySubcategories) {
-        if (subcategory.firebaseId) {
-          const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
-          for (const cabinet of relatedCabinets) {
-            if (cabinet.firebaseId) {
-              await deleteData('cabinets', cabinet.firebaseId);
-            }
-          }
-          await deleteData('subcategories', subcategory.firebaseId);
-        }
-      }
-      
-      if (category?.firebaseId) {
-        await deleteData('categories', category.firebaseId);
-        showSuccess(`Category "${category.name}" and all its contents deleted successfully!`);
-      }
-    }
-
     // Initialize the app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Cabinet Manufacturing System with Dispatch Starting...');
+      console.log('🚀 Cabinet Manufacturing System with Folders Starting...');
       showHomePage();
       loadData();
     });
