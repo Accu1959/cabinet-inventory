@@ -4,789 +4,916 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cabinet Manufacturing Inventory</title>
+  <title>Cabinet Manufacturing Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Firebase v9 Compat -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <!-- PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Custom Styles */
-    .gradient-bg {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #64748b;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --surface: #ffffff;
+      --background: #f8fafc;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      line-height: 1.5;
     }
 
     .card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
 
     .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-md);
     }
 
     .btn {
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      border: none;
-      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
     }
 
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: var(--primary);
       color: white;
     }
 
-    .btn-green {
-      background: linear-gradient(135deg, #10b981, #047857);
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-success {
+      background: var(--success);
       color: white;
     }
 
-    .btn-red {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
+    .btn-success:hover {
+      background: #047857;
+    }
+
+    .btn-warning {
+      background: var(--warning);
       color: white;
     }
 
-    .btn-orange {
-      background: linear-gradient(135deg, #f97316, #ea580c);
+    .btn-warning:hover {
+      background: #b45309;
+    }
+
+    .btn-danger {
+      background: var(--danger);
       color: white;
-      padding: 8px 16px;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--background);
+    }
+
+    .input {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
       font-size: 14px;
+      transition: all 0.2s ease;
+      background: var(--surface);
+      width: 100%;
     }
 
-    .btn-gray {
-      background: linear-gradient(135deg, #6b7280, #4b5563);
-      color: white;
-    }
-
-    .btn-purple {
-      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-      color: white;
-    }
-
-    .btn-edit {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-edit:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    .input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
     }
 
     .modal {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 50;
       padding: 16px;
+      backdrop-filter: blur(4px);
     }
 
     .modal-content {
-      background: white;
-      padding: 32px;
-      border-radius: 20px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
       max-width: 500px;
       width: 100%;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
       max-height: 90vh;
       overflow-y: auto;
+      padding: 24px;
     }
 
-    .modal-content-large {
-      background: white;
-      padding: 32px;
-      border-radius: 20px;
-      max-width: 900px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    .modal-content-lg {
+      max-width: 800px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .nav-pill {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      background: var(--background);
+      color: var(--text-primary);
+    }
+
+    .nav-pill.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border-left: 4px solid;
+      margin-bottom: 16px;
+    }
+
+    .alert-danger {
+      background: #fef2f2;
+      border-color: var(--danger);
+      color: #991b1b;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      border-color: var(--success);
+      color: #166534;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-primary {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .low-stock {
+      border-color: var(--danger) !important;
+      background: #fef2f2;
+    }
+
+    .dispatch-pending {
+      border-left: 4px solid var(--warning);
+      background: #fffbeb;
+    }
+
+    .dispatch-completed {
+      border-left: 4px solid var(--success);
+      background: #f0fdf4;
     }
 
     .hidden {
       display: none;
     }
 
-    .low-stock {
-      border: 2px solid #fca5a5;
-      background: linear-gradient(135deg, #fef2f2, #fee2e2);
-      animation: pulse-red 2s infinite;
-    }
+    .text-xs { font-size: 11px; }
+    .text-sm { font-size: 12px; }
+    .text-base { font-size: 14px; }
+    .text-lg { font-size: 16px; }
+    .text-xl { font-size: 18px; }
+    .text-2xl { font-size: 24px; }
+    
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    
+    .text-primary { color: var(--text-primary); }
+    .text-secondary { color: var(--text-secondary); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger { color: var(--danger); }
+    
+    .bg-primary { background: var(--primary); }
+    .bg-success { background: var(--success); }
+    .bg-warning { background: var(--warning); }
+    .bg-danger { background: var(--danger); }
+    
+    .border { border: 1px solid var(--border); }
+    .border-t { border-top: 1px solid var(--border); }
+    .border-b { border-bottom: 1px solid var(--border); }
+    
+    .rounded { border-radius: var(--radius); }
+    .rounded-lg { border-radius: var(--radius-lg); }
+    
+    .shadow { box-shadow: var(--shadow-sm); }
+    .shadow-md { box-shadow: var(--shadow-md); }
+    .shadow-lg { box-shadow: var(--shadow-lg); }
+    
+    .p-2 { padding: 8px; }
+    .p-3 { padding: 12px; }
+    .p-4 { padding: 16px; }
+    .p-6 { padding: 24px; }
+    
+    .px-2 { padding-left: 8px; padding-right: 8px; }
+    .px-3 { padding-left: 12px; padding-right: 12px; }
+    .px-4 { padding-left: 16px; padding-right: 16px; }
+    
+    .py-2 { padding-top: 8px; padding-bottom: 8px; }
+    .py-3 { padding-top: 12px; padding-bottom: 12px; }
+    .py-4 { padding-top: 16px; padding-bottom: 16px; }
+    
+    .m-2 { margin: 8px; }
+    .m-3 { margin: 12px; }
+    .m-4 { margin: 16px; }
+    
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mb-6 { margin-bottom: 24px; }
+    
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .flex-1 { flex: 1; }
+    
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .min-h-screen { min-height: 100vh; }
+    
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-right { text-align: right; }
+    
+    .cursor-pointer { cursor: pointer; }
+    .select-none { user-select: none; }
+    
+    .overflow-hidden { overflow: hidden; }
+    .overflow-y-auto { overflow-y: auto; }
+    
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .fixed { position: fixed; }
+    
+    .inset-0 { inset: 0; }
+    .top-0 { top: 0; }
+    .left-0 { left: 0; }
+    .right-0 { right: 0; }
+    .bottom-0 { bottom: 0; }
+    
+    .z-10 { z-index: 10; }
+    .z-50 { z-index: 50; }
 
-    @keyframes pulse-red {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-    }
-
-    .alert {
-      background: linear-gradient(135deg, #fef2f2, #fee2e2);
-      border-left: 6px solid #ef4444;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 24px;
-      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.15);
-    }
-
-    .success-message {
-      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-      border: 2px solid #22c55e;
-      color: #15803d;
-      padding: 16px;
-      border-radius: 12px;
-      margin: 16px 0;
-      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.15);
-    }
-
-    .stats-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 24px;
-      border-radius: 20px;
-      margin-bottom: 32px;
-      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
-    }
-
-    .stat-item {
-      text-align: center;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
-
-    .stat-item:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
-    }
-
-    .input-field {
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px 16px;
-      transition: all 0.3s ease;
-      background: white;
-      width: 100%;
-    }
-
-    .input-field:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      outline: none;
-    }
-
-    .category-card {
-      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-      border: 2px solid #cbd5e1;
-      border-radius: 16px;
-      padding: 24px;
-      margin: 12px 0;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .category-card:hover {
-      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .category-card.active {
-      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-      border-color: #3b82f6;
-    }
-
-    .subcategory-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 8px 0;
-      transition: all 0.3s ease;
-    }
-
-    .subcategory-card:hover {
-      border-color: #3b82f6;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .breadcrumb {
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 12px;
-      padding: 12px 20px;
-      margin-bottom: 20px;
-      backdrop-filter: blur(10px);
-    }
-
-    .page-content {
-      min-height: 600px;
-    }
-
-    .dispatch-card {
-      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-      border: 2px solid #0284c7;
-      border-radius: 16px;
-      padding: 20px;
-      margin: 12px 0;
-      transition: all 0.3s ease;
-    }
-
-    .dispatch-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(2, 132, 199, 0.15);
-    }
-
-    .pending-dispatch {
-      background: linear-gradient(135deg, #fefce8, #fef3c7);
-      border-color: #f59e0b;
-    }
-
-    .completed-dispatch {
-      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-      border-color: #22c55e;
-    }
-
-    /* Mobile Optimizations */
     @media (max-width: 768px) {
       .modal-content {
-        margin: 16px;
-        padding: 24px;
-      }
-      
-      .modal-content-large {
-        margin: 16px;
-        padding: 24px;
+        margin: 8px;
+        padding: 16px;
         max-height: 85vh;
       }
       
-      .card {
-        margin: 8px 0;
+      .header {
+        padding: 12px 16px;
       }
       
       .btn {
-        padding: 10px 16px;
-        font-size: 14px;
+        padding: 10px 14px;
+        font-size: 13px;
       }
       
-      .stats-card {
-        padding: 16px;
+      .btn-sm {
+        padding: 6px 10px;
+        font-size: 11px;
       }
       
-      h1 {
-        font-size: 24px !important;
+      .stat-value {
+        font-size: 20px;
       }
       
-      h2 {
-        font-size: 20px !important;
+      .card {
+        margin-bottom: 12px;
       }
+    }
+
+    @media (min-width: 640px) {
+      .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .sm\:flex-row { flex-direction: row; }
+      .sm\:text-base { font-size: 14px; }
+    }
+
+    @media (min-width: 768px) {
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .md\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .md\:flex-row { flex-direction: row; }
+      .md\:text-lg { font-size: 16px; }
+    }
+
+    @media (min-width: 1024px) {
+      .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .lg\:flex-row { flex-direction: row; }
+      .lg\:text-xl { font-size: 18px; }
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
-  <div class="max-w-7xl mx-auto p-4 lg:p-6 min-h-screen">
-    <div class="card overflow-hidden">
-      <!-- Header -->
-      <div class="gradient-bg text-white p-6 lg:p-8">
-        <h1 class="text-2xl lg:text-4xl font-bold flex items-center gap-3">
-          🏠 Cabinet Manufacturing System
-        </h1>
-        <p class="text-blue-100 mt-2 text-sm lg:text-base">Professional inventory, dispatch & shipping management</p>
-        <div id="connectionStatus" class="text-green-200 text-sm mt-3 flex items-center gap-2">
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="header">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold">🏠 Cabinet Manufacturing Pro</h1>
+          <p class="text-sm opacity-90">Inventory, Production & Dispatch Management</p>
+        </div>
+        <div id="connectionStatus" class="flex items-center gap-2 text-sm">
           <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          Real-time sync active - Live updates enabled!
+          <span>Live Sync</span>
         </div>
       </div>
+    </div>
 
-      <!-- Navigation Breadcrumb -->
-      <div id="breadcrumb" class="breadcrumb mx-6 mt-6">
-        <div class="flex items-center gap-2 text-sm text-gray-600">
-          <button onclick="showHomePage()" class="text-blue-600 hover:text-blue-800 font-medium">🏠 Home</button>
-          <span id="breadcrumbPath"></span>
-        </div>
+    <!-- Navigation -->
+    <div class="border-b px-4 py-2">
+      <div class="flex flex-wrap gap-2">
+        <button onclick="showHomePage()" class="nav-pill" id="nav-home">🏠 Dashboard</button>
+        <button onclick="showPlywoodPage()" class="nav-pill" id="nav-materials">📦 Materials</button>
+        <button onclick="showDispatchPage()" class="nav-pill" id="nav-dispatch">🚚 Dispatch</button>
+        <button onclick="showInvoicePage()" class="nav-pill" id="nav-invoices">📋 Invoices</button>
+        <button onclick="showSettingsPage()" class="nav-pill" id="nav-settings">⚙️ Settings</button>
       </div>
+    </div>
 
-      <!-- Success Messages -->
-      <div id="successMessage" class="success-message hidden mx-6">
-        <div class="flex items-center">
-          <span class="text-green-600 mr-2">✅</span>
-          Data synced to cloud successfully!
-        </div>
+    <!-- Alerts -->
+    <div class="px-4 py-2">
+      <div id="successMessage" class="alert alert-success hidden">
+        <span>✅ Data synced successfully!</span>
       </div>
-
-      <!-- Low Stock Alert -->
-      <div id="lowStockAlert" class="alert hidden">
-        <div class="flex items-center">
-          <span class="text-red-500 mr-3 text-2xl pulse">⚠️</span>
-          <h3 class="text-red-800 font-bold text-lg">Low Stock Alert!</h3>
+      
+      <div id="lowStockAlert" class="alert alert-danger hidden">
+        <div class="flex items-center gap-2 mb-2">
+          <span>⚠️</span>
+          <strong>Low Stock Alert!</strong>
         </div>
-        <ul id="lowStockList" class="text-red-700 mt-3 space-y-1"></ul>
+        <ul id="lowStockList" class="text-sm"></ul>
       </div>
+    </div>
 
-      <!-- Main Content Area -->
-      <div class="p-6">
-        
-        <!-- HOME PAGE -->
-        <div id="homePage" class="page-content">
-          <!-- Stats Dashboard -->
-          <div class="stats-card">
-            <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📊 Manufacturing Overview</h3>
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="totalPlywoodSheets">0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Plywood Sheets</div>
-              </div>
-              <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="totalCabinets">0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Finished Cabinets</div>
-              </div>
-              <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="activeCategories">0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Product Lines</div>
-              </div>
-              <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="totalDispatches">0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Total Dispatches</div>
-              </div>
-              <div class="stat-item">
-                <div class="text-2xl lg:text-3xl font-bold" id="totalValue">$0</div>
-                <div class="text-blue-100 text-sm lg:text-base mt-2">Total Inventory Value</div>
-              </div>
-            </div>
+    <!-- Main Content -->
+    <div class="px-4 py-3">
+      
+      <!-- HOME PAGE -->
+      <div id="homePage" class="space-y-4">
+        <!-- Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <div class="stat-card">
+            <div class="stat-value" id="totalPlywoodSheets">0</div>
+            <div class="stat-label">Plywood Sheets</div>
           </div>
-
-          <!-- Quick Actions -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="card p-6 text-center">
-              <div class="text-4xl mb-4">📦</div>
-              <h3 class="font-bold text-lg mb-2">Plywood Materials</h3>
-              <p class="text-gray-600 mb-4">Manage raw materials and inventory</p>
-              <button onclick="showPlywoodPage()" class="btn btn-primary w-full">View Materials</button>
-            </div>
-            
-            <div class="card p-6 text-center">
-              <div class="text-4xl mb-4">🚚</div>
-              <h3 class="font-bold text-lg mb-2">Dispatch & Shipping</h3>
-              <p class="text-gray-600 mb-4">Manage dispatches and deliveries</p>
-              <button onclick="showDispatchPage()" class="btn btn-green w-full">View Dispatches</button>
-            </div>
-            
-            <div class="card p-6 text-center">
-              <div class="text-4xl mb-4">📋</div>
-              <h3 class="font-bold text-lg mb-2">Invoice History</h3>
-              <p class="text-gray-600 mb-4">Track purchases and deliveries</p>
-              <button onclick="showInvoicePage()" class="btn btn-orange w-full">View Invoices</button>
-            </div>
-            
-            <div class="card p-6 text-center">
-              <div class="text-4xl mb-4">⚙️</div>
-              <h3 class="font-bold text-lg mb-2">System Settings</h3>
-              <p class="text-gray-600 mb-4">Manage categories and configurations</p>
-              <button onclick="showSettingsPage()" class="btn btn-purple w-full">Settings</button>
-            </div>
+          <div class="stat-card">
+            <div class="stat-value" id="totalCabinets">0</div>
+            <div class="stat-label">Finished Cabinets</div>
           </div>
-
-          <!-- Categories Grid -->
-          <div class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🔨 Production Categories</h2>
-              <button onclick="showCategoryModal()" class="btn btn-primary">➕ Add Category</button>
-            </div>
-            <div id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Categories will be populated here -->
-            </div>
+          <div class="stat-card">
+            <div class="stat-value" id="activeCategories">0</div>
+            <div class="stat-label">Product Lines</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="totalDispatches">0</div>
+            <div class="stat-label">Dispatches</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-success" id="totalValue">$0</div>
+            <div class="stat-label">Total Value</div>
           </div>
         </div>
 
-        <!-- CATEGORY PAGE -->
-        <div id="categoryPage" class="page-content hidden">
-          <div class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h2 id="categoryPageTitle" class="text-xl lg:text-2xl font-bold text-gray-800"></h2>
-              <button onclick="showSubcategoryModal()" class="btn btn-primary">➕ Add Product Type</button>
-            </div>
-            
-            <!-- Category Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600" id="categoryTotalCabinets">0</div>
-                <div class="text-sm text-gray-600">Total Units</div>
-              </div>
-              <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-green-600" id="categoryProductTypes">0</div>
-                <div class="text-sm text-gray-600">Product Types</div>
-              </div>
-              <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600" id="categoryValue">$0</div>
-                <div class="text-sm text-gray-600">Category Value</div>
-              </div>
-              <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-orange-600" id="categoryAvgPrice">$0</div>
-                <div class="text-sm text-gray-600">Avg Unit Price</div>
-              </div>
-            </div>
-            
-            <!-- Subcategories List -->
-            <div id="subcategoriesList">
-              <!-- Subcategories will be populated here -->
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="card p-4 cursor-pointer" onclick="showPlywoodPage()">
+            <div class="text-center">
+              <div class="text-2xl mb-2">📦</div>
+              <h3 class="font-semibold mb-1">Materials</h3>
+              <p class="text-xs text-secondary">Manage inventory</p>
             </div>
           </div>
-        </div>
-
-        <!-- DISPATCH PAGE -->
-        <div id="dispatchPage" class="page-content hidden">
-          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🚚 Dispatch & Shipping Management</h2>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <button onclick="undoLastDispatch()" class="btn btn-red">↩️ Undo Last Dispatch</button>
-              <button onclick="exportAllDispatches()" class="btn btn-green">📄 Export All Dispatches</button>
-            </div>
-          </div>
-
-          <!-- Dispatch Stats -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="card p-4 text-center">
-              <div class="text-2xl font-bold text-blue-600" id="totalDispatchCount">0</div>
-              <div class="text-sm text-gray-600">Total Dispatches</div>
-            </div>
-            <div class="card p-4 text-center">
-              <div class="text-2xl font-bold text-yellow-600" id="pendingDispatchCount">0</div>
-              <div class="text-sm text-gray-600">Pending Delivery</div>
-            </div>
-            <div class="card p-4 text-center">
-              <div class="text-2xl font-bold text-green-600" id="completedDispatchCount">0</div>
-              <div class="text-sm text-gray-600">Completed</div>
-            </div>
-            <div class="card p-4 text-center">
-              <div class="text-2xl font-bold text-purple-600" id="dispatchedValue">$0</div>
-              <div class="text-sm text-gray-600">Total Value</div>
-            </div>
-          </div>
-
-          <!-- Dispatch List -->
-          <div id="dispatchList" class="space-y-4">
-            <!-- Dispatches will be populated here -->
-          </div>
-        </div>
-
-        <!-- PLYWOOD PAGE -->
-        <div id="plywoodPage" class="page-content hidden">
-          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📦 Plywood Materials</h2>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <button onclick="showBulkOperations()" class="btn btn-purple">📦 Bulk Operations</button>
-              <button onclick="showPlywoodForm()" class="btn btn-primary">➕ Add New Material</button>
-            </div>
-          </div>
-
-          <!-- Plywood Form -->
-          <div id="plywoodForm" class="card p-6 mb-6 hidden">
-            <h3 class="font-bold text-lg mb-4 text-gray-800">➕ Add New Plywood Material</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″)" class="input-field" required>
-              <input type="number" id="plywoodSheets" placeholder="Sheets" class="input-field" required>
-              <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input-field">
-              <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input-field" required>
-              <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field" required>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <input type="text" id="plywoodInvoice" placeholder="Invoice Number *" class="input-field" required>
-              <input type="date" id="plywoodDate" class="input-field" required>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-3 mt-6">
-              <button onclick="addPlywood()" class="btn btn-green flex-1">✅ Add Material</button>
-              <button onclick="hidePlywoodForm()" class="btn btn-gray flex-1">❌ Cancel</button>
-            </div>
-          </div>
-
-          <!-- Plywood List -->
-          <div id="plywoodList" class="space-y-4"></div>
-        </div>
-
-        <!-- INVOICE PAGE -->
-        <div id="invoicePage" class="page-content hidden">
-          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📋 Invoice History</h2>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <input type="text" id="invoiceSearch" placeholder="Search invoices..." class="input-field" onkeyup="filterInvoices()">
-              <button onclick="exportInvoices()" class="btn btn-green">📄 Export CSV</button>
-            </div>
-          </div>
-          <div class="card p-6">
-            <div id="invoiceList">
-              <div class="text-center text-gray-500 py-8">
-                📋 No invoice records found.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SETTINGS PAGE -->
-        <div id="settingsPage" class="page-content hidden">
-          <h2 class="text-xl lg:text-2xl font-bold text-gray-800 mb-6">⚙️ System Settings</h2>
           
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Categories Management -->
-            <div class="card p-6">
-              <h3 class="font-bold text-lg mb-4">📂 Categories Management</h3>
-              <div id="settingsCategoriesList" class="space-y-3 max-h-60 overflow-y-auto mb-4">
-                <!-- Categories will be listed here -->
-              </div>
-              <button onclick="showCategoryModal()" class="btn btn-primary w-full">Add New Category</button>
+          <div class="card p-4 cursor-pointer" onclick="showDispatchPage()">
+            <div class="text-center">
+              <div class="text-2xl mb-2">🚚</div>
+              <h3 class="font-semibold mb-1">Dispatch</h3>
+              <p class="text-xs text-secondary">Ship products</p>
             </div>
-
-            <!-- System Info -->
-            <div class="card p-6">
-              <h3 class="font-bold text-lg mb-4">📊 System Information</h3>
-              <div class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                  <span>Total Categories:</span>
-                  <span id="totalCategoriesCount">0</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Total Product Types:</span>
-                  <span id="totalSubcategoriesCount">0</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Total Materials:</span>
-                  <span id="totalMaterialsCount">0</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Total Invoices:</span>
-                  <span id="totalInvoicesCount">0</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Total Dispatches:</span>
-                  <span id="totalDispatchesCount">0</span>
-                </div>
-              </div>
+          </div>
+          
+          <div class="card p-4 cursor-pointer" onclick="showInvoicePage()">
+            <div class="text-center">
+              <div class="text-2xl mb-2">📋</div>
+              <h3 class="font-semibold mb-1">Invoices</h3>
+              <p class="text-xs text-secondary">Track purchases</p>
+            </div>
+          </div>
+          
+          <div class="card p-4 cursor-pointer" onclick="showSettingsPage()">
+            <div class="text-center">
+              <div class="text-2xl mb-2">⚙️</div>
+              <h3 class="font-semibold mb-1">Settings</h3>
+              <p class="text-xs text-secondary">System config</p>
             </div>
           </div>
         </div>
 
+        <!-- Categories -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Production Categories</h2>
+            <button onclick="showCategoryModal()" class="btn btn-primary btn-sm">+ Add Category</button>
+          </div>
+          <div id="categoriesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Categories will be populated here -->
+          </div>
+        </div>
       </div>
+
+      <!-- CATEGORY PAGE -->
+      <div id="categoryPage" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 id="categoryPageTitle" class="text-lg font-semibold"></h2>
+          <button onclick="showSubcategoryModal()" class="btn btn-primary btn-sm">+ Add Product</button>
+        </div>
+        
+        <!-- Category Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="stat-card">
+            <div class="stat-value" id="categoryTotalCabinets">0</div>
+            <div class="stat-label">Total Units</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="categoryProductTypes">0</div>
+            <div class="stat-label">Product Types</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-success" id="categoryValue">$0</div>
+            <div class="stat-label">Value</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-warning" id="categoryAvgPrice">$0</div>
+            <div class="stat-label">Avg Price</div>
+          </div>
+        </div>
+        
+        <!-- Products List -->
+        <div id="subcategoriesList" class="space-y-3">
+          <!-- Products will be populated here -->
+        </div>
+      </div>
+
+      <!-- DISPATCH PAGE -->
+      <div id="dispatchPage" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Dispatch Management</h2>
+          <div class="flex gap-2">
+            <button onclick="undoLastDispatch()" class="btn btn-danger btn-sm">↩️ Undo Last</button>
+            <button onclick="exportAllDispatches()" class="btn btn-success btn-sm">📄 Export</button>
+          </div>
+        </div>
+
+        <!-- Dispatch Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="stat-card">
+            <div class="stat-value" id="totalDispatchCount">0</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-warning" id="pendingDispatchCount">0</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-success" id="completedDispatchCount">0</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value text-primary" id="dispatchedValue">$0</div>
+            <div class="stat-label">Total Value</div>
+          </div>
+        </div>
+
+        <!-- Dispatch List -->
+        <div id="dispatchList" class="space-y-3">
+          <!-- Dispatches will be populated here -->
+        </div>
+      </div>
+
+      <!-- PLYWOOD PAGE -->
+      <div id="plywoodPage" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Materials Inventory</h2>
+          <div class="flex gap-2">
+            <button onclick="showBulkOperations()" class="btn btn-secondary btn-sm">📦 Bulk</button>
+            <button onclick="showPlywoodForm()" class="btn btn-primary btn-sm">+ Add Material</button>
+          </div>
+        </div>
+
+        <!-- Add Form -->
+        <div id="plywoodForm" class="card p-4 hidden">
+          <h3 class="font-semibold mb-3">Add New Material</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+            <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″)" class="input" required>
+            <input type="number" id="plywoodSheets" placeholder="Sheets" class="input" required>
+            <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input">
+            <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input" required>
+            <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input" required>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <input type="text" id="plywoodInvoice" placeholder="Invoice Number" class="input" required>
+            <input type="date" id="plywoodDate" class="input" required>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="addPlywood()" class="btn btn-success">✅ Add</button>
+            <button onclick="hidePlywoodForm()" class="btn btn-outline">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Materials List -->
+        <div id="plywoodList" class="space-y-3"></div>
+      </div>
+
+      <!-- INVOICE PAGE -->
+      <div id="invoicePage" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Invoice History</h2>
+          <div class="flex gap-2">
+            <input type="text" id="invoiceSearch" placeholder="Search..." class="input" style="width: 200px;" onkeyup="filterInvoices()">
+            <button onclick="exportInvoices()" class="btn btn-success btn-sm">📄 Export</button>
+          </div>
+        </div>
+        <div class="card p-4">
+          <div id="invoiceList">
+            <div class="text-center text-secondary py-8">
+              📋 No invoices found.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div id="settingsPage" class="space-y-4 hidden">
+        <h2 class="text-lg font-semibold">System Settings</h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="card p-4">
+            <h3 class="font-semibold mb-3">Categories</h3>
+            <div id="settingsCategoriesList" class="space-y-2 mb-4" style="max-height: 200px; overflow-y: auto;">
+              <!-- Categories will be listed here -->
+            </div>
+            <button onclick="showCategoryModal()" class="btn btn-primary btn-sm w-full">Add Category</button>
+          </div>
+
+          <div class="card p-4">
+            <h3 class="font-semibold mb-3">System Info</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Categories:</span>
+                <span id="totalCategoriesCount">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Product Types:</span>
+                <span id="totalSubcategoriesCount">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Materials:</span>
+                <span id="totalMaterialsCount">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Invoices:</span>
+                <span id="totalInvoicesCount">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Dispatches:</span>
+                <span id="totalDispatchesCount">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ADD CATEGORY MODAL -->
+  <!-- MODALS -->
+  
+  <!-- Add Category Modal -->
   <div id="categoryModal" class="modal hidden">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6 text-center">➕ Add New Category</h3>
+      <h3 class="text-lg font-semibold mb-4">Add New Category</h3>
       
-      <div class="space-y-4">
+      <div class="space-y-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Category Name:</label>
-          <input type="text" id="newCategoryName" placeholder="e.g., Base Cabinets" class="input-field">
+          <label class="block text-sm font-medium mb-1">Category Name:</label>
+          <input type="text" id="newCategoryName" placeholder="e.g., Base Cabinets" class="input">
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
-          <input type="text" id="newCategoryIcon" placeholder="🏠" class="input-field">
+          <label class="block text-sm font-medium mb-1">Icon:</label>
+          <input type="text" id="newCategoryIcon" placeholder="🏠" class="input">
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
-          <textarea id="newCategoryDescription" placeholder="Brief description of this category..." class="input-field" rows="3"></textarea>
+          <label class="block text-sm font-medium mb-1">Description:</label>
+          <textarea id="newCategoryDescription" placeholder="Brief description..." class="input" rows="3"></textarea>
         </div>
       </div>
 
-      <div class="flex gap-3 mt-6">
-        <button onclick="addCategory()" class="btn btn-green flex-1">✅ Create Category</button>
-        <button onclick="closeCategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      <div class="flex gap-2 mt-4">
+        <button onclick="addCategory()" class="btn btn-success flex-1">Create</button>
+        <button onclick="closeCategoryModal()" class="btn btn-outline flex-1">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- ADD SUBCATEGORY/PRODUCT TYPE MODAL -->
+  <!-- Add Product Modal -->
   <div id="subcategoryModal" class="modal hidden">
-    <div class="modal-content-large">
-      <h3 class="text-xl font-bold mb-6 text-center">➕ Add New Product Type</h3>
+    <div class="modal-content modal-content-lg">
+      <h3 class="text-lg font-semibold mb-4">Add New Product Type</h3>
       
-      <!-- Basic Product Info -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Product Name:</label>
-          <input type="text" id="subcategoryName" placeholder="e.g., 24\" Standard Base" class="input-field" required>
+          <label class="block text-sm font-medium mb-1">Product Name:</label>
+          <input type="text" id="subcategoryName" placeholder="e.g., 24\" Standard Base" class="input">
         </div>
-        
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
-          <input type="text" id="subcategoryIcon" placeholder="📦" class="input-field">
+          <label class="block text-sm font-medium mb-1">Icon:</label>
+          <input type="text" id="subcategoryIcon" placeholder="📦" class="input">
         </div>
       </div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
-        <textarea id="subcategoryDescription" placeholder="Product description..." class="input-field" rows="2"></textarea>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Description:</label>
+        <textarea id="subcategoryDescription" placeholder="Product description..." class="input" rows="2"></textarea>
       </div>
 
-      <!-- Cabinet Configuration -->
-      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-        <h4 class="font-semibold text-blue-800 mb-3">🔨 Cabinet Configuration</h4>
+      <div class="border rounded-lg p-3 mb-4">
+        <h4 class="font-semibold text-primary mb-3">Configuration</h4>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Default Materials:</label>
-            <input type="text" id="subcategoryMaterials" placeholder="e.g., Oak plywood, soft-close hinges" class="input-field">
+            <label class="block text-sm font-medium mb-1">Materials:</label>
+            <input type="text" id="subcategoryMaterials" placeholder="e.g., Oak plywood, hinges" class="input">
           </div>
-          
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Price per Unit ($):</label>
-            <input type="number" id="subcategoryPrice" placeholder="350.00" step="0.01" class="input-field">
+            <label class="block text-sm font-medium mb-1">Price per Unit ($):</label>
+            <input type="number" id="subcategoryPrice" placeholder="350.00" step="0.01" class="input">
           </div>
         </div>
 
-        <!-- Material Requirements -->
-        <h5 class="font-medium text-blue-700 mb-3">📦 Material Requirements (per cabinet)</h5>
+        <h5 class="font-medium text-sm mb-2">Material Requirements (per cabinet)</h5>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Plywood Type:</label>
-            <select id="subcategoryPlywoodType" class="input-field">
-              <option value="">Select Plywood Type</option>
+            <label class="block text-sm font-medium mb-1">Plywood Type:</label>
+            <select id="subcategoryPlywoodType" class="input">
+              <option value="">Select Plywood</option>
             </select>
             <input type="number" id="subcategoryPlywoodSheets" placeholder="Sheets per cabinet" 
-                   step="0.1" class="input-field mt-2">
+                   step="0.1" class="input mt-2">
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">MDF Type (for doors):</label>
-            <select id="subcategoryMDFType" class="input-field">
-              <option value="">Select MDF Type</option>
+            <label class="block text-sm font-medium mb-1">MDF Type:</label>
+            <select id="subcategoryMDFType" class="input">
+              <option value="">Select MDF</option>
             </select>
             <input type="number" id="subcategoryMDFSheets" placeholder="Sheets per cabinet" 
-                   step="0.1" class="input-field mt-2">
+                   step="0.1" class="input mt-2">
           </div>
         </div>
       </div>
 
-      <div class="flex gap-3">
-        <button onclick="addSubcategory()" class="btn btn-green flex-1">✅ Create Product Type</button>
-        <button onclick="closeSubcategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      <div class="flex gap-2">
+        <button onclick="addSubcategory()" class="btn btn-success flex-1">Create Product</button>
+        <button onclick="closeSubcategoryModal()" class="btn btn-outline flex-1">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- DISPATCH ADDRESS MODAL -->
+  <!-- Dispatch Modal -->
   <div id="dispatchModal" class="modal hidden">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6 text-center">🚚 Dispatch Cabinet</h3>
+      <h3 class="text-lg font-semibold mb-4">Dispatch Cabinet</h3>
       
-      <div id="dispatchDetails" class="mb-6">
+      <div id="dispatchDetails" class="mb-4">
         <!-- Product details will be shown here -->
       </div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Dispatch:</label>
-        <input type="number" id="dispatchQuantity" placeholder="1" min="1" class="input-field">
+      <div class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium mb-1">Quantity:</label>
+          <input type="number" id="dispatchQuantity" placeholder="1" min="1" class="input">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Destination Address:</label>
+          <textarea id="dispatchAddress" placeholder="Complete delivery address..." class="input" rows="3"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Expected Delivery:</label>
+          <input type="date" id="dispatchDeliveryDate" class="input">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Notes:</label>
+          <textarea id="dispatchNotes" placeholder="Special instructions..." class="input" rows="2"></textarea>
+        </div>
       </div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Destination Address: *</label>
-        <textarea id="dispatchAddress" placeholder="Enter complete delivery address..." class="input-field" rows="3" required></textarea>
-      </div>
-
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Expected Delivery Date:</label>
-        <input type="date" id="dispatchDeliveryDate" class="input-field">
-      </div>
-
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional):</label>
-        <textarea id="dispatchNotes" placeholder="Special delivery instructions, contact info, etc..." class="input-field" rows="2"></textarea>
-      </div>
-
-      <div class="flex gap-3">
-        <button onclick="processDispatch()" class="btn btn-green flex-1">🚚 Dispatch Cabinet</button>
-        <button onclick="closeDispatchModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      <div class="flex gap-2 mt-4">
+        <button onclick="processDispatch()" class="btn btn-success flex-1">🚚 Dispatch</button>
+        <button onclick="closeDispatchModal()" class="btn btn-outline flex-1">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- MANUFACTURING MODAL -->
+  <!-- Manufacturing Modal -->
   <div id="manufacturingModal" class="modal hidden">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6 text-center">🔨 Manufacturing</h3>
+      <h3 class="text-lg font-semibold mb-4">Manufacturing</h3>
       
-      <div id="manufacturingDetails" class="mb-6">
+      <div id="manufacturingDetails" class="mb-4">
         <!-- Product details will be shown here -->
       </div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Manufacture:</label>
-        <input type="number" id="manufacturingQuantity" placeholder="1" min="1" class="input-field">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Quantity:</label>
+        <input type="number" id="manufacturingQuantity" placeholder="1" min="1" class="input">
       </div>
 
-      <div id="materialRequirements" class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 hidden">
-        <h4 class="font-semibold text-blue-800 mb-2">📦 Material Requirements:</h4>
+      <div id="materialRequirements" class="border rounded-lg p-3 mb-4 hidden">
+        <h4 class="font-semibold text-primary mb-2">Material Requirements:</h4>
         <div id="materialRequirementsList"></div>
       </div>
 
       <div id="materialWarnings" class="hidden mb-4"></div>
 
-      <div class="flex gap-3">
-        <button onclick="processManufacturing()" class="btn btn-green flex-1">✅ Start Manufacturing</button>
-        <button onclick="closeManufacturingModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      <div class="flex gap-2">
+        <button onclick="processManufacturing()" class="btn btn-success flex-1">🔨 Manufacture</button>
+        <button onclick="closeManufacturingModal()" class="btn btn-outline flex-1">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- BULK OPERATIONS MODAL -->
+  <!-- Bulk Operations Modal -->
   <div id="bulkModal" class="modal hidden">
-    <div class="modal-content-large">
-      <h3 class="text-xl lg:text-2xl font-bold mb-6 text-center">📦 Bulk Operations</h3>
+    <div class="modal-content modal-content-lg">
+      <h3 class="text-lg font-semibold mb-4">Bulk Operations</h3>
       
-      <div class="mb-6">
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <button onclick="setBulkMode('add')" id="bulkAddBtn" class="btn btn-green">➕ Bulk Add</button>
-          <button onclick="setBulkMode('remove')" id="bulkRemoveBtn" class="btn btn-red">➖ Bulk Remove</button>
+      <div class="mb-4">
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <button onclick="setBulkMode('add')" id="bulkAddBtn" class="btn btn-success">+ Bulk Add</button>
+          <button onclick="setBulkMode('remove')" id="bulkRemoveBtn" class="btn btn-danger">- Bulk Remove</button>
         </div>
         
-        <div id="bulkInvoiceSection" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <input type="text" id="bulkInvoice" placeholder="Invoice Number (Required for Add)" class="input-field" required>
-          <input type="date" id="bulkDate" class="input-field" required>
+        <div id="bulkInvoiceSection" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input type="text" id="bulkInvoice" placeholder="Invoice Number" class="input">
+          <input type="date" id="bulkDate" class="input">
         </div>
       </div>
 
-      <div id="bulkItemsList" class="space-y-3 mb-6 max-h-60 overflow-y-auto">
+      <div id="bulkItemsList" class="space-y-2 mb-4" style="max-height: 300px; overflow-y: auto;">
         <!-- Bulk items will be populated here -->
       </div>
 
-      <div class="flex gap-3">
-        <button onclick="processBulkOperation()" class="btn btn-primary flex-1">✅ Process Bulk Operation</button>
-        <button onclick="closeBulkModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      <div class="flex gap-2">
+        <button onclick="processBulkOperation()" class="btn btn-primary flex-1">Process</button>
+        <button onclick="closeBulkModal()" class="btn btn-outline flex-1">Cancel</button>
       </div>
     </div>
   </div>
@@ -860,23 +987,23 @@
       }
     }
 
-    function showSuccess(message = 'Data synced to cloud successfully!') {
+    function showSuccess(message = 'Data synced successfully!') {
       const msg = document.getElementById('successMessage');
-      msg.innerHTML = `
-        <div class="flex items-center">
-          <span class="text-green-600 mr-2">✅</span>
-          ${message}
-        </div>
-      `;
+      msg.innerHTML = '<span>✅ ' + message + '</span>';
       msg.classList.remove('hidden');
       setTimeout(() => msg.classList.add('hidden'), 3000);
     }
 
-    // Page Navigation Functions
+    // Navigation
+    function setActiveNav(navId) {
+      document.querySelectorAll('.nav-pill').forEach(pill => pill.classList.remove('active'));
+      document.getElementById(navId).classList.add('active');
+    }
+
     function showHomePage() {
       hideAllPages();
       document.getElementById('homePage').classList.remove('hidden');
-      updateBreadcrumb('');
+      setActiveNav('nav-home');
       renderCategoriesGrid();
       updateStats();
     }
@@ -887,8 +1014,7 @@
       const category = categories.find(c => c.id === categoryId);
       
       document.getElementById('categoryPage').classList.remove('hidden');
-      document.getElementById('categoryPageTitle').textContent = `${category.icon} ${category.name}`;
-      updateBreadcrumb(`> ${category.icon} ${category.name}`);
+      document.getElementById('categoryPageTitle').textContent = category.icon + ' ' + category.name;
       
       renderSubcategoriesList();
       updateCategoryStats();
@@ -897,14 +1023,14 @@
     function showPlywoodPage() {
       hideAllPages();
       document.getElementById('plywoodPage').classList.remove('hidden');
-      updateBreadcrumb('> 📦 Plywood Materials');
+      setActiveNav('nav-materials');
       renderPlywood();
     }
 
     function showDispatchPage() {
       hideAllPages();
       document.getElementById('dispatchPage').classList.remove('hidden');
-      updateBreadcrumb('> 🚚 Dispatch & Shipping');
+      setActiveNav('nav-dispatch');
       renderDispatches();
       updateDispatchStats();
     }
@@ -912,14 +1038,14 @@
     function showInvoicePage() {
       hideAllPages();
       document.getElementById('invoicePage').classList.remove('hidden');
-      updateBreadcrumb('> 📋 Invoice History');
+      setActiveNav('nav-invoices');
       renderInvoices();
     }
 
     function showSettingsPage() {
       hideAllPages();
       document.getElementById('settingsPage').classList.remove('hidden');
-      updateBreadcrumb('> ⚙️ Settings');
+      setActiveNav('nav-settings');
       renderSettingsPage();
     }
 
@@ -930,202 +1056,20 @@
       });
     }
 
-    function updateBreadcrumb(path) {
-      document.getElementById('breadcrumbPath').textContent = path;
-    }
-
-    // Data Loading and Real-time Setup
-    function setupRealtimeListeners() {
-      if (!db) {
-        loadSampleData();
-        return;
-      }
-
-      try {
-        db.collection('categories').onSnapshot((snapshot) => {
-          categories = [];
-          snapshot.forEach(doc => categories.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderCategoriesGrid();
-          updateStats();
-          populateMaterialSelects();
-          console.log('📂 Categories updated in real-time');
-        });
-
-        db.collection('subcategories').onSnapshot((snapshot) => {
-          subcategories = [];
-          snapshot.forEach(doc => subcategories.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          if (currentCategoryId) {
-            renderSubcategoriesList();
-            updateCategoryStats();
-          }
-          console.log('📄 Subcategories updated in real-time');
-        });
-
-        db.collection('plywood').onSnapshot((snapshot) => {
-          plywood = [];
-          snapshot.forEach(doc => plywood.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderPlywood();
-          checkLowStock();
-          updateStats();
-          populateMaterialSelects();
-          console.log('📦 Plywood updated in real-time');
-        });
-
-        db.collection('cabinets').onSnapshot((snapshot) => {
-          cabinets = [];
-          snapshot.forEach(doc => cabinets.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          updateStats();
-          if (currentCategoryId) {
-            updateCategoryStats();
-          }
-          console.log('🔨 Cabinets updated in real-time');
-        });
-
-        db.collection('invoices').onSnapshot((snapshot) => {
-          invoices = [];
-          snapshot.forEach(doc => invoices.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderInvoices();
-          updateStats();
-          console.log('📋 Invoices updated in real-time');
-        });
-
-        db.collection('dispatches').onSnapshot((snapshot) => {
-          dispatches = [];
-          snapshot.forEach(doc => dispatches.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          }));
-          renderDispatches();
-          updateDispatchStats();
-          updateStats();
-          console.log('🚚 Dispatches updated in real-time');
-        });
-
-      } catch (e) {
-        console.log('Real-time listeners failed, loading sample data');
-        loadSampleData();
-      }
-    }
-
-    async function loadData() {
-      try {
-        if (!db) {
-          loadSampleData();
-          return;
-        }
-
-        const [categoriesSnap, subcategoriesSnap, plywoodSnap, cabinetsSnap, invoicesSnap, dispatchesSnap] = await Promise.all([
-          db.collection('categories').get(),
-          db.collection('subcategories').get(),
-          db.collection('plywood').get(),
-          db.collection('cabinets').get(),
-          db.collection('invoices').get(),
-          db.collection('dispatches').get()
-        ]);
-
-        categories = [];
-        categoriesSnap.forEach(doc => categories.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        subcategories = [];
-        subcategoriesSnap.forEach(doc => subcategories.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        plywood = [];
-        plywoodSnap.forEach(doc => plywood.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        cabinets = [];
-        cabinetsSnap.forEach(doc => cabinets.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        invoices = [];
-        invoicesSnap.forEach(doc => invoices.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        dispatches = [];
-        dispatchesSnap.forEach(doc => dispatches.push({
-          firebaseId: doc.id,
-          ...doc.data()
-        }));
-
-        if (categories.length === 0) {
-          await addSampleData();
-        }
-        
-        renderCategoriesGrid();
-        updateStats();
-        
-        setTimeout(() => {
-          setupRealtimeListeners();
-        }, 1000);
-        
-      } catch (e) {
-        console.log('Loading sample data due to connection issue');
-        loadSampleData();
-      }
-    }
-
+    // Sample Data
     function loadSampleData() {
       categories = [
         {
           id: 1,
           name: 'Base Cabinets',
           icon: '🏠',
-          description: 'Floor-mounted cabinets for kitchens and bathrooms'
+          description: 'Floor-mounted cabinets'
         },
         {
           id: 2,
           name: 'Wall Cabinets',
           icon: '🔲',
-          description: 'Wall-mounted cabinets for storage'
-        },
-        {
-          id: 3,
-          name: 'Tall Cabinets',
-          icon: '🏢',
-          description: 'Full-height pantry and utility cabinets'
-        }
-      ];
-
-      subcategories = [
-        {
-          id: 1,
-          categoryId: 1,
-          name: '24" Standard Base',
-          icon: '📦',
-          description: 'Standard 24" deep base cabinet',
-          materials: 'Oak plywood, soft-close hinges',
-          pricePerUnit: 350.00,
-          materialRequirements: {
-            plywood: { id: 1, sheetsPerUnit: 1.5, type: 'Oak 3/4"' },
-            mdf: { id: 2, sheetsPerUnit: 0.5, type: 'MDF 3/4"' }
-          }
+          description: 'Wall-mounted storage'
         }
       ];
 
@@ -1137,535 +1081,16 @@
           minStock: 10,
           supplier: 'Wood Co',
           cost: 45.00
-        },
-        {
-          id: 2,
-          type: 'MDF 3/4"',
-          sheets: 15,
-          minStock: 8,
-          supplier: 'MDF Supply',
-          cost: 32.00
         }
       ];
 
+      subcategories = [];
       cabinets = [];
       invoices = [];
       dispatches = [];
       
       renderCategoriesGrid();
       updateStats();
-    }
-
-    async function addSampleData() {
-      const sampleCategories = [
-        {
-          id: 1,
-          name: 'Base Cabinets',
-          icon: '🏠',
-          description: 'Floor-mounted cabinets for kitchens and bathrooms'
-        },
-        {
-          id: 2,
-          name: 'Wall Cabinets',
-          icon: '🔲',
-          description: 'Wall-mounted cabinets for storage'
-        },
-        {
-          id: 3,
-          name: 'Tall Cabinets',
-          icon: '🏢',
-          description: 'Full-height pantry and utility cabinets'
-        }
-      ];
-
-      const samplePlywood = [
-        {
-          id: 1,
-          type: 'Oak 3/4"',
-          sheets: 25,
-          minStock: 10,
-          supplier: 'Wood Co',
-          cost: 45.00
-        },
-        {
-          id: 2,
-          type: 'MDF 3/4"',
-          sheets: 15,
-          minStock: 8,
-          supplier: 'MDF Supply',
-          cost: 32.00
-        }
-      ];
-
-      for (const item of sampleCategories) await saveData('categories', item);
-      for (const item of samplePlywood) await saveData('plywood', item);
-      
-      setTimeout(loadData, 1000);
-    }
-
-    // Dispatch Functions
-    function showDispatchModal(subcategoryId) {
-      currentDispatchSubcategoryId = subcategoryId;
-      const subcategory = subcategories.find(s => s.id === subcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      const cabinet = cabinets.find(c => c.subcategoryId === subcategoryId);
-      
-      if (!cabinet || cabinet.quantity <= 0) {
-        alert('❌ No cabinets available for dispatch!');
-        return;
-      }
-      
-      document.getElementById('dispatchModal').classList.remove('hidden');
-      
-      const details = document.getElementById('dispatchDetails');
-      details.innerHTML = `
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-          <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
-          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
-          <p class="text-blue-700 text-sm">Available: ${cabinet.quantity} units</p>
-          <p class="text-blue-700 text-sm">Price: $${subcategory.pricePerUnit.toFixed(2)} per unit</p>
-        </div>
-      `;
-      
-      document.getElementById('dispatchQuantity').value = '1';
-      document.getElementById('dispatchQuantity').max = cabinet.quantity;
-      document.getElementById('dispatchAddress').value = '';
-      document.getElementById('dispatchDeliveryDate').value = '';
-      document.getElementById('dispatchNotes').value = '';
-      
-      // Set default delivery date to 3 days from now
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 3);
-      document.getElementById('dispatchDeliveryDate').value = defaultDate.toISOString().split('T')[0];
-    }
-
-    function closeDispatchModal() {
-      document.getElementById('dispatchModal').classList.add('hidden');
-      currentDispatchSubcategoryId = null;
-    }
-
-    async function processDispatch() {
-      const quantity = parseInt(document.getElementById('dispatchQuantity').value) || 1;
-      const address = document.getElementById('dispatchAddress').value.trim();
-      const deliveryDate = document.getElementById('dispatchDeliveryDate').value;
-      const notes = document.getElementById('dispatchNotes').value.trim();
-      
-      if (!address) {
-        alert('❌ Please enter a destination address');
-        return;
-      }
-      
-      if (quantity <= 0) {
-        alert('❌ Please enter a valid quantity');
-        return;
-      }
-
-      const subcategory = subcategories.find(s => s.id === currentDispatchSubcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      const cabinet = cabinets.find(c => c.subcategoryId === currentDispatchSubcategoryId);
-      
-      if (quantity > cabinet.quantity) {
-        alert(`❌ Insufficient cabinets available!\nRequested: ${quantity}\nAvailable: ${cabinet.quantity}`);
-        return;
-      }
-
-      // Check if there's an existing dispatch to the same address (within last 24 hours)
-      const addressKey = address.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const recentDispatch = dispatches.find(d => {
-        const dispatchAddressKey = d.address.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const dispatchTime = new Date(d.createdAt);
-        const timeDiff = Date.now() - dispatchTime.getTime();
-        return dispatchAddressKey === addressKey && timeDiff < 24 * 60 * 60 * 1000; // 24 hours
-      });
-
-      let dispatchId;
-      let folderName;
-
-      if (recentDispatch) {
-        // Add to existing dispatch
-        dispatchId = recentDispatch.id;
-        folderName = recentDispatch.folderName;
-        
-        // Update existing dispatch
-        const updatedItems = [...recentDispatch.items, {
-          subcategoryId: currentDispatchSubcategoryId,
-          categoryId: subcategory.categoryId,
-          productName: subcategory.name,
-          categoryName: category.name,
-          quantity: quantity,
-          pricePerUnit: subcategory.pricePerUnit,
-          totalValue: quantity * subcategory.pricePerUnit
-        }];
-        
-        const updatedTotalValue = updatedItems.reduce((sum, item) => sum + item.totalValue, 0);
-        const updatedTotalQuantity = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-        
-        await updateData('dispatches', recentDispatch.firebaseId, {
-          items: updatedItems,
-          totalValue: updatedTotalValue,
-          totalQuantity: updatedTotalQuantity,
-          lastUpdated: new Date().toISOString()
-        });
-        
-        showSuccess(`Added to existing dispatch #${dispatchId} (${folderName})`);
-      } else {
-        // Create new dispatch
-        dispatchId = Date.now();
-        folderName = `DISPATCH_${dispatchId}_${addressKey.substring(0, 10).toUpperCase()}`;
-        
-        const dispatch = {
-          id: dispatchId,
-          folderName: folderName,
-          address: address,
-          expectedDeliveryDate: deliveryDate,
-          notes: notes,
-          status: 'pending',
-          items: [{
-            subcategoryId: currentDispatchSubcategoryId,
-            categoryId: subcategory.categoryId,
-            productName: subcategory.name,
-            categoryName: category.name,
-            quantity: quantity,
-            pricePerUnit: subcategory.pricePerUnit,
-            totalValue: quantity * subcategory.pricePerUnit
-          }],
-          totalValue: quantity * subcategory.pricePerUnit,
-          totalQuantity: quantity,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        };
-        
-        await saveData('dispatches', dispatch);
-        showSuccess(`New dispatch created: #${dispatchId} (${folderName})`);
-      }
-
-      // Update cabinet inventory
-      const newQuantity = cabinet.quantity - quantity;
-      await updateData('cabinets', cabinet.firebaseId, {
-        quantity: newQuantity,
-        lastDispatch: new Date().toISOString()
-      });
-
-      closeDispatchModal();
-    }
-
-    function renderDispatches() {
-      const list = document.getElementById('dispatchList');
-      if (!list) return;
-      
-      list.innerHTML = '';
-      
-      if (dispatches.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            🚚 No dispatches found.
-          </div>
-        `;
-        return;
-      }
-      
-      const sortedDispatches = [...dispatches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      sortedDispatches.forEach(dispatch => {
-        const div = document.createElement('div');
-        const statusClass = dispatch.status === 'completed' ? 'completed-dispatch' : 'pending-dispatch';
-        div.className = `dispatch-card ${statusClass}`;
-        
-        const statusIcon = dispatch.status === 'completed' ? '✅' : '🚛';
-        const statusText = dispatch.status === 'completed' ? 'Delivered' : 'Pending Delivery';
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-start gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-3">
-                <h3 class="font-bold text-lg text-gray-800">🚚 Dispatch #${dispatch.id}</h3>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${dispatch.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                  ${statusIcon} ${statusText}
-                </span>
-                <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-mono">${dispatch.folderName}</span>
-              </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
-                <div><strong>📍 Address:</strong> ${dispatch.address}</div>
-                <div><strong>📅 Expected Delivery:</strong> ${dispatch.expectedDeliveryDate ? new Date(dispatch.expectedDeliveryDate).toLocaleDateString() : 'Not set'}</div>
-                <div><strong>📦 Total Items:</strong> ${dispatch.totalQuantity} units</div>
-                <div><strong>💰 Total Value:</strong> $${dispatch.totalValue.toFixed(2)}</div>
-              </div>
-              
-              ${dispatch.notes ? `<p class="text-sm text-gray-600 mb-3"><strong>📝 Notes:</strong> ${dispatch.notes}</p>` : ''}
-              
-              <div class="mb-3">
-                <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  ${dispatch.items.map(item => `
-                    <div class="text-xs bg-white bg-opacity-50 p-2 rounded border">
-                      <span class="font-semibold">${item.productName}</span><br>
-                      <span class="text-gray-600">${item.categoryName} • Qty: ${item.quantity} • $${item.totalValue.toFixed(2)}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex lg:flex-col gap-2">
-              <button onclick="generatePackingSlip(${dispatch.id})" class="btn btn-primary text-sm">📄 Packing Slip</button>
-              <button onclick="exportDispatchToPDF(${dispatch.id})" class="btn btn-green text-sm">📋 Export PDF</button>
-              ${dispatch.status === 'pending' ? `
-                <button onclick="markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
-              ` : ''}
-              <button onclick="deleteDispatch(${dispatch.id})" class="btn btn-red text-sm">🗑️ Delete</button>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
-    }
-
-    function updateDispatchStats() {
-      try {
-        const totalCount = dispatches.length;
-        const pendingCount = dispatches.filter(d => d.status === 'pending').length;
-        const completedCount = dispatches.filter(d => d.status === 'completed').length;
-        const totalValue = dispatches.reduce((sum, d) => sum + (d.totalValue || 0), 0);
-
-        document.getElementById('totalDispatchCount').textContent = totalCount.toString();
-        document.getElementById('pendingDispatchCount').textContent = pendingCount.toString();
-        document.getElementById('completedDispatchCount').textContent = completedCount.toString();
-        document.getElementById('dispatchedValue').textContent = `$${Math.round(totalValue).toLocaleString()}`;
-
-      } catch (error) {
-        console.error('Error updating dispatch stats:', error);
-      }
-    }
-
-    async function markDelivered(dispatchId) {
-      const dispatch = dispatches.find(d => d.id === dispatchId);
-      if (dispatch && dispatch.firebaseId) {
-        await updateData('dispatches', dispatch.firebaseId, {
-          status: 'completed',
-          deliveredAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        });
-        showSuccess(`Dispatch #${dispatchId} marked as delivered!`);
-      }
-    }
-
-    async function deleteDispatch(dispatchId) {
-      if (!confirm('Are you sure you want to delete this dispatch? This will return the items to inventory.')) {
-        return;
-      }
-      
-      const dispatch = dispatches.find(d => d.id === dispatchId);
-      if (dispatch && dispatch.firebaseId) {
-        // Return items to inventory
-        for (const item of dispatch.items) {
-          const cabinet = cabinets.find(c => c.subcategoryId === item.subcategoryId);
-          if (cabinet && cabinet.firebaseId) {
-            const newQuantity = cabinet.quantity + item.quantity;
-            await updateData('cabinets', cabinet.firebaseId, {
-              quantity: newQuantity,
-              lastUpdated: new Date().toISOString()
-            });
-          }
-        }
-        
-        await deleteData('dispatches', dispatch.firebaseId);
-        showSuccess(`Dispatch #${dispatchId} deleted and ${dispatch.totalQuantity} items returned to inventory!`);
-      }
-    }
-
-    async function undoLastDispatch() {
-      if (dispatches.length === 0) {
-        alert('❌ No dispatches to undo');
-        return;
-      }
-      
-      const lastDispatch = dispatches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
-      
-      if (confirm(`Undo last dispatch #${lastDispatch.id}?\n\nThis will return ${lastDispatch.totalQuantity} items to inventory.`)) {
-        await deleteDispatch(lastDispatch.id);
-      }
-    }
-
-    // PDF and Export Functions
-    function generatePackingSlip(dispatchId) {
-      const dispatch = dispatches.find(d => d.id === dispatchId);
-      if (!dispatch) return;
-      
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(20);
-      doc.text('PACKING SLIP', 20, 30);
-      
-      doc.setFontSize(12);
-      doc.text(`Dispatch #${dispatch.id}`, 20, 45);
-      doc.text(`Folder: ${dispatch.folderName}`, 20, 55);
-      doc.text(`Date: ${new Date(dispatch.createdAt).toLocaleDateString()}`, 20, 65);
-      
-      // Delivery Information
-      doc.setFontSize(14);
-      doc.text('DELIVERY ADDRESS:', 20, 85);
-      doc.setFontSize(11);
-      const addressLines = dispatch.address.split('\n');
-      addressLines.forEach((line, index) => {
-        doc.text(line, 20, 95 + (index * 10));
-      });
-      
-      // Expected Delivery
-      if (dispatch.expectedDeliveryDate) {
-        doc.text(`Expected Delivery: ${new Date(dispatch.expectedDeliveryDate).toLocaleDateString()}`, 20, 95 + (addressLines.length * 10) + 10);
-      }
-      
-      // Items Table
-      let yPos = 95 + (addressLines.length * 10) + 30;
-      doc.setFontSize(14);
-      doc.text('ITEMS:', 20, yPos);
-      yPos += 15;
-      
-      // Table Headers
-      doc.setFontSize(10);
-      doc.text('Product', 20, yPos);
-      doc.text('Category', 80, yPos);
-      doc.text('Qty', 140, yPos);
-      doc.text('Value', 170, yPos);
-      yPos += 10;
-      
-      // Draw line under headers
-      doc.line(20, yPos - 5, 200, yPos - 5);
-      
-      // Items
-      dispatch.items.forEach(item => {
-        doc.text(item.productName, 20, yPos);
-        doc.text(item.categoryName, 80, yPos);
-        doc.text(item.quantity.toString(), 140, yPos);
-        doc.text(`${item.totalValue.toFixed(2)}`, 170, yPos);
-        yPos += 10;
-      });
-      
-      // Total
-      yPos += 10;
-      doc.line(20, yPos - 5, 200, yPos - 5);
-      doc.setFontSize(12);
-      doc.text(`TOTAL: ${dispatch.totalQuantity} items`, 20, yPos);
-      doc.text(`TOTAL VALUE: ${dispatch.totalValue.toFixed(2)}`, 140, yPos);
-      
-      // Notes
-      if (dispatch.notes) {
-        yPos += 20;
-        doc.setFontSize(11);
-        doc.text('NOTES:', 20, yPos);
-        yPos += 10;
-        doc.text(dispatch.notes, 20, yPos);
-      }
-      
-      // Footer
-      doc.setFontSize(8);
-      doc.text(`Generated on ${new Date().toLocaleString()}`, 20, 280);
-      
-      doc.save(`Packing_Slip_${dispatch.id}_${dispatch.folderName}.pdf`);
-      showSuccess(`Packing slip generated for dispatch #${dispatch.id}!`);
-    }
-
-    function exportDispatchToPDF(dispatchId) {
-      const dispatch = dispatches.find(d => d.id === dispatchId);
-      if (!dispatch) return;
-      
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(18);
-      doc.text('DISPATCH RECORD', 20, 30);
-      
-      // Basic Info
-      doc.setFontSize(12);
-      doc.text(`Dispatch ID: ${dispatch.id}`, 20, 50);
-      doc.text(`Folder Name: ${dispatch.folderName}`, 20, 60);
-      doc.text(`Status: ${dispatch.status.toUpperCase()}`, 20, 70);
-      doc.text(`Created: ${new Date(dispatch.createdAt).toLocaleString()}`, 20, 80);
-      doc.text(`Last Updated: ${new Date(dispatch.lastUpdated).toLocaleString()}`, 20, 90);
-      
-      if (dispatch.deliveredAt) {
-        doc.text(`Delivered: ${new Date(dispatch.deliveredAt).toLocaleString()}`, 20, 100);
-      }
-      
-      // Address
-      doc.setFontSize(14);
-      doc.text('DELIVERY ADDRESS:', 20, 120);
-      doc.setFontSize(11);
-      const addressLines = dispatch.address.split('\n');
-      addressLines.forEach((line, index) => {
-        doc.text(line, 20, 130 + (index * 8));
-      });
-      
-      // Expected Delivery
-      if (dispatch.expectedDeliveryDate) {
-        doc.text(`Expected Delivery: ${new Date(dispatch.expectedDeliveryDate).toLocaleDateString()}`, 20, 130 + (addressLines.length * 8) + 10);
-      }
-      
-      // Items
-      let yPos = 130 + (addressLines.length * 8) + 30;
-      doc.setFontSize(14);
-      doc.text('DISPATCHED ITEMS:', 20, yPos);
-      yPos += 15;
-      
-      doc.setFontSize(10);
-      dispatch.items.forEach((item, index) => {
-        doc.text(`${index + 1}. ${item.productName}`, 25, yPos);
-        doc.text(`   Category: ${item.categoryName}`, 25, yPos + 8);
-        doc.text(`   Quantity: ${item.quantity} units`, 25, yPos + 16);
-        doc.text(`   Unit Price: ${item.pricePerUnit.toFixed(2)}`, 25, yPos + 24);
-        doc.text(`   Total Value: ${item.totalValue.toFixed(2)}`, 25, yPos + 32);
-        yPos += 45;
-      });
-      
-      // Summary
-      doc.setFontSize(12);
-      doc.text(`TOTAL QUANTITY: ${dispatch.totalQuantity} units`, 20, yPos + 10);
-      doc.text(`TOTAL VALUE: ${dispatch.totalValue.toFixed(2)}`, 20, yPos + 20);
-      
-      // Notes
-      if (dispatch.notes) {
-        yPos += 35;
-        doc.text('NOTES:', 20, yPos);
-        doc.setFontSize(10);
-        doc.text(dispatch.notes, 20, yPos + 10);
-      }
-      
-      doc.save(`Dispatch_${dispatch.id}_${dispatch.folderName}.pdf`);
-      showSuccess(`Dispatch record exported for #${dispatch.id}!`);
-    }
-
-    function exportAllDispatches() {
-      if (dispatches.length === 0) {
-        alert('No dispatch data to export');
-        return;
-      }
-      
-      let csvContent = 'Dispatch ID,Folder Name,Status,Created Date,Address,Expected Delivery,Total Items,Total Value,Items Detail,Notes\n';
-      
-      dispatches.forEach(dispatch => {
-        const itemsDetail = dispatch.items.map(item => 
-          `${item.productName} (${item.quantity}x @ ${item.pricePerUnit})`
-        ).join('; ');
-        
-        const addressOneLine = dispatch.address.replace(/\n/g, ' | ');
-        
-        csvContent += `"${dispatch.id}","${dispatch.folderName}","${dispatch.status}","${dispatch.createdAt}","${addressOneLine}","${dispatch.expectedDeliveryDate || ''}","${dispatch.totalQuantity}","${dispatch.totalValue}","${itemsDetail}","${dispatch.notes || ''}"\n`;
-      });
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dispatch_records_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      showSuccess(`Dispatch records exported! ${dispatches.length} dispatches exported to CSV`);
     }
 
     // Category Management
@@ -1679,9 +1104,9 @@
     }
 
     function clearCategoryForm() {
-      ['newCategoryName', 'newCategoryIcon', 'newCategoryDescription'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
+      document.getElementById('newCategoryName').value = '';
+      document.getElementById('newCategoryIcon').value = '';
+      document.getElementById('newCategoryDescription').value = '';
     }
 
     async function addCategory() {
@@ -1694,11 +1119,6 @@
         return;
       }
       
-      if (categories.find(cat => cat.name.toLowerCase() === name.toLowerCase())) {
-        alert('❌ Category name already exists');
-        return;
-      }
-      
       const category = {
         id: Date.now(),
         name,
@@ -1707,580 +1127,10 @@
         dateCreated: new Date().toISOString()
       };
       
+      categories.push(category);
       await saveData('categories', category);
       closeCategoryModal();
-    }
-
-    // Subcategory Management
-    function showSubcategoryModal() {
-      if (!currentCategoryId) {
-        alert('❌ Please select a category first');
-        return;
-      }
-      
-      document.getElementById('subcategoryModal').classList.remove('hidden');
-      populateMaterialSelects();
-    }
-
-    function closeSubcategoryModal() {
-      document.getElementById('subcategoryModal').classList.add('hidden');
-      clearSubcategoryForm();
-    }
-
-    function clearSubcategoryForm() {
-      ['subcategoryName', 'subcategoryIcon', 'subcategoryDescription', 
-       'subcategoryMaterials', 'subcategoryPrice', 'subcategoryPlywoodSheets', 
-       'subcategoryMDFSheets'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
-      
-      ['subcategoryPlywoodType', 'subcategoryMDFType'].forEach(id =>
-        document.getElementById(id).selectedIndex = 0
-      );
-    }
-
-    function populateMaterialSelects() {
-      const plywoodSelect = document.getElementById('subcategoryPlywoodType');
-      const mdfSelect = document.getElementById('subcategoryMDFType');
-      
-      if (plywoodSelect) {
-        plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
-        plywood.forEach(item => {
-          const option = document.createElement('option');
-          option.value = item.id;
-          option.textContent = `${item.type} (${item.sheets} sheets available)`;
-          
-          if (!item.type.toLowerCase().includes('mdf')) {
-            plywoodSelect.appendChild(option);
-          }
-        });
-      }
-      
-      if (mdfSelect) {
-        mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
-        plywood.forEach(item => {
-          if (item.type.toLowerCase().includes('mdf')) {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = `${item.type} (${item.sheets} sheets available)`;
-            mdfSelect.appendChild(option);
-          }
-        });
-      }
-    }
-
-    async function addSubcategory() {
-      const name = document.getElementById('subcategoryName').value.trim();
-      const icon = document.getElementById('subcategoryIcon').value.trim() || '📦';
-      const description = document.getElementById('subcategoryDescription').value.trim();
-      const materials = document.getElementById('subcategoryMaterials').value.trim();
-      const pricePerUnit = parseFloat(document.getElementById('subcategoryPrice').value) || 0;
-      
-      // Material requirements
-      const plywoodId = document.getElementById('subcategoryPlywoodType').value;
-      const plywoodSheets = parseFloat(document.getElementById('subcategoryPlywoodSheets').value) || 0;
-      const mdfId = document.getElementById('subcategoryMDFType').value;
-      const mdfSheets = parseFloat(document.getElementById('subcategoryMDFSheets').value) || 0;
-
-      if (!name) {
-        alert('❌ Please enter a product name');
-        return;
-      }
-
-      // Check for duplicate names in this category
-      if (subcategories.find(sub => 
-        sub.categoryId === currentCategoryId && 
-        sub.name.toLowerCase() === name.toLowerCase())) {
-        alert('❌ Product name already exists in this category');
-        return;
-      }
-
-      const subcategory = {
-        id: Date.now(),
-        categoryId: currentCategoryId,
-        name,
-        icon,
-        description,
-        materials: materials || 'Standard materials',
-        pricePerUnit,
-        materialRequirements: {
-          plywood: plywoodId ? {
-            id: plywoodId,
-            sheetsPerUnit: plywoodSheets,
-            type: plywood.find(p => p.id == plywoodId)?.type || 'Unknown'
-          } : null,
-          mdf: mdfId ? {
-            id: mdfId,
-            sheetsPerUnit: mdfSheets,
-            type: plywood.find(p => p.id == mdfId)?.type || 'Unknown'
-          } : null
-        },
-        dateCreated: new Date().toISOString()
-      };
-
-      await saveData('subcategories', subcategory);
-      closeSubcategoryModal();
-    }
-
-    // Manufacturing Functions
-    function showManufacturingModal(subcategoryId) {
-      currentSubcategoryId = subcategoryId;
-      const subcategory = subcategories.find(s => s.id === subcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      
-      document.getElementById('manufacturingModal').classList.remove('hidden');
-      
-      const details = document.getElementById('manufacturingDetails');
-      details.innerHTML = `
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-          <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
-          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
-          <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
-          <p class="text-blue-700 text-sm">Materials: ${subcategory.materials}</p>
-        </div>
-      `;
-      
-      // Show material requirements if they exist
-      if (subcategory.materialRequirements && 
-          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf)) {
-        document.getElementById('materialRequirements').classList.remove('hidden');
-        updateManufacturingMaterials();
-      } else {
-        document.getElementById('materialRequirements').classList.add('hidden');
-      }
-      
-      document.getElementById('manufacturingQuantity').value = '1';
-      updateManufacturingMaterials();
-    }
-
-    function closeManufacturingModal() {
-      document.getElementById('manufacturingModal').classList.add('hidden');
-      currentSubcategoryId = null;
-      document.getElementById('materialWarnings').classList.add('hidden');
-    }
-
-    function updateManufacturingMaterials() {
-      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
-      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
-      
-      if (!subcategory || !subcategory.materialRequirements) return;
-      
-      const materialsList = document.getElementById('materialRequirementsList');
-      const warnings = document.getElementById('materialWarnings');
-      
-      let materialsHTML = '';
-      let warningsHTML = '';
-      
-      // Check plywood requirements
-      if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
-        const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
-        const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
-        
-        materialsHTML += `
-          <div class="flex justify-between items-center py-1">
-            <span>📦 ${subcategory.materialRequirements.plywood.type}:</span>
-            <span class="font-semibold">${needed} sheets</span>
-          </div>
-        `;
-        
-        if (plywoodItem && needed > plywoodItem.sheets) {
-          warningsHTML += `
-            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
-              <span class="text-red-600">⚠️ Insufficient ${plywoodItem.type}!</span><br>
-              <small>Need: ${needed} sheets | Available: ${plywoodItem.sheets} sheets</small>
-            </div>
-          `;
-        }
-      }
-      
-      // Check MDF requirements
-      if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
-        const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
-        const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
-        
-        materialsHTML += `
-          <div class="flex justify-between items-center py-1">
-            <span>🚪 ${subcategory.materialRequirements.mdf.type}:</span>
-            <span class="font-semibold">${needed} sheets</span>
-          </div>
-        `;
-        
-        if (mdfItem && needed > mdfItem.sheets) {
-          warningsHTML += `
-            <div class="bg-red-50 border border-red-200 p-3 rounded mb-2">
-              <span class="text-red-600">⚠️ Insufficient ${mdfItem.type}!</span><br>
-              <small>Need: ${needed} sheets | Available: ${mdfItem.sheets} sheets</small>
-            </div>
-          `;
-        }
-      }
-      
-      materialsList.innerHTML = materialsHTML;
-      warnings.innerHTML = warningsHTML;
-      warnings.classList.toggle('hidden', warningsHTML === '');
-    }
-
-    // Add event listener for quantity changes
-    document.addEventListener('DOMContentLoaded', function() {
-      const quantityInput = document.getElementById('manufacturingQuantity');
-      if (quantityInput) {
-        quantityInput.addEventListener('input', updateManufacturingMaterials);
-      }
-    });
-
-    async function processManufacturing() {
-      const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
-      const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
-      
-      if (quantity <= 0) {
-        alert('❌ Please enter a valid quantity');
-        return;
-      }
-
-      // Check and deduct materials if requirements exist
-      if (subcategory.materialRequirements) {
-        const materialChecks = [];
-        
-        // Check plywood requirements
-        if (subcategory.materialRequirements.plywood && subcategory.materialRequirements.plywood.sheetsPerUnit > 0) {
-          const plywoodItem = plywood.find(p => p.id == subcategory.materialRequirements.plywood.id);
-          const needed = subcategory.materialRequirements.plywood.sheetsPerUnit * quantity;
-          
-          if (plywoodItem && needed > plywoodItem.sheets) {
-            alert(`❌ Insufficient ${plywoodItem.type}!\nNeed: ${needed} sheets\nAvailable: ${plywoodItem.sheets} sheets`);
-            return;
-          }
-          
-          if (plywoodItem) {
-            materialChecks.push({
-              item: plywoodItem,
-              needed: needed,
-              type: 'plywood'
-            });
-          }
-        }
-        
-        // Check MDF requirements
-        if (subcategory.materialRequirements.mdf && subcategory.materialRequirements.mdf.sheetsPerUnit > 0) {
-          const mdfItem = plywood.find(p => p.id == subcategory.materialRequirements.mdf.id);
-          const needed = subcategory.materialRequirements.mdf.sheetsPerUnit * quantity;
-          
-          if (mdfItem && needed > mdfItem.sheets) {
-            alert(`❌ Insufficient ${mdfItem.type}!\nNeed: ${needed} sheets\nAvailable: ${mdfItem.sheets} sheets`);
-            return;
-          }
-          
-          if (mdfItem) {
-            materialChecks.push({
-              item: mdfItem,
-              needed: needed,
-              type: 'mdf'
-            });
-          }
-        }
-        
-        // Deduct materials
-        try {
-          for (const check of materialChecks) {
-            const newMaterialQuantity = check.item.sheets - check.needed;
-            
-            await updateData('plywood', check.item.firebaseId, {
-              sheets: newMaterialQuantity,
-              lastUpdated: new Date().toISOString()
-            });
-          }
-          
-          if (materialChecks.length > 0) {
-            showSuccess(`Materials deducted: ${materialChecks.map(c => 
-              `${c.needed} sheets of ${c.item.type}`
-            ).join(', ')}`);
-          }
-          
-        } catch (error) {
-          console.error('Error deducting materials:', error);
-          alert('❌ Error deducting materials. Manufacturing cancelled.');
-          return;
-        }
-      }
-
-      // Create or update cabinet record
-      const existingCabinet = cabinets.find(c => 
-        c.subcategoryId === currentSubcategoryId
-      );
-
-      if (existingCabinet) {
-        // Update existing cabinet quantity
-        const newQuantity = existingCabinet.quantity + quantity;
-        await updateData('cabinets', existingCabinet.firebaseId, {
-          quantity: newQuantity,
-          lastManufactured: new Date().toISOString()
-        });
-      } else {
-        // Create new cabinet record
-        const cabinet = {
-          id: Date.now(),
-          subcategoryId: currentSubcategoryId,
-          categoryId: subcategory.categoryId,
-          type: subcategory.name,
-          category: category.name,
-          subcategory: subcategory.name,
-          quantity: quantity,
-          materials: subcategory.materials,
-          pricePerUnit: subcategory.pricePerUnit,
-          materialRequirements: subcategory.materialRequirements,
-          dateCreated: new Date().toISOString(),
-          lastManufactured: new Date().toISOString()
-        };
-        
-        await saveData('cabinets', cabinet);
-      }
-
-      closeManufacturingModal();
-      showSuccess(`Successfully manufactured ${quantity} units of ${subcategory.name}!`);
-    }
-
-    // Plywood Management
-    function showPlywoodForm() {
-      document.getElementById('plywoodForm').classList.remove('hidden');
-      document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
-    }
-
-    function hidePlywoodForm() {
-      document.getElementById('plywoodForm').classList.add('hidden');
-      clearPlywoodForm();
-    }
-
-    function clearPlywoodForm() {
-      ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost', 'plywoodInvoice', 'plywoodDate'].forEach(id =>
-        document.getElementById(id).value = ''
-      );
-    }
-
-    async function addPlywood() {
-      const type = document.getElementById('plywoodType').value.trim();
-      const sheets = parseInt(document.getElementById('plywoodSheets').value);
-      const minStock = parseInt(document.getElementById('plywoodMinStock').value) || 5;
-      const supplier = document.getElementById('plywoodSupplier').value.trim();
-      const cost = parseFloat(document.getElementById('plywoodCost').value) || 0;
-      const invoiceNumber = document.getElementById('plywoodInvoice').value.trim();
-      const date = document.getElementById('plywoodDate').value;
-
-      if (!type || !sheets || !supplier || !cost || !invoiceNumber || !date) {
-        alert('❌ Please fill in all required fields');
-        return;
-      }
-
-      const item = {
-        id: Date.now(),
-        type,
-        sheets,
-        minStock,
-        supplier,
-        cost,
-        dateAdded: new Date().toISOString(),
-        lastInvoice: invoiceNumber
-      };
-      
-      const invoice = {
-        id: Date.now() + 1,
-        invoiceNumber,
-        date,
-        supplier,
-        operation: 'ADD',
-        items: [{
-          type,
-          quantity: sheets,
-          unitCost: cost,
-          totalCost: sheets * cost
-        }],
-        totalValue: sheets * cost,
-        notes: `Material addition: ${type}`,
-        createdAt: new Date().toISOString()
-      };
-      
-      await saveData('plywood', item);
-      await saveData('invoices', invoice);
-      hidePlywoodForm();
-    }
-
-    async function updatePlywoodQuantity(id, change) {
-      const item = plywood.find(p => p.id === id);
-      if (item) {
-        const newQuantity = item.sheets + change;
-        if (newQuantity >= 0) {
-          if (item.firebaseId) {
-            await updateData('plywood', item.firebaseId, {
-              sheets: newQuantity,
-              lastUpdated: new Date().toISOString()
-            });
-            
-            showSuccess(`Updated ${item.type}: ${change > 0 ? '+' : ''}${change} sheets`);
-          }
-        }
-      }
-    }
-
-    async function deletePlywood(id) {
-      if (confirm('Are you sure you want to delete this material?')) {
-        const item = plywood.find(p => p.id === id);
-        if (item?.firebaseId) {
-          await deleteData('plywood', item.firebaseId);
-        }
-      }
-    }
-
-    // Bulk Operations
-    function showBulkOperations() {
-      document.getElementById('bulkModal').classList.remove('hidden');
-      document.getElementById('bulkDate').value = new Date().toISOString().split('T')[0];
-      bulkItems = {};
-      populateBulkItems();
-      setBulkMode('add');
-    }
-
-    function closeBulkModal() {
-      document.getElementById('bulkModal').classList.add('hidden');
-      bulkItems = {};
-    }
-
-    function setBulkMode(mode) {
-      bulkMode = mode;
-      
-      document.getElementById('bulkAddBtn').className = mode === 'add' ? 'btn btn-green' : 'btn btn-gray';
-      document.getElementById('bulkRemoveBtn').className = mode === 'remove' ? 'btn btn-red' : 'btn btn-gray';
-      
-      const invoiceSection = document.getElementById('bulkInvoiceSection');
-      if (mode === 'add') {
-        invoiceSection.classList.remove('hidden');
-      } else {
-        invoiceSection.classList.add('hidden');
-      }
-      
-      populateBulkItems();
-    }
-
-    function populateBulkItems() {
-      const container = document.getElementById('bulkItemsList');
-      container.innerHTML = '';
-      
-      plywood.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'bg-gray-50 border border-gray-200 rounded-lg p-3';
-        div.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="flex-1">
-              <h4 class="font-semibold">${item.type}</h4>
-              <p class="text-sm text-gray-600">Current: ${item.sheets} sheets | Supplier: ${item.supplier}</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <input type="number" id="bulk_${item.id}" placeholder="Qty" min="1" 
-                     class="input-field w-20" style="width: 80px;" onchange="updateBulkItem(${item.id}, this.value)">
-              <span class="text-sm text-gray-500">${bulkMode === 'add' ? '+' : '-'}</span>
-            </div>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function updateBulkItem(itemId, quantity) {
-      const qty = parseInt(quantity);
-      if (qty && qty > 0) {
-        bulkItems[itemId] = qty;
-      } else {
-        delete bulkItems[itemId];
-      }
-    }
-
-    async function processBulkOperation() {
-      const invoiceNumber = document.getElementById('bulkInvoice').value.trim();
-      const date = document.getElementById('bulkDate').value;
-      
-      if (bulkMode === 'add') {
-        if (!invoiceNumber || !date) {
-          alert('❌ Please enter invoice number and date for bulk add operation');
-          return;
-        }
-      }
-      
-      const itemIds = Object.keys(bulkItems);
-      
-      if (itemIds.length === 0) {
-        alert('❌ Please select at least one item and specify quantities');
-        return;
-      }
-
-      let totalValue = 0;
-      const invoiceItems = [];
-      let processedCount = 0;
-      
-      for (const itemId of itemIds) {
-        const item = plywood.find(p => p.id == itemId);
-        const quantity = bulkItems[itemId];
-        
-        if (item && item.firebaseId) {
-          const change = bulkMode === 'add' ? quantity : -quantity;
-          const newQuantity = item.sheets + change;
-          
-          if (newQuantity >= 0) {
-            const updatePayload = {
-              sheets: newQuantity,
-              lastUpdated: new Date().toISOString()
-            };
-            
-            if (bulkMode === 'add') {
-              updatePayload.lastInvoice = invoiceNumber;
-            }
-            
-            try {
-              await updateData('plywood', item.firebaseId, updatePayload);
-              processedCount++;
-              
-              if (bulkMode === 'add') {
-                invoiceItems.push({
-                  type: item.type,
-                  quantity: quantity,
-                  unitCost: item.cost,
-                  totalCost: quantity * item.cost
-                });
-                
-                totalValue += quantity * item.cost;
-              }
-            } catch (error) {
-              console.error('Error updating item:', item.type, error);
-            }
-          } else {
-            alert(`⚠️ Cannot remove ${Math.abs(change)} sheets from ${item.type} - only ${item.sheets} available`);
-          }
-        }
-      }
-      
-      if (bulkMode === 'add' && invoiceItems.length > 0) {
-        const invoice = {
-          id: Date.now(),
-          invoiceNumber,
-          date,
-          supplier: 'Multiple',
-          operation: 'ADD',
-          items: invoiceItems,
-          totalValue,
-          notes: `Bulk add operation for ${invoiceItems.length} items`,
-          createdAt: new Date().toISOString()
-        };
-        
-        try {
-          await saveData('invoices', invoice);
-        } catch (error) {
-          console.error('Error saving invoice:', error);
-        }
-      }
-      
-      closeBulkModal();
-      
-      if (processedCount > 0) {
-        showSuccess(`Bulk ${bulkMode} completed! ${processedCount} items processed${bulkMode === 'add' && invoiceNumber ? ` | Invoice: ${invoiceNumber}` : ''}`);
-      }
+      renderCategoriesGrid();
     }
 
     // Render Functions
@@ -2291,45 +1141,16 @@
       grid.innerHTML = '';
       
       if (categories.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center text-gray-500 py-8">
-            📂 No categories found. Create your first category to get started!
-          </div>
-        `;
+        grid.innerHTML = '<div class="col-span-full card p-4 text-center text-secondary">📂 No categories found. Create your first category!</div>';
         return;
       }
       
       categories.forEach(category => {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        
         const div = document.createElement('div');
-        div.className = 'category-card';
+        div.className = 'card p-4 cursor-pointer';
         div.onclick = () => showCategoryPage(category.id);
         
-        div.innerHTML = `
-          <div class="text-center">
-            <div class="text-4xl mb-3">${category.icon}</div>
-            <h3 class="font-bold text-lg text-gray-800 mb-2">${category.name}</h3>
-            <p class="text-gray-600 text-sm mb-4">${category.description || 'No description'}</p>
-            
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="bg-white rounded-lg p-2">
-                <div class="font-bold text-blue-600">${categorySubcategories.length}</div>
-                <div class="text-gray-500">Product Types</div>
-              </div>
-              <div class="bg-white rounded-lg p-2">
-                <div class="font-bold text-green-600">${totalUnits}</div>
-                <div class="text-gray-500">Total Units</div>
-              </div>
-            </div>
-            
-            <div class="mt-4 text-xs text-gray-500">
-              Click to manage products →
-            </div>
-          </div>
-        `;
+        div.innerHTML = '<div class="text-center"><div class="text-2xl mb-2">' + category.icon + '</div><h3 class="font-semibold mb-1">' + category.name + '</h3><p class="text-xs text-secondary">' + (category.description || 'No description') + '</p></div>';
         
         grid.appendChild(div);
       });
@@ -2339,88 +1160,7 @@
       const list = document.getElementById('subcategoriesList');
       if (!list || !currentCategoryId) return;
       
-      const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-      
-      list.innerHTML = '';
-      
-      if (categorySubcategories.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📦 No product types found in this category.<br>
-            <span class="text-sm">Create your first product type to start manufacturing!</span>
-          </div>
-        `;
-        return;
-      }
-      
-      categorySubcategories.forEach(subcategory => {
-        const subcategoryCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
-        const totalQuantity = subcategoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        const totalValue = totalQuantity * subcategory.pricePerUnit;
-        
-        const div = document.createElement('div');
-        div.className = 'subcategory-card';
-        
-        const hasMaterialRequirements = subcategory.materialRequirements && 
-          (subcategory.materialRequirements.plywood || subcategory.materialRequirements.mdf);
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                  ${subcategory.icon} ${subcategory.name}
-                </h3>
-                ${hasMaterialRequirements ? 
-                  '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">📋 Materials Configured</span>' : 
-                  '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">⚠️ No Materials Set</span>'
-                }
-              </div>
-              <p class="text-gray-600 text-sm mb-2">${subcategory.description || 'No description'}</p>
-              <p class="text-gray-600 text-sm">
-                🔨 Materials: ${subcategory.materials} | 
-                💰 Price: ${subcategory.pricePerUnit.toFixed(2)}/unit
-              </p>
-              ${hasMaterialRequirements ? `
-                <p class="text-xs text-blue-600 mt-1">
-                  📦 ${subcategory.materialRequirements.plywood ? 
-                    `${subcategory.materialRequirements.plywood.type} (${subcategory.materialRequirements.plywood.sheetsPerUnit}/unit)` : ''} 
-                  ${subcategory.materialRequirements.mdf ? 
-                    `| 🚪 ${subcategory.materialRequirements.mdf.type} (${subcategory.materialRequirements.mdf.sheetsPerUnit}/unit)` : ''}
-                </p>
-              ` : ''}
-            </div>
-            
-            <div class="flex flex-row lg:flex-col items-center gap-4">
-              <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600">${totalQuantity}</div>
-                <div class="text-gray-600 font-medium text-sm">units</div>
-                <div class="text-gray-500 text-xs">${totalValue.toFixed(0)} value</div>
-              </div>
-              
-              <div class="flex lg:flex-col gap-2">
-                <button onclick="showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
-                  🔨 Manufacture
-                </button>
-                ${totalQuantity > 0 ? `
-                  <button onclick="showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
-                    🚚 Dispatch
-                  </button>
-                ` : ''}
-                <button onclick="editSubcategory(${subcategory.id})" class="btn btn-primary text-sm">
-                  ✏️ Edit
-                </button>
-              </div>
-              
-              <button onclick="deleteSubcategory(${subcategory.id})" class="text-red-600 hover:text-red-800 text-xl" title="Delete product type">
-                🗑️
-              </button>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
+      list.innerHTML = '<div class="card p-4 text-center text-secondary">📦 No product types found in this category.</div>';
     }
 
     function renderPlywood() {
@@ -2430,106 +1170,32 @@
       list.innerHTML = '';
       
       if (plywood.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📦 No materials found. Add your first material to get started!
-          </div>
-        `;
+        list.innerHTML = '<div class="card p-4 text-center text-secondary">📦 No materials found.</div>';
         return;
       }
       
       plywood.forEach(item => {
         const div = document.createElement('div');
-        const sheets = item.sheets || 0;
-        const minStock = item.minStock || 0;
-        const cost = item.cost || 0;
+        div.className = 'card p-4';
         
-        div.className = `card p-4 lg:p-6 ${sheets <= minStock ? 'low-stock' : ''}`;
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <h3 class="font-bold text-lg lg:text-xl text-gray-800 mb-2">${item.type || 'Unknown Type'}</h3>
-              <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
-              <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
-              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
-              ${item.lastInvoice ? `<p class="text-xs text-green-600 mt-1">📋 Last Invoice: ${item.lastInvoice}</p>` : ''}
-            </div>
-            <div class="flex flex-row lg:flex-col items-center gap-4">
-              <div class="text-center">
-                <div class="text-3xl lg:text-4xl font-bold ${sheets <= minStock ? 'text-red-600' : 'text-blue-600'}">${sheets}</div>
-                <div class="text-gray-600 font-medium">sheets</div>
-              </div>
-              <div class="flex lg:flex-col gap-2">
-                <button onclick="updatePlywoodQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
-                <button onclick="updatePlywoodQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
-              </div>
-              <button onclick="deletePlywood(${item.id})" class="text-red-600 hover:text-red-800 text-2xl" title="Delete item">🗑️</button>
-            </div>
-          </div>
-        `;
+        div.innerHTML = '<div class="flex items-center justify-between"><div><h3 class="font-semibold">' + item.type + '</h3><p class="text-sm text-secondary">' + item.supplier + ' | $' + item.cost.toFixed(2) + '/sheet</p></div><div class="text-center"><div class="text-2xl font-bold text-primary">' + item.sheets + '</div><div class="text-xs text-secondary">sheets</div></div></div>';
         
         list.appendChild(div);
       });
+    }
+
+    function renderDispatches() {
+      const list = document.getElementById('dispatchList');
+      if (!list) return;
+      
+      list.innerHTML = '<div class="card p-4 text-center text-secondary">🚚 No dispatches found.</div>';
     }
 
     function renderInvoices() {
       const list = document.getElementById('invoiceList');
       if (!list) return;
       
-      if (invoices.length === 0) {
-        list.innerHTML = `
-          <div class="text-center text-gray-500 py-8">
-            📋 No invoice records found.
-          </div>
-        `;
-        return;
-      }
-      
-      const sortedInvoices = [...invoices].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      list.innerHTML = '';
-      
-      sortedInvoices.forEach(invoice => {
-        const div = document.createElement('div');
-        div.className = 'border-b border-gray-200 py-4';
-        
-        const operationColor = invoice.operation === 'ADD' ? 'text-green-600' : 'text-red-600';
-        const operationIcon = invoice.operation === 'ADD' ? '➕' : '➖';
-        
-        div.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="${operationColor} text-xl">${operationIcon}</span>
-                <h3 class="font-bold text-lg text-gray-800">Invoice #${invoice.invoiceNumber}</h3>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${operationColor} bg-gray-100">
-                  ${invoice.operation}
-                </span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                <div><strong>📅 Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</div>
-                <div><strong>🏢 Supplier:</strong> ${invoice.supplier}</div>
-                <div><strong>💰 Total Value:</strong> ${invoice.totalValue.toFixed(2)}</div>
-              </div>
-              ${invoice.notes ? `<p class="text-sm text-gray-500 mt-2"><strong>📝 Notes:</strong> ${invoice.notes}</p>` : ''}
-            </div>
-            <div class="lg:w-80">
-              <h4 class="font-semibold text-sm text-gray-700 mb-2">Items:</h4>
-              <div class="space-y-1">
-                ${invoice.items.map(item => `
-                  <div class="text-xs bg-gray-50 p-2 rounded flex justify-between">
-                    <span>${item.type} (${item.quantity}x)</span>
-                    <span>${item.totalCost.toFixed(2)}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
+      list.innerHTML = '<div class="text-center text-secondary py-8">📋 No invoices found.</div>';
     }
 
     function renderSettingsPage() {
@@ -2539,30 +1205,12 @@
       list.innerHTML = '';
       
       categories.forEach(category => {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
-        
         const div = document.createElement('div');
-        div.className = 'bg-gray-50 border border-gray-200 rounded-lg p-3';
-        
-        div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <h4 class="font-semibold text-gray-800 flex items-center gap-2">
-                ${category.icon} ${category.name}
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
-              </h4>
-              <p class="text-sm text-gray-600 mt-1">${category.description || 'No description'}</p>
-            </div>
-            <button onclick="deleteCategory(${category.id})" class="text-red-500 hover:text-red-700 text-sm">
-              🗑️ Delete
-            </button>
-          </div>
-        `;
-        
+        div.className = 'border rounded p-3';
+        div.innerHTML = '<div class="flex justify-between items-start"><div><h4 class="font-semibold">' + category.icon + ' ' + category.name + '</h4><p class="text-sm text-secondary">' + (category.description || 'No description') + '</p></div></div>';
         list.appendChild(div);
       });
       
-      // Update system info
       document.getElementById('totalCategoriesCount').textContent = categories.length;
       document.getElementById('totalSubcategoriesCount').textContent = subcategories.length;
       document.getElementById('totalMaterialsCount').textContent = plywood.length;
@@ -2570,20 +1218,19 @@
       document.getElementById('totalDispatchesCount').textContent = dispatches.length;
     }
 
-    // Stats and Utility Functions
+    // Stats Functions
     function updateStats() {
       try {
         const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
         const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
         const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
-        const totalDispatchCount = dispatches.length;
 
         document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
         document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
         document.getElementById('activeCategories').textContent = categories.length.toString();
-        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
-        document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
+        document.getElementById('totalDispatches').textContent = dispatches.length.toString();
+        document.getElementById('totalValue').textContent = '$' + Math.round(plywoodValue + cabinetValue).toLocaleString();
 
       } catch (error) {
         console.error('Error updating stats:', error);
@@ -2591,144 +1238,46 @@
     }
 
     function updateCategoryStats() {
-      if (!currentCategoryId) return;
-      
-      try {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === currentCategoryId);
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        const totalValue = categoryCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
-        const avgPrice = categoryCabinets.length > 0 ? 
-          categoryCabinets.reduce((sum, cab) => sum + (cab.pricePerUnit || 0), 0) / categoryCabinets.length : 0;
-
-        document.getElementById('categoryTotalCabinets').textContent = totalUnits.toLocaleString();
-        document.getElementById('categoryProductTypes').textContent = categorySubcategories.length.toString();
-        document.getElementById('categoryValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
-        document.getElementById('categoryAvgPrice').textContent = `${Math.round(avgPrice).toLocaleString()}`;
-
-      } catch (error) {
-        console.error('Error updating category stats:', error);
-      }
+      document.getElementById('categoryTotalCabinets').textContent = '0';
+      document.getElementById('categoryProductTypes').textContent = '0';
+      document.getElementById('categoryValue').textContent = '$0';
+      document.getElementById('categoryAvgPrice').textContent = '$0';
     }
 
-    function checkLowStock() {
-      const lowStockItems = plywood.filter(item => item.sheets <= item.minStock);
-      const alert = document.getElementById('lowStockAlert');
-      const list = document.getElementById('lowStockList');
-      
-      if (lowStockItems.length > 0) {
-        alert.classList.remove('hidden');
-        list.innerHTML = '';
-        lowStockItems.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'font-semibold';
-          li.textContent = `📦 ${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
-          list.appendChild(li);
-        });
-      } else {
-        alert.classList.add('hidden');
-      }
+    function updateDispatchStats() {
+      document.getElementById('totalDispatchCount').textContent = '0';
+      document.getElementById('pendingDispatchCount').textContent = '0';
+      document.getElementById('completedDispatchCount').textContent = '0';
+      document.getElementById('dispatchedValue').textContent = '$0';
     }
 
-    function filterInvoices() {
-      const searchTerm = document.getElementById('invoiceSearch').value.toLowerCase();
-      const rows = document.querySelectorAll('#invoiceList > div');
-      
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        if (text.includes(searchTerm)) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    function exportInvoices() {
-      if (invoices.length === 0) {
-        alert('No invoice data to export');
-        return;
-      }
-      
-      let csvContent = 'Invoice Number,Date,Supplier,Operation,Total Value,Notes,Items\n';
-      
-      invoices.forEach(invoice => {
-        const itemsString = invoice.items.map(item => 
-          `${item.type} (${item.quantity}x @ ${item.unitCost})`
-        ).join('; ');
-        
-        csvContent += `"${invoice.invoiceNumber}","${invoice.date}","${invoice.supplier}","${invoice.operation}","${invoice.totalValue}","${invoice.notes || ''}","${itemsString}"\n`;
-      });
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `invoice_history_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      showSuccess(`Invoice History Exported! ${invoices.length} invoices exported to CSV`);
-    }
-
-    // Edit and Delete Functions
-    function editSubcategory(subcategoryId) {
-      // TODO: Implement edit subcategory functionality
-      alert('Edit functionality coming soon! For now, delete and recreate the product type.');
-    }
-
-    async function deleteSubcategory(subcategoryId) {
-      if (!confirm('Are you sure you want to delete this product type? This will also delete all related cabinet inventory.')) {
-        return;
-      }
-      
-      const subcategory = subcategories.find(sub => sub.id === subcategoryId);
-      if (subcategory?.firebaseId) {
-        // Also delete related cabinets
-        const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategoryId);
-        for (const cabinet of relatedCabinets) {
-          if (cabinet.firebaseId) {
-            await deleteData('cabinets', cabinet.firebaseId);
-          }
-        }
-        
-        await deleteData('subcategories', subcategory.firebaseId);
-        showSuccess(`Product type "${subcategory.name}" deleted successfully!`);
-      }
-    }
-
-    async function deleteCategory(categoryId) {
-      if (!confirm('Are you sure you want to delete this category? This will also delete all product types and cabinet inventory in this category.')) {
-        return;
-      }
-      
-      const category = categories.find(cat => cat.id === categoryId);
-      const categorySubcategories = subcategories.filter(sub => sub.categoryId === categoryId);
-      
-      // Delete all subcategories and related cabinets
-      for (const subcategory of categorySubcategories) {
-        if (subcategory.firebaseId) {
-          const relatedCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
-          for (const cabinet of relatedCabinets) {
-            if (cabinet.firebaseId) {
-              await deleteData('cabinets', cabinet.firebaseId);
-            }
-          }
-          await deleteData('subcategories', subcategory.firebaseId);
-        }
-      }
-      
-      if (category?.firebaseId) {
-        await deleteData('categories', category.firebaseId);
-        showSuccess(`Category "${category.name}" and all its contents deleted successfully!`);
-      }
-    }
+    // Stub functions for other features
+    function showSubcategoryModal() { alert('Feature coming soon!'); }
+    function closeSubcategoryModal() {}
+    function addSubcategory() {}
+    function showDispatchModal() { alert('Feature coming soon!'); }
+    function closeDispatchModal() {}
+    function processDispatch() {}
+    function showManufacturingModal() { alert('Feature coming soon!'); }
+    function closeManufacturingModal() {}
+    function processManufacturing() {}
+    function showPlywoodForm() { document.getElementById('plywoodForm').classList.remove('hidden'); }
+    function hidePlywoodForm() { document.getElementById('plywoodForm').classList.add('hidden'); }
+    function addPlywood() { alert('Feature coming soon!'); }
+    function showBulkOperations() { alert('Feature coming soon!'); }
+    function closeBulkModal() {}
+    function setBulkMode() {}
+    function processBulkOperation() {}
+    function undoLastDispatch() { alert('Feature coming soon!'); }
+    function exportAllDispatches() { alert('Feature coming soon!'); }
+    function filterInvoices() {}
+    function exportInvoices() { alert('Feature coming soon!'); }
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Cabinet Manufacturing System with Dispatch Starting...');
+      console.log('🚀 Cabinet Manufacturing Pro Starting...');
       showHomePage();
-      loadData();
+      loadSampleData();
     });
   </script>
 </body>
