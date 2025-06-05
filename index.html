@@ -81,35 +81,11 @@
       color: white;
     }
 
-    .btn-edit {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-edit:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       transform: none !important;
       box-shadow: none !important;
-    }
-
-    .disabled-feature {
-      opacity: 0.4;
-      pointer-events: none;
-      filter: grayscale(70%);
     }
 
     .modal {
@@ -234,11 +210,6 @@
       background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
       transform: translateY(-3px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .category-card.active {
-      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-      border-color: #3b82f6;
     }
 
     .subcategory-card {
@@ -543,7 +514,14 @@
           </div>
 
           <!-- Quick Actions -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card p-6 text-center">
+              <div class="text-4xl mb-4">🗄️</div>
+              <h3 class="font-bold text-lg mb-2">Cabinets</h3>
+              <p class="text-gray-600 mb-4">Manage cabinet categories and inventory</p>
+              <button onclick="showCabinetsPage()" class="btn btn-primary w-full">View Cabinets</button>
+            </div>
+            
             <div class="card p-6 text-center">
               <div class="text-4xl mb-4">📦</div>
               <h3 class="font-bold text-lg mb-2">Plywood Materials</h3>
@@ -566,49 +544,78 @@
             </div>
             
             <div class="card p-6 text-center">
-              <div class="text-4xl mb-4">🎯</div>
-              <h3 class="font-bold text-lg mb-2">Quick Setup</h3>
-              <p class="text-gray-600 mb-4">Load demo data to explore features</p>
-              <button onclick="loadDemoData()" class="btn btn-primary w-full">Load Demo Data</button>
-            </div>
-          </div>
-
-          <!-- Categories Grid -->
-          <div class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🔨 Production Categories</h2>
-              <button onclick="showCategoryModal()" class="btn btn-primary">➕ Add Category</button>
-            </div>
-            <div id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Categories will be populated here -->
+              <div class="text-4xl mb-4">⚙️</div>
+              <h3 class="font-bold text-lg mb-2">Settings & Features</h3>
+              <p class="text-gray-600 mb-4">System settings and advanced features</p>
+              <button onclick="showSettingsPage()" class="btn btn-purple w-full">Settings</button>
             </div>
           </div>
         </div>
 
-        <!-- CATEGORY PAGE -->
-        <div id="categoryPage" class="page-content hidden">
+        <!-- CABINETS MAIN PAGE -->
+        <div id="cabinetsPage" class="page-content hidden">
           <div class="mb-6">
             <div class="flex justify-between items-center mb-4">
-              <h2 id="categoryPageTitle" class="text-xl lg:text-2xl font-bold text-gray-800"></h2>
-              <button onclick="showSubcategoryModal()" class="btn btn-primary">➕ Add Product Type</button>
+              <div class="flex items-center gap-4">
+                <button onclick="showHomePage()" class="btn btn-gray">← Back</button>
+                <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🗄️ Cabinet Categories</h2>
+              </div>
+              <button onclick="showCabinetFolderModal()" class="btn btn-primary">➕ Add Cabinet Category</button>
             </div>
             
-            <!-- Category Stats -->
+            <!-- Cabinet Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600" id="categoryTotalCabinets">0</div>
+                <div class="text-2xl font-bold text-blue-600" id="allCabinetsTotalUnits">0</div>
                 <div class="text-sm text-gray-600">Total Units</div>
               </div>
               <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-green-600" id="categoryProductTypes">0</div>
+                <div class="text-2xl font-bold text-green-600" id="allCabinetsCategories">0</div>
+                <div class="text-sm text-gray-600">Categories</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="allCabinetsValue">$0</div>
+                <div class="text-sm text-gray-600">Total Value</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-orange-600" id="allCabinetsProductTypes">0</div>
+                <div class="text-sm text-gray-600">Product Types</div>
+              </div>
+            </div>
+            
+            <div id="cabinetFoldersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Cabinet folders will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- CABINET FOLDER PAGE -->
+        <div id="cabinetFolderPage" class="page-content hidden">
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-4">
+                <button onclick="showCabinetsPage()" class="btn btn-gray">← Back to Cabinets</button>
+                <h2 id="cabinetFolderPageTitle" class="text-xl lg:text-2xl font-bold text-gray-800"></h2>
+              </div>
+              <button onclick="showSubcategoryModal()" class="btn btn-primary">➕ Add Product Type</button>
+            </div>
+            
+            <!-- Cabinet Folder Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="folderTotalCabinets">0</div>
+                <div class="text-sm text-gray-600">Total Units</div>
+              </div>
+              <div class="card p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="folderProductTypes">0</div>
                 <div class="text-sm text-gray-600">Product Types</div>
               </div>
               <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600" id="categoryValue">$0</div>
-                <div class="text-sm text-gray-600">Category Value</div>
+                <div class="text-2xl font-bold text-purple-600" id="folderValue">$0</div>
+                <div class="text-sm text-gray-600">Folder Value</div>
               </div>
               <div class="card p-4 text-center">
-                <div class="text-2xl font-bold text-orange-600" id="categoryAvgPrice">$0</div>
+                <div class="text-2xl font-bold text-orange-600" id="folderAvgPrice">$0</div>
                 <div class="text-sm text-gray-600">Avg Unit Price</div>
               </div>
             </div>
@@ -623,7 +630,10 @@
         <!-- DISPATCH PAGE -->
         <div id="dispatchPage" class="page-content hidden">
           <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🚚 Dispatch & Shipping Management</h2>
+            <div class="flex items-center gap-4">
+              <button onclick="showHomePage()" class="btn btn-gray">← Back</button>
+              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">🚚 Dispatch & Shipping Management</h2>
+            </div>
             <div class="flex flex-col sm:flex-row gap-3">
               <button onclick="undoLastDispatch()" class="btn btn-red">↩️ Undo Last Dispatch</button>
               <button onclick="exportAllDispatches()" class="btn btn-green">📄 Export All Dispatches</button>
@@ -659,7 +669,10 @@
         <!-- PLYWOOD PAGE -->
         <div id="plywoodPage" class="page-content hidden">
           <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📦 Plywood Materials</h2>
+            <div class="flex items-center gap-4">
+              <button onclick="showHomePage()" class="btn btn-gray">← Back</button>
+              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📦 Plywood Materials</h2>
+            </div>
             <button onclick="showPlywoodForm()" class="btn btn-primary">➕ Add New Material</button>
           </div>
 
@@ -690,7 +703,10 @@
         <!-- INVOICE PAGE -->
         <div id="invoicePage" class="page-content hidden">
           <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📋 Invoice History</h2>
+            <div class="flex items-center gap-4">
+              <button onclick="showHomePage()" class="btn btn-gray">← Back</button>
+              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">📋 Invoice History</h2>
+            </div>
             <div class="flex flex-col sm:flex-row gap-3">
               <input type="text" id="invoiceSearch" placeholder="Search invoices..." class="input-field" onkeyup="filterInvoices()">
               <button onclick="exportInvoices()" class="btn btn-green">📄 Export CSV</button>
@@ -705,37 +721,91 @@
           </div>
         </div>
 
+        <!-- SETTINGS PAGE -->
+        <div id="settingsPage" class="page-content hidden">
+          <div class="mb-6">
+            <div class="flex items-center gap-4 mb-6">
+              <button onclick="showHomePage()" class="btn btn-gray">← Back</button>
+              <h2 class="text-xl lg:text-2xl font-bold text-gray-800">⚙️ Settings & Features</h2>
+            </div>
+            
+            <!-- Data Management -->
+            <div class="card p-6 mb-6">
+              <h3 class="font-bold text-lg mb-4 text-gray-800">📊 Data Management</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button onclick="loadDemoData()" class="btn btn-primary">🎯 Load Demo Data</button>
+                <button onclick="exportAllData()" class="btn btn-green">📤 Export All Data</button>
+                <button onclick="importData()" class="btn btn-orange">📥 Import Data</button>
+                <button onclick="clearAllData()" class="btn btn-red">🗑️ Clear All Data</button>
+                <button onclick="resetSystem()" class="btn btn-gray">🔄 Reset System</button>
+                <button onclick="backupData()" class="btn btn-purple">💾 Backup Data</button>
+              </div>
+            </div>
+
+            <!-- System Features -->
+            <div class="card p-6 mb-6">
+              <h3 class="font-bold text-lg mb-4 text-gray-800">🔧 System Features</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <h4 class="font-semibold text-gray-700 mb-2">📱 Auto-Save</h4>
+                  <p class="text-sm text-gray-600 mb-3">Automatically save changes to storage</p>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="autoSaveEnabled" checked class="mr-2">
+                    <span class="text-sm">Enable auto-save</span>
+                  </label>
+                </div>
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <h4 class="font-semibold text-gray-700 mb-2">⚠️ Low Stock Alerts</h4>
+                  <p class="text-sm text-gray-600 mb-3">Show alerts when stock is low</p>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="lowStockAlertsEnabled" checked class="mr-2">
+                    <span class="text-sm">Enable low stock alerts</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Storage Status -->
+            <div class="card p-6">
+              <h3 class="font-bold text-lg mb-4 text-gray-800">💾 Storage Status</h3>
+              <div id="storageStatus" class="space-y-3">
+                <!-- Storage status will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
   <!-- MODALS -->
 
-  <!-- ADD CATEGORY MODAL -->
-  <div id="categoryModal" class="modal hidden">
+  <!-- ADD CABINET FOLDER MODAL -->
+  <div id="cabinetFolderModal" class="modal hidden">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6 text-center">➕ Add New Category</h3>
+      <h3 class="text-xl font-bold mb-6 text-center">📁 Add New Cabinet Category</h3>
       
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Category Name:</label>
-          <input type="text" id="newCategoryName" placeholder="e.g., Base Cabinets" class="input-field">
+          <input type="text" id="newCabinetFolderName" placeholder="e.g., Wall Cabinets" class="input-field">
         </div>
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
-          <input type="text" id="newCategoryIcon" placeholder="🏠" class="input-field">
+          <input type="text" id="newCabinetFolderIcon" placeholder="🗄️" class="input-field">
         </div>
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
-          <textarea id="newCategoryDescription" placeholder="Brief description of this category..." class="input-field" rows="3"></textarea>
+          <textarea id="newCabinetFolderDescription" placeholder="Brief description of this cabinet type..." class="input-field" rows="3"></textarea>
         </div>
       </div>
 
       <div class="flex gap-3 mt-6">
-        <button onclick="addCategory()" class="btn btn-green flex-1">✅ Create Category</button>
-        <button onclick="closeCategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+        <button onclick="addCabinetFolder()" class="btn btn-green flex-1">✅ Create Category</button>
+        <button onclick="closeCabinetFolderModal()" class="btn btn-gray flex-1">❌ Cancel</button>
       </div>
     </div>
   </div>
@@ -909,17 +979,17 @@
   <script>
     // Global Variables
     let plywood = [];
-    let categories = [];
+    let cabinetFolders = [];
     let subcategories = [];
     let cabinets = [];
     let invoices = [];
     let dispatches = [];
-    let currentCategoryId = null;
+    let currentFolderId = null;
     let currentSubcategoryId = null;
     let currentDispatchSubcategoryId = null;
     let db = null;
     let isFirebaseAvailable = false;
-    let dataInitialized = false; // Track if we've already initialized data
+    let dataInitialized = false;
 
     // Authentication variables
     let currentUser = null;
@@ -932,7 +1002,7 @@
       'employee': { password: 'emp123', role: 'employee', name: 'Employee User' }
     };
 
-    // In-Memory Storage Management (localStorage not available in sandboxed environment)
+    // In-Memory Storage Management
     let isLocalStorageAvailable = false;
     
     // Check if localStorage is available
@@ -968,59 +1038,11 @@
         }
       }
       
-      // Try Firebase (if available)
-      if (isFirebaseAvailable && db) {
-        try {
-          // Clear existing data in this collection
-          const batch = db.batch();
-          const existingDocs = await db.collection(key).get();
-          existingDocs.forEach(doc => {
-            batch.delete(doc.ref);
-          });
-          
-          // Add new data
-          data.forEach(item => {
-            const docRef = db.collection(key).doc();
-            batch.set(docRef, {
-              ...item,
-              firebaseId: docRef.id,
-              lastSynced: new Date().toISOString()
-            });
-          });
-          
-          await batch.commit();
-          firebaseSaved = true;
-          console.log(`☁️ Saved ${key} to Firebase (${data.length} items)`);
-        } catch (error) {
-          console.error(`❌ Failed to save ${key} to Firebase:`, error);
-        }
-      }
-      
       return localSaved || firebaseSaved;
     }
 
     // Enhanced load function from Firebase + localStorage
     async function loadFromStorage(key) {
-      // Try Firebase first (if available)
-      if (isFirebaseAvailable && db) {
-        try {
-          const snapshot = await db.collection(key).get();
-          if (!snapshot.empty) {
-            const data = [];
-            snapshot.forEach(doc => {
-              data.push({
-                firebaseId: doc.id,
-                ...doc.data()
-              });
-            });
-            console.log(`☁️ Loaded ${key} from Firebase (${data.length} items)`);
-            return data;
-          }
-        } catch (error) {
-          console.error(`❌ Failed to load ${key} from Firebase:`, error);
-        }
-      }
-      
       // Fallback to localStorage
       if (isLocalStorageAvailable) {
         try {
@@ -1038,12 +1060,12 @@
       return [];
     }
 
-    // Save all data to both localStorage and Firebase
+    // Save all data to localStorage
     async function saveAllData() {
       console.log('💾 Saving all data...');
       
       const results = await Promise.all([
-        saveToStorage('categories', categories),
+        saveToStorage('cabinetFolders', cabinetFolders),
         saveToStorage('subcategories', subcategories),
         saveToStorage('plywood', plywood),
         saveToStorage('cabinets', cabinets),
@@ -1063,10 +1085,10 @@
       }
     }
 
-    // Load all data from Firebase + localStorage
+    // Load all data
     async function loadAllData() {
       // Don't reload if we already have data initialized during this session
-      if (dataInitialized && categories.length > 0) {
+      if (dataInitialized && cabinetFolders.length > 0) {
         console.log('📊 Using existing session data');
         updateStorageIndicator();
         return true;
@@ -1076,14 +1098,14 @@
       
       try {
         const [
-          loadedCategories,
+          loadedFolders,
           loadedSubcategories,
           loadedPlywood,
           loadedCabinets,
           loadedDispatches,
           loadedInvoices
         ] = await Promise.all([
-          loadFromStorage('categories'),
+          loadFromStorage('cabinetFolders'),
           loadFromStorage('subcategories'),
           loadFromStorage('plywood'),
           loadFromStorage('cabinets'),
@@ -1092,8 +1114,8 @@
         ]);
         
         // Only use loaded data if it's not empty
-        if (loadedCategories.length > 0) {
-          categories = loadedCategories;
+        if (loadedFolders.length > 0) {
+          cabinetFolders = loadedFolders;
           subcategories = loadedSubcategories || [];
           plywood = loadedPlywood || [];
           cabinets = loadedCabinets || [];
@@ -1102,8 +1124,6 @@
           
           dataInitialized = true;
           console.log('📥 Data loaded successfully');
-          console.log(`Data loaded: ${categories.length} categories, ${subcategories.length} products, ${plywood.length} materials, ${cabinets.length} inventory items, ${dispatches.length} dispatches`);
-          
           updateStorageIndicator();
           return true;
         }
@@ -1111,178 +1131,48 @@
         console.error('❌ Failed to load data:', error);
       }
       
-      // If no data was loaded, we'll need to initialize empty system
-      console.log('📥 No existing data found - starting with empty system');
+      // If no data was loaded, initialize default cabinet folders
+      console.log('📥 No existing data found - creating default cabinet folders');
+      initializeDefaultCabinetFolders();
       updateStorageIndicator();
       return false;
     }
 
-    // Add individual item to Firebase
-    async function saveItemToFirebase(collection, item) {
-      if (!isFirebaseAvailable || !db) return null;
-      
-      try {
-        if (item.firebaseId) {
-          // Update existing item
-          await db.collection(collection).doc(item.firebaseId).update({
-            ...item,
-            lastSynced: new Date().toISOString()
-          });
-          console.log(`☁️ Updated ${collection} item in Firebase`);
-          return item.firebaseId;
-        } else {
-          // Create new item
-          const docRef = await db.collection(collection).add({
-            ...item,
-            lastSynced: new Date().toISOString()
-          });
-          console.log(`☁️ Created ${collection} item in Firebase`);
-          return docRef.id;
+    // Initialize default cabinet folders
+    function initializeDefaultCabinetFolders() {
+      cabinetFolders = [
+        {
+          id: 1,
+          name: 'Wall Cabinets',
+          icon: '🗄️',
+          description: 'Wall-mounted cabinets for kitchens and bathrooms',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: 'Base Cabinets',
+          icon: '🏠',
+          description: 'Floor-mounted base cabinets',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 3,
+          name: 'Fridge Cabinets',
+          icon: '❄️',
+          description: 'Tall cabinets designed for refrigerator integration',
+          dateCreated: new Date().toISOString()
         }
-      } catch (error) {
-        console.error(`❌ Failed to save ${collection} item to Firebase:`, error);
-        return null;
-      }
-    }
-
-    // Delete item from Firebase
-    async function deleteItemFromFirebase(collection, firebaseId) {
-      if (!isFirebaseAvailable || !db || !firebaseId) return false;
+      ];
       
-      try {
-        await db.collection(collection).doc(firebaseId).delete();
-        console.log(`☁️ Deleted ${collection} item from Firebase`);
-        return true;
-      } catch (error) {
-        console.error(`❌ Failed to delete ${collection} item from Firebase:`, error);
-        return false;
-      }
-    }
-
-    // Setup real-time Firebase listeners
-    function setupFirebaseListeners() {
-      if (!isFirebaseAvailable || !db) return;
+      subcategories = [];
+      plywood = [];
+      cabinets = [];
+      dispatches = [];
+      invoices = [];
       
-      console.log('🔄 Setting up Firebase real-time listeners...');
-      
-      // Categories listener
-      db.collection('categories').onSnapshot((snapshot) => {
-        const updatedCategories = [];
-        snapshot.forEach(doc => {
-          updatedCategories.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          });
-        });
-        
-        if (updatedCategories.length > 0) {
-          categories = updatedCategories;
-          renderCategoriesGrid();
-          console.log('🔄 Categories updated from Firebase');
-        }
-      }, error => {
-        console.error('❌ Categories listener error:', error);
-      });
-      
-      // Subcategories listener
-      db.collection('subcategories').onSnapshot((snapshot) => {
-        const updatedSubcategories = [];
-        snapshot.forEach(doc => {
-          updatedSubcategories.push({
-            firebaseId: doc.id,
-            ...doc.data()
-          });
-        });
-        
-        if (updatedSubcategories.length > 0) {
-          subcategories = updatedSubcategories;
-          if (currentCategoryId) {
-            renderSubcategoriesList();
-          }
-          console.log('🔄 Subcategories updated from Firebase');
-        }
-      }, error => {
-        console.error('❌ Subcategories listener error:', error);
-      });
-      
-      // Continue with other collections...
-      ['plywood', 'cabinets', 'dispatches', 'invoices'].forEach(collection => {
-        db.collection(collection).onSnapshot((snapshot) => {
-          const updatedData = [];
-          snapshot.forEach(doc => {
-            updatedData.push({
-              firebaseId: doc.id,
-              ...doc.data()
-            });
-          });
-          
-          // Update corresponding global array
-          switch(collection) {
-            case 'plywood':
-              plywood = updatedData;
-              renderPlywood();
-              break;
-            case 'cabinets':
-              cabinets = updatedData;
-              renderSubcategoriesList();
-              break;
-            case 'dispatches':
-              dispatches = updatedData;
-              renderDispatches();
-              updateDispatchStats();
-              break;
-            case 'invoices':
-              invoices = updatedData;
-              renderInvoices();
-              break;
-          }
-          
-          updateStats();
-          console.log(`🔄 ${collection} updated from Firebase`);
-        }, error => {
-          console.error(`❌ ${collection} listener error:`, error);
-        });
-      });
-    }
-
-    // Firebase initialization
-    const firebaseConfig = {
-      apiKey: "AIzaSyAMmPd0w9igmg6oyDtJeG5XBeeBON29yQA",
-      authDomain: "cabinet-inventory-web.firebaseapp.com",
-      projectId: "cabinet-inventory-web",
-      storageBucket: "cabinet-inventory-web.firebasestorage.app",
-      messagingSenderId: "558741277330",
-      appId: "1:558741277330:web:b8b92f7ef1f92a12c9744b",
-      measurementId: "G-0JCXB70V7S"
-    };
-
-    try {
-      if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        isFirebaseAvailable = true;
-        console.log('🔥 Firebase initialized successfully');
-        
-        // Test Firebase connection
-        db.collection('test').doc('connection').set({
-          timestamp: new Date().toISOString(),
-          status: 'connected'
-        }).then(() => {
-          console.log('✅ Firebase connection test successful');
-          showSuccess('🔥 Connected to Firebase cloud storage!');
-        }).catch(error => {
-          console.error('❌ Firebase connection test failed:', error);
-          isFirebaseAvailable = false;
-        });
-        
-      } else {
-        console.log('⚠️ Firebase not available, using localStorage only');
-        isFirebaseAvailable = false;
-      }
-    } catch (error) {
-      console.log('⚠️ Firebase initialization failed, using localStorage only');
-      console.error('Firebase error:', error);
-      isFirebaseAvailable = false;
+      dataInitialized = true;
+      saveAllData();
+      console.log('✅ Default cabinet folders initialized');
     }
 
     // Enhanced success message function with auto-save
@@ -1299,11 +1189,7 @@
       }, 3000);
       
       // Save data after any successful operation (async)
-      saveAllData().then(saved => {
-        if (saved && isFirebaseAvailable) {
-          console.log('✅ Data synced to Firebase');
-        }
-      }).catch(error => {
+      saveAllData().catch(error => {
         console.error('❌ Failed to save data:', error);
       });
     }
@@ -1356,7 +1242,6 @@
 
     function checkAutoLogin() {
       if (!isLocalStorageAvailable) {
-        // In sandboxed environment, no persistent login
         return false;
       }
       
@@ -1392,14 +1277,6 @@
 
     function showMainApp() {
       console.log('🚀 showMainApp called');
-      console.log('📊 Current data state:', {
-        categories: categories.length,
-        subcategories: subcategories.length,
-        plywood: plywood.length,
-        cabinets: cabinets.length,
-        dispatches: dispatches.length,
-        dataInitialized: dataInitialized
-      });
 
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
@@ -1419,12 +1296,11 @@
       // Load existing data first
       const dataLoaded = loadAllData();
       
-      // Only initialize sample data if we have absolutely no data and haven't initialized before
-      if (!dataLoaded && !dataInitialized && categories.length === 0) {
-        console.log('🎯 No data found, starting with empty system...');
-        // Start with empty system instead of demo data
-        dataInitialized = true;
-        showSuccess('✨ Welcome! Start by creating your first category and products.');
+      // Only initialize default folders if we have absolutely no data and haven't initialized before
+      if (!dataLoaded && !dataInitialized && cabinetFolders.length === 0) {
+        console.log('🎯 No data found, initializing default cabinet folders...');
+        initializeDefaultCabinetFolders();
+        showSuccess('✨ Welcome! Default cabinet folders created. Start by adding your first products.');
       } else {
         console.log('📊 Using existing data');
         dataInitialized = true;
@@ -1432,162 +1308,8 @@
       
       // Always refresh the UI
       showHomePage();
-      renderCategoriesGrid();
       updateStats();
       checkLowStock();
-    }
-
-    // Sample data initialization
-    function initializeWithSampleData() {
-      console.log('🎯 Initializing with sample data...');
-      
-      // Create sample categories
-      categories = [
-        {
-          id: 1,
-          name: 'Base Cabinets',
-          icon: '🏠',
-          description: 'Floor-mounted cabinets for kitchens and bathrooms',
-          dateCreated: new Date().toISOString()
-        },
-        {
-          id: 2,
-          name: 'Wall Cabinets',
-          icon: '🔲',
-          description: 'Wall-mounted cabinets for storage',
-          dateCreated: new Date().toISOString()
-        }
-      ];
-
-      // Create sample subcategories
-      subcategories = [
-        {
-          id: 1,
-          categoryId: 1,
-          name: '24" Standard Base',
-          icon: '📦',
-          description: 'Standard 24" deep base cabinet',
-          materials: 'Oak plywood, soft-close hinges',
-          pricePerUnit: 350.00,
-          dateCreated: new Date().toISOString()
-        },
-        {
-          id: 2,
-          categoryId: 2,
-          name: '30" Wall Cabinet',
-          icon: '🔲',
-          description: 'Standard 30" wall-mounted cabinet',
-          materials: 'Maple plywood, adjustable shelves',
-          pricePerUnit: 275.00,
-          dateCreated: new Date().toISOString()
-        }
-      ];
-
-      // Create sample plywood
-      plywood = [
-        {
-          id: 1,
-          type: 'Oak 3/4"',
-          sheets: 25,
-          minStock: 10,
-          supplier: 'Wood Co',
-          cost: 45.00,
-          lastInvoice: 'INV-001',
-          dateAdded: new Date().toISOString()
-        },
-        {
-          id: 2,
-          type: 'Maple 3/4"',
-          sheets: 15,
-          minStock: 8,
-          supplier: 'Premium Woods',
-          cost: 52.00,
-          lastInvoice: 'INV-002',
-          dateAdded: new Date().toISOString()
-        }
-      ];
-
-      // Create sample cabinets inventory
-      cabinets = [
-        {
-          id: 1,
-          subcategoryId: 1,
-          categoryId: 1,
-          type: '24" Standard Base',
-          quantity: 5,
-          materials: 'Oak plywood, soft-close hinges',
-          pricePerUnit: 350.00,
-          dateCreated: new Date().toISOString()
-        },
-        {
-          id: 2,
-          subcategoryId: 2,
-          categoryId: 2,
-          type: '30" Wall Cabinet',
-          quantity: 3,
-          materials: 'Maple plywood, adjustable shelves',
-          pricePerUnit: 275.00,
-          dateCreated: new Date().toISOString()
-        }
-      ];
-
-      dispatches = [];
-      invoices = [];
-
-      // Mark as initialized
-      dataInitialized = true;
-      
-      // Save sample data
-      saveAllData();
-      
-      console.log('✅ Sample data initialized successfully');
-    }
-
-    // Function to generate folder name from address
-    function generateFolderName(address) {
-      // Extract key parts of address and create a consistent folder name
-      const cleanAddress = address.toLowerCase()
-        .replace(/\n/g, ' ')
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      // Extract key components (street, city, etc.)
-      const parts = cleanAddress.split(' ');
-      const relevantParts = parts.filter(part => 
-        part.length > 2 && 
-        !['apt', 'apartment', 'unit', 'suite', 'floor', 'the', 'and', 'of'].includes(part)
-      );
-      
-      // Create folder name from first few relevant parts
-      const folderParts = relevantParts.slice(0, 3);
-      return folderParts.join('_').substring(0, 20).toUpperCase();
-    }
-
-    // Function to check if address matches existing folder
-    function findMatchingFolder(newAddress) {
-      const newFolderName = generateFolderName(newAddress);
-      
-      // Look for existing dispatches with same or similar address
-      for (const dispatch of dispatches) {
-        if (dispatch.folderName === newFolderName) {
-          return dispatch.folderName;
-        }
-        
-        // Also check if addresses are very similar (same key words)
-        const existingWords = dispatch.address.toLowerCase().split(/\s+/);
-        const newWords = newAddress.toLowerCase().split(/\s+/);
-        const commonWords = existingWords.filter(word => 
-          newWords.includes(word) && word.length > 3
-        );
-        
-        // If more than 2 significant words match, consider it the same location
-        if (commonWords.length >= 2) {
-          return dispatch.folderName;
-        }
-      }
-      
-      return newFolderName;
     }
 
     // Page navigation functions
@@ -1595,21 +1317,28 @@
       hideAllPages();
       document.getElementById('homePage').classList.remove('hidden');
       updateBreadcrumb('');
-      renderCategoriesGrid();
       updateStats();
     }
 
-    function showCategoryPage(categoryId) {
+    function showCabinetsPage() {
       hideAllPages();
-      currentCategoryId = categoryId;
-      const category = categories.find(c => c.id === categoryId);
+      document.getElementById('cabinetsPage').classList.remove('hidden');
+      updateBreadcrumb('> 🗄️ Cabinets');
+      renderCabinetFoldersGrid();
+      updateAllCabinetsStats();
+    }
+
+    function showCabinetFolderPage(folderId) {
+      hideAllPages();
+      currentFolderId = folderId;
+      const folder = cabinetFolders.find(f => f.id === folderId);
       
-      document.getElementById('categoryPage').classList.remove('hidden');
-      document.getElementById('categoryPageTitle').textContent = `${category.icon} ${category.name}`;
-      updateBreadcrumb(`> ${category.icon} ${category.name}`);
+      document.getElementById('cabinetFolderPage').classList.remove('hidden');
+      document.getElementById('cabinetFolderPageTitle').textContent = `${folder.icon} ${folder.name}`;
+      updateBreadcrumb(`> 🗄️ Cabinets > ${folder.icon} ${folder.name}`);
       
       renderSubcategoriesList();
-      updateCategoryStats();
+      updateFolderStats();
     }
 
     function showPlywoodPage() {
@@ -1634,8 +1363,15 @@
       renderInvoices();
     }
 
+    function showSettingsPage() {
+      hideAllPages();
+      document.getElementById('settingsPage').classList.remove('hidden');
+      updateBreadcrumb('> ⚙️ Settings & Features');
+      renderStorageStatus();
+    }
+
     function hideAllPages() {
-      const pages = ['homePage', 'categoryPage', 'plywoodPage', 'dispatchPage', 'invoicePage'];
+      const pages = ['homePage', 'cabinetsPage', 'cabinetFolderPage', 'plywoodPage', 'dispatchPage', 'invoicePage', 'settingsPage'];
       pages.forEach(page => {
         document.getElementById(page).classList.add('hidden');
       });
@@ -1646,39 +1382,39 @@
     }
 
     // Render functions
-    function renderCategoriesGrid() {
-      const grid = document.getElementById('categoriesGrid');
+    function renderCabinetFoldersGrid() {
+      const grid = document.getElementById('cabinetFoldersGrid');
       if (!grid) return;
       
       grid.innerHTML = '';
       
-      if (categories.length === 0) {
+      if (cabinetFolders.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center text-gray-500 py-8">
-            📂 No categories found. Create your first category to get started!
+            📂 No cabinet categories found. Create your first category to get started!
           </div>
         `;
         return;
       }
       
-      categories.forEach(category => {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === category.id);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === category.id);
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+      cabinetFolders.forEach(folder => {
+        const folderSubcategories = subcategories.filter(sub => sub.folderId === folder.id);
+        const folderCabinets = cabinets.filter(cab => cab.folderId === folder.id);
+        const totalUnits = folderCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
         
         const div = document.createElement('div');
         div.className = 'category-card';
-        div.onclick = () => showCategoryPage(category.id);
+        div.onclick = () => showCabinetFolderPage(folder.id);
         
         div.innerHTML = `
           <div class="text-center">
-            <div class="text-4xl mb-3">${category.icon}</div>
-            <h3 class="font-bold text-lg text-gray-800 mb-2">${category.name}</h3>
-            <p class="text-gray-600 text-sm mb-4">${category.description || 'No description'}</p>
+            <div class="text-4xl mb-3">${folder.icon}</div>
+            <h3 class="font-bold text-lg text-gray-800 mb-2">${folder.name}</h3>
+            <p class="text-gray-600 text-sm mb-4">${folder.description || 'No description'}</p>
             
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div class="bg-white rounded-lg p-2">
-                <div class="font-bold text-blue-600">${categorySubcategories.length}</div>
+                <div class="font-bold text-blue-600">${folderSubcategories.length}</div>
                 <div class="text-gray-500">Product Types</div>
               </div>
               <div class="bg-white rounded-lg p-2">
@@ -1699,17 +1435,13 @@
 
     function renderSubcategoriesList() {
       const list = document.getElementById('subcategoriesList');
-      if (!list || !currentCategoryId) return;
+      if (!list || !currentFolderId) return;
       
-      console.log('🎨 Rendering subcategories for category:', currentCategoryId);
-      console.log('📊 Current cabinets data:', cabinets.map(c => ({ id: c.id, subcategoryId: c.subcategoryId, quantity: c.quantity })));
-      
-      const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-      console.log('📦 Found subcategories:', categorySubcategories.length);
+      const folderSubcategories = subcategories.filter(sub => sub.folderId === currentFolderId);
       
       list.innerHTML = '';
       
-      if (categorySubcategories.length === 0) {
+      if (folderSubcategories.length === 0) {
         list.innerHTML = `
           <div class="text-center text-gray-500 py-8">
             📦 No product types found in this category.<br>
@@ -1719,12 +1451,10 @@
         return;
       }
       
-      categorySubcategories.forEach(subcategory => {
+      folderSubcategories.forEach(subcategory => {
         const subcategoryCabinets = cabinets.filter(cab => cab.subcategoryId === subcategory.id);
         const totalQuantity = subcategoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
         const totalValue = totalQuantity * subcategory.pricePerUnit;
-        
-        console.log(`📊 ${subcategory.name}: ${totalQuantity} units (value: ${totalValue.toFixed(2)})`);
         
         const div = document.createElement('div');
         div.className = 'subcategory-card';
@@ -1800,9 +1530,9 @@
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
               <h3 class="font-bold text-lg lg:text-xl text-gray-800 mb-2">${item.type || 'Unknown Type'}</h3>
-              <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: $${cost.toFixed(2)}/sheet</p>
+              <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
               <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
-              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: $${(sheets * cost).toFixed(2)}</p>
+              <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
               ${item.lastInvoice ? `<p class="text-xs text-green-600 mt-1">📋 Last Invoice: ${item.lastInvoice}</p>` : ''}
             </div>
             <div class="flex flex-row lg:flex-col items-center gap-4">
@@ -1960,6 +1690,43 @@
       });
     }
 
+    function renderStorageStatus() {
+      const statusDiv = document.getElementById('storageStatus');
+      if (!statusDiv) return;
+      
+      statusDiv.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">💾 Local Storage</h4>
+            <p class="text-sm ${isLocalStorageAvailable ? 'text-green-600' : 'text-orange-600'}">
+              ${isLocalStorageAvailable ? '✅ Available' : '⚠️ Using Memory Only'}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Browser local storage</p>
+          </div>
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">📊 Data Summary</h4>
+            <div class="text-sm space-y-1">
+              <div><strong>Cabinet Categories:</strong> ${cabinetFolders.length}</div>
+              <div><strong>Product Types:</strong> ${subcategories.length}</div>
+              <div><strong>Materials:</strong> ${plywood.length}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+          <h4 class="font-semibold text-blue-800 mb-2">📊 Full Data Summary</h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div><strong>Cabinet Categories:</strong> ${cabinetFolders.length}</div>
+            <div><strong>Product Types:</strong> ${subcategories.length}</div>
+            <div><strong>Plywood Materials:</strong> ${plywood.length}</div>
+            <div><strong>Cabinet Inventory:</strong> ${cabinets.length}</div>
+            <div><strong>Dispatches:</strong> ${dispatches.length}</div>
+            <div><strong>Invoice Records:</strong> ${invoices.length}</div>
+          </div>
+        </div>
+      `;
+    }
+
     // Stats and calculation functions
     function updateStats() {
       try {
@@ -1971,7 +1738,7 @@
 
         document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
         document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
-        document.getElementById('activeCategories').textContent = categories.length.toString();
+        document.getElementById('activeCategories').textContent = cabinetFolders.length.toString();
         document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
         document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
 
@@ -1980,24 +1747,41 @@
       }
     }
 
-    function updateCategoryStats() {
-      if (!currentCategoryId) return;
-      
+    function updateAllCabinetsStats() {
       try {
-        const categorySubcategories = subcategories.filter(sub => sub.categoryId === currentCategoryId);
-        const categoryCabinets = cabinets.filter(cab => cab.categoryId === currentCategoryId);
-        
-        const totalUnits = categoryCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
-        const totalValue = categoryCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
-        const avgPrice = totalUnits > 0 ? totalValue / totalUnits : 0;
+        const totalUnits = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const totalCategories = cabinetFolders.length;
+        const totalValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
+        const totalProductTypes = subcategories.length;
 
-        document.getElementById('categoryTotalCabinets').textContent = totalUnits.toString();
-        document.getElementById('categoryProductTypes').textContent = categorySubcategories.length.toString();
-        document.getElementById('categoryValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
-        document.getElementById('categoryAvgPrice').textContent = `${avgPrice.toFixed(0)}`;
+        document.getElementById('allCabinetsTotalUnits').textContent = totalUnits.toString();
+        document.getElementById('allCabinetsCategories').textContent = totalCategories.toString();
+        document.getElementById('allCabinetsValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
+        document.getElementById('allCabinetsProductTypes').textContent = totalProductTypes.toString();
 
       } catch (error) {
-        console.error('Error updating category stats:', error);
+        console.error('Error updating all cabinets stats:', error);
+      }
+    }
+
+    function updateFolderStats() {
+      if (!currentFolderId) return;
+      
+      try {
+        const folderSubcategories = subcategories.filter(sub => sub.folderId === currentFolderId);
+        const folderCabinets = cabinets.filter(cab => cab.folderId === currentFolderId);
+        
+        const totalUnits = folderCabinets.reduce((sum, cab) => sum + (cab.quantity || 0), 0);
+        const totalValue = folderCabinets.reduce((sum, cab) => sum + ((cab.quantity || 0) * (cab.pricePerUnit || 0)), 0);
+        const avgPrice = totalUnits > 0 ? totalValue / totalUnits : 0;
+
+        document.getElementById('folderTotalCabinets').textContent = totalUnits.toString();
+        document.getElementById('folderProductTypes').textContent = folderSubcategories.length.toString();
+        document.getElementById('folderValue').textContent = `${Math.round(totalValue).toLocaleString()}`;
+        document.getElementById('folderAvgPrice').textContent = `${avgPrice.toFixed(0)}`;
+
+      } catch (error) {
+        console.error('Error updating folder stats:', error);
       }
     }
 
@@ -2041,26 +1825,26 @@
     }
 
     // Modal functions
-    function showCategoryModal() {
-      document.getElementById('categoryModal').classList.remove('hidden');
-      document.getElementById('newCategoryName').value = '';
-      document.getElementById('newCategoryIcon').value = '';
-      document.getElementById('newCategoryDescription').value = '';
+    function showCabinetFolderModal() {
+      document.getElementById('cabinetFolderModal').classList.remove('hidden');
+      document.getElementById('newCabinetFolderName').value = '';
+      document.getElementById('newCabinetFolderIcon').value = '';
+      document.getElementById('newCabinetFolderDescription').value = '';
     }
 
-    function closeCategoryModal() {
-      document.getElementById('categoryModal').classList.add('hidden');
+    function closeCabinetFolderModal() {
+      document.getElementById('cabinetFolderModal').classList.add('hidden');
     }
 
     function showSubcategoryModal() {
-      if (!currentCategoryId) {
-        alert('❌ Please select a category first');
+      if (!currentFolderId) {
+        alert('❌ Please select a cabinet category first');
         return;
       }
       
       document.getElementById('subcategoryModal').classList.remove('hidden');
       clearSubcategoryForm();
-      populateMaterialSelects(); // Populate material dropdowns
+      populateMaterialSelects();
     }
 
     function closeSubcategoryModal() {
@@ -2085,10 +1869,48 @@
       document.getElementById('nonCabinetConfiguration').classList.add('hidden');
     }
 
+    function populateMaterialSelects() {
+      const primarySelect = document.getElementById('subcategoryPlywoodType');
+      const secondarySelect = document.getElementById('subcategorySecondaryType');
+      
+      if (primarySelect && secondarySelect) {
+        // Clear existing options
+        primarySelect.innerHTML = '<option value="">Select Plywood Type</option>';
+        secondarySelect.innerHTML = '<option value="">Select Secondary Material</option>';
+        
+        // Add plywood options
+        plywood.forEach(material => {
+          const option1 = document.createElement('option');
+          option1.value = material.id;
+          option1.textContent = `${material.type} (${material.sheets} sheets available)`;
+          primarySelect.appendChild(option1);
+          
+          const option2 = document.createElement('option');
+          option2.value = material.id;
+          option2.textContent = `${material.type} (${material.sheets} sheets available)`;
+          secondarySelect.appendChild(option2);
+        });
+      }
+    }
+
+    function toggleProductTypeOptions() {
+      const productType = document.getElementById('productType').value;
+      const cabinetConfig = document.getElementById('cabinetConfiguration');
+      const nonCabinetConfig = document.getElementById('nonCabinetConfiguration');
+      
+      if (productType === 'cabinet') {
+        cabinetConfig.classList.remove('hidden');
+        nonCabinetConfig.classList.add('hidden');
+      } else {
+        cabinetConfig.classList.add('hidden');
+        nonCabinetConfig.classList.remove('hidden');
+      }
+    }
+
     function showManufacturingModal(subcategoryId) {
       currentSubcategoryId = subcategoryId;
       const subcategory = subcategories.find(s => s.id === subcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
+      const folder = cabinetFolders.find(f => f.id === subcategory.folderId);
       
       document.getElementById('manufacturingModal').classList.remove('hidden');
       
@@ -2096,7 +1918,7 @@
       details.innerHTML = `
         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
           <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
-          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
+          <p class="text-blue-700 text-sm mt-1">Category: ${folder.icon} ${folder.name}</p>
           <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
           <p class="text-blue-700 text-sm">Materials: ${subcategory.materials}</p>
         </div>
@@ -2112,7 +1934,7 @@
     function showDispatchModal(subcategoryId) {
       currentDispatchSubcategoryId = subcategoryId;
       const subcategory = subcategories.find(s => s.id === subcategoryId);
-      const category = categories.find(c => c.id === subcategory.categoryId);
+      const folder = cabinetFolders.find(f => f.id === subcategory.folderId);
       const cabinet = cabinets.find(c => c.subcategoryId === subcategoryId);
       
       if (!cabinet || cabinet.quantity <= 0) {
@@ -2126,7 +1948,7 @@
       details.innerHTML = `
         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
           <h4 class="font-bold text-lg text-blue-800">${subcategory.icon} ${subcategory.name}</h4>
-          <p class="text-blue-700 text-sm mt-1">Category: ${category.icon} ${category.name}</p>
+          <p class="text-blue-700 text-sm mt-1">Category: ${folder.icon} ${folder.name}</p>
           <p class="text-blue-700 text-sm">Available: ${cabinet.quantity} units</p>
           <p class="text-blue-700 text-sm">Price: ${subcategory.pricePerUnit.toFixed(2)} per unit</p>
         </div>
@@ -2158,17 +1980,17 @@
     }
 
     // Add functions
-    function addCategory() {
-      const name = document.getElementById('newCategoryName').value.trim();
-      const icon = document.getElementById('newCategoryIcon').value.trim() || '📂';
-      const description = document.getElementById('newCategoryDescription').value.trim();
+    function addCabinetFolder() {
+      const name = document.getElementById('newCabinetFolderName').value.trim();
+      const icon = document.getElementById('newCabinetFolderIcon').value.trim() || '🗄️';
+      const description = document.getElementById('newCabinetFolderDescription').value.trim();
       
       if (!name) {
         alert('❌ Please enter a category name');
         return;
       }
       
-      const category = {
+      const folder = {
         id: Date.now(),
         name,
         icon,
@@ -2176,11 +1998,12 @@
         dateCreated: new Date().toISOString()
       };
       
-      categories.push(category);
-      closeCategoryModal();
-      renderCategoriesGrid();
+      cabinetFolders.push(folder);
+      closeCabinetFolderModal();
+      renderCabinetFoldersGrid();
       updateStats();
-      showSuccess(`Category "${name}" created successfully!`);
+      updateAllCabinetsStats();
+      showSuccess(`Cabinet category "${name}" created successfully!`);
     }
 
     function addSubcategory() {
@@ -2232,7 +2055,7 @@
 
       const subcategory = {
         id: Date.now(),
-        categoryId: currentCategoryId,
+        folderId: currentFolderId,
         name,
         icon,
         description,
@@ -2246,7 +2069,8 @@
       subcategories.push(subcategory);
       closeSubcategoryModal();
       renderSubcategoriesList();
-      updateCategoryStats();
+      updateFolderStats();
+      updateAllCabinetsStats();
       showSuccess(`Product type "${name}" created successfully!`);
     }
 
@@ -2301,8 +2125,6 @@
       const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
       const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
       
-      console.log('🔨 Manufacturing:', quantity, 'units of', subcategory.name);
-      
       if (quantity <= 0) {
         alert('❌ Please enter a valid quantity');
         return;
@@ -2310,8 +2132,6 @@
 
       // Check material requirements and deduct materials
       if (subcategory.materialRequirements) {
-        console.log('📦 Processing material requirements:', subcategory.materialRequirements);
-        
         // Check primary material
         if (subcategory.materialRequirements.primary) {
           const primaryMaterial = plywood.find(p => p.id == subcategory.materialRequirements.primary.materialId);
@@ -2364,12 +2184,11 @@
         }
         
         if (materialsUsed.length > 0) {
-          console.log('📦 Materials consumed:', materialsUsed);
           showSuccess(`Manufacturing completed! Consumed: ${materialsUsed.join(', ')}`);
         }
         
       } else if (subcategory.productType === 'cabinet') {
-        // Legacy cabinet without specific material requirements - try to deduct some material
+        // Legacy cabinet without specific material requirements
         const availablePlywood = plywood.find(p => p.sheets >= quantity && !p.hidden);
         if (availablePlywood) {
           availablePlywood.sheets -= quantity;
@@ -2386,15 +2205,13 @@
       const existingCabinet = cabinets.find(c => c.subcategoryId === currentSubcategoryId);
 
       if (existingCabinet) {
-        const oldQuantity = existingCabinet.quantity;
         existingCabinet.quantity += quantity;
         existingCabinet.lastManufactured = new Date().toISOString();
-        console.log(`📦 Updated cabinet inventory: ${oldQuantity} → ${existingCabinet.quantity}`);
       } else {
         const cabinet = {
           id: Date.now(),
           subcategoryId: currentSubcategoryId,
-          categoryId: subcategory.categoryId,
+          folderId: subcategory.folderId,
           type: subcategory.name,
           quantity: quantity,
           materials: subcategory.materials,
@@ -2405,16 +2222,14 @@
         };
         
         cabinets.push(cabinet);
-        console.log(`📦 Created new cabinet inventory:`, cabinet);
       }
-
-      console.log('📊 Current cabinets after manufacturing:', cabinets.map(c => ({ id: c.id, type: c.type, quantity: c.quantity })));
 
       closeManufacturingModal();
       renderSubcategoriesList();
       renderPlywood();
       updateStats();
-      updateCategoryStats();
+      updateFolderStats();
+      updateAllCabinetsStats();
       checkLowStock();
       showSuccess(`Successfully manufactured ${quantity} units of ${subcategory.name}!`);
     }
@@ -2424,8 +2239,6 @@
       const address = document.getElementById('dispatchAddress').value.trim();
       const deliveryDate = document.getElementById('dispatchDeliveryDate').value;
       const notes = document.getElementById('dispatchNotes').value.trim();
-      
-      console.log('🚚 Dispatching:', quantity, 'units');
       
       if (!address) {
         alert('❌ Please enter a destination address');
@@ -2441,26 +2254,11 @@
       }
 
       // Update cabinet inventory
-      const oldQuantity = cabinet.quantity;
       cabinet.quantity -= quantity;
       cabinet.lastUpdated = new Date().toISOString();
-      
-      console.log(`📦 Updated cabinet inventory: ${oldQuantity} → ${cabinet.quantity}`);
 
-      // Generate or find matching folder name for the address
-      const folderName = findMatchingFolder(address);
-      console.log(`📁 Assigned folder: ${folderName}`);
-
-      // Check if there are existing dispatches to the same folder
-      const existingFolderDispatches = dispatches.filter(d => d.folderName === folderName);
-      let folderDisplayName = folderName;
-      
-      if (existingFolderDispatches.length > 0) {
-        folderDisplayName = `${folderName} (${existingFolderDispatches.length + 1} items)`;
-        showSuccess(`📁 Added to existing folder: ${folderName}`);
-      } else {
-        showSuccess(`📁 Created new folder: ${folderName}`);
-      }
+      // Generate folder name for the address
+      const folderName = generateFolderName(address);
 
       // Create dispatch record
       const dispatch = {
@@ -2477,18 +2275,37 @@
       };
       
       dispatches.push(dispatch);
-      console.log('🚚 Created dispatch:', dispatch);
-      console.log('📊 Current dispatches:', dispatches.length);
 
       closeDispatchModal();
       renderSubcategoriesList();
       updateStats();
-      updateCategoryStats();
+      updateFolderStats();
+      updateAllCabinetsStats();
       updateDispatchStats();
-      showSuccess(`Successfully dispatched ${quantity} units of ${subcategory.name} to folder ${folderName}!`);
+      showSuccess(`Successfully dispatched ${quantity} units of ${subcategory.name}!`);
     }
 
     // Utility functions
+    function generateFolderName(address) {
+      // Extract key parts of address and create a consistent folder name
+      const cleanAddress = address.toLowerCase()
+        .replace(/\n/g, ' ')
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Extract key components (street, city, etc.)
+      const parts = cleanAddress.split(' ');
+      const relevantParts = parts.filter(part => 
+        part.length > 2 && 
+        !['apt', 'apartment', 'unit', 'suite', 'floor', 'the', 'and', 'of'].includes(part)
+      );
+      
+      // Create folder name from first few relevant parts
+      const folderParts = relevantParts.slice(0, 3);
+      return folderParts.join('_').substring(0, 20).toUpperCase();
+    }
+
     function updatePlywoodQuantity(id, change) {
       const item = plywood.find(p => p.id === id);
       if (item) {
@@ -2543,7 +2360,8 @@
         renderSubcategoriesList();
         updateDispatchStats();
         updateStats();
-        updateCategoryStats();
+        updateFolderStats();
+        updateAllCabinetsStats();
         showSuccess(`Dispatch #${dispatchId} deleted and ${returnedQuantity} items returned to inventory!`);
       }
     }
@@ -2613,6 +2431,283 @@
       showSuccess(`Invoice records exported! ${invoices.length} invoices exported to CSV`);
     }
 
+    // Settings functions
+    function loadDemoData() {
+      if (!confirm('This will replace all current data with demo data. Continue?')) {
+        return;
+      }
+      
+      // Create demo cabinet folders
+      cabinetFolders = [
+        {
+          id: 1,
+          name: 'Wall Cabinets',
+          icon: '🗄️',
+          description: 'Wall-mounted cabinets for kitchens and bathrooms',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: 'Base Cabinets',
+          icon: '🏠',
+          description: 'Floor-mounted base cabinets',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 3,
+          name: 'Fridge Cabinets',
+          icon: '❄️',
+          description: 'Tall cabinets designed for refrigerator integration',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 4,
+          name: 'Pantry Cabinets',
+          icon: '🥫',
+          description: 'Large storage cabinets for pantry items',
+          dateCreated: new Date().toISOString()
+        }
+      ];
+
+      // Create demo subcategories
+      subcategories = [
+        {
+          id: 1,
+          folderId: 1,
+          name: '30" Wall Cabinet',
+          icon: '🔲',
+          description: 'Standard 30" wall-mounted cabinet',
+          materials: 'Maple plywood, adjustable shelves',
+          pricePerUnit: 275.00,
+          productType: 'cabinet',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 2,
+          folderId: 2,
+          name: '24" Standard Base',
+          icon: '📦',
+          description: 'Standard 24" deep base cabinet',
+          materials: 'Oak plywood, soft-close hinges',
+          pricePerUnit: 350.00,
+          productType: 'cabinet',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 3,
+          folderId: 3,
+          name: '84" Fridge Panel',
+          icon: '❄️',
+          description: 'Full height refrigerator panel',
+          materials: 'Oak plywood, finished sides',
+          pricePerUnit: 450.00,
+          productType: 'cabinet',
+          dateCreated: new Date().toISOString()
+        }
+      ];
+
+      // Create demo plywood
+      plywood = [
+        {
+          id: 1,
+          type: 'Oak 3/4"',
+          sheets: 25,
+          minStock: 10,
+          supplier: 'Wood Co',
+          cost: 45.00,
+          lastInvoice: 'INV-001',
+          dateAdded: new Date().toISOString()
+        },
+        {
+          id: 2,
+          type: 'Maple 3/4"',
+          sheets: 15,
+          minStock: 8,
+          supplier: 'Premium Woods',
+          cost: 52.00,
+          lastInvoice: 'INV-002',
+          dateAdded: new Date().toISOString()
+        },
+        {
+          id: 3,
+          type: 'Birch 1/2"',
+          sheets: 12,
+          minStock: 5,
+          supplier: 'Wood Co',
+          cost: 38.00,
+          lastInvoice: 'INV-003',
+          dateAdded: new Date().toISOString()
+        }
+      ];
+
+      // Create demo cabinets inventory
+      cabinets = [
+        {
+          id: 1,
+          subcategoryId: 1,
+          folderId: 1,
+          type: '30" Wall Cabinet',
+          quantity: 3,
+          materials: 'Maple plywood, adjustable shelves',
+          pricePerUnit: 275.00,
+          productType: 'cabinet',
+          dateCreated: new Date().toISOString()
+        },
+        {
+          id: 2,
+          subcategoryId: 2,
+          folderId: 2,
+          type: '24" Standard Base',
+          quantity: 5,
+          materials: 'Oak plywood, soft-close hinges',
+          pricePerUnit: 350.00,
+          productType: 'cabinet',
+          dateCreated: new Date().toISOString()
+        }
+      ];
+
+      // Create demo invoices
+      invoices = [
+        {
+          id: 1,
+          invoiceNumber: 'INV-001',
+          supplier: 'Wood Co',
+          date: new Date().toISOString(),
+          items: 1,
+          total: 1125.00,
+          materials: [{ type: 'Oak 3/4"', sheets: 25, cost: 45.00 }]
+        },
+        {
+          id: 2,
+          invoiceNumber: 'INV-002',
+          supplier: 'Premium Woods',
+          date: new Date().toISOString(),
+          items: 1,
+          total: 780.00,
+          materials: [{ type: 'Maple 3/4"', sheets: 15, cost: 52.00 }]
+        }
+      ];
+
+      dispatches = [];
+      dataInitialized = true;
+      
+      // Save and refresh UI
+      saveAllData();
+      renderCabinetFoldersGrid();
+      updateStats();
+      updateAllCabinetsStats();
+      showSuccess('✅ Demo data loaded successfully! Explore the features.');
+    }
+
+    function exportAllData() {
+      const allData = {
+        cabinetFolders,
+        subcategories,
+        plywood,
+        cabinets,
+        dispatches,
+        invoices,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const dataStr = JSON.stringify(allData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cabinet_inventory_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      showSuccess('✅ All data exported successfully!');
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const importedData = JSON.parse(e.target.result);
+            
+            if (confirm('This will replace all current data. Continue?')) {
+              cabinetFolders = importedData.cabinetFolders || [];
+              subcategories = importedData.subcategories || [];
+              plywood = importedData.plywood || [];
+              cabinets = importedData.cabinets || [];
+              dispatches = importedData.dispatches || [];
+              invoices = importedData.invoices || [];
+              
+              dataInitialized = true;
+              saveAllData();
+              renderCabinetFoldersGrid();
+              updateStats();
+              updateAllCabinetsStats();
+              showSuccess('✅ Data imported successfully!');
+            }
+          } catch (error) {
+            alert('❌ Error importing data: Invalid file format');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function clearAllData() {
+      if (!confirm('This will permanently delete ALL data. This cannot be undone. Continue?')) {
+        return;
+      }
+      
+      if (!confirm('Are you absolutely sure? This will delete everything!')) {
+        return;
+      }
+      
+      cabinetFolders = [];
+      subcategories = [];
+      plywood = [];
+      cabinets = [];
+      dispatches = [];
+      invoices = [];
+      
+      // Clear from storage
+      if (isLocalStorageAvailable) {
+        ['cabinetFolders', 'subcategories', 'plywood', 'cabinets', 'dispatches', 'invoices'].forEach(key => {
+          try {
+            localStorage.removeItem(`cabinet_${key}`);
+          } catch (error) {
+            console.error(`Failed to clear ${key} from localStorage`);
+          }
+        });
+      }
+      
+      // Initialize default folders
+      initializeDefaultCabinetFolders();
+      renderCabinetFoldersGrid();
+      updateStats();
+      updateAllCabinetsStats();
+      showSuccess('✅ All data cleared. Default cabinet categories restored.');
+    }
+
+    function resetSystem() {
+      if (!confirm('This will reset the system to default state. Continue?')) {
+        return;
+      }
+      
+      clearAllData();
+      showSuccess('✅ System reset to default state.');
+    }
+
+    function backupData() {
+      exportAllData();
+    }
+
     // Storage indicator management
     function updateStorageIndicator() {
       const indicator = document.getElementById('storageIndicator');
@@ -2620,12 +2715,7 @@
       const text = document.getElementById('storageText');
       const connectionText = document.getElementById('connectionText');
       
-      if (isFirebaseAvailable) {
-        indicator.className = 'storage-indicator storage-firebase';
-        icon.textContent = '☁️';
-        text.textContent = 'Firebase Cloud';
-        connectionText.textContent = 'Real-time cloud sync active';
-      } else if (isLocalStorageAvailable) {
+      if (isLocalStorageAvailable) {
         indicator.className = 'storage-indicator storage-local';
         icon.textContent = '💾';
         text.textContent = 'Local Storage';
@@ -2651,13 +2741,6 @@
       
       // Check localStorage availability first
       checkLocalStorageAvailability();
-      
-      // Setup Firebase listeners if available
-      if (isFirebaseAvailable) {
-        setTimeout(() => {
-          setupFirebaseListeners();
-        }, 2000); // Wait 2 seconds for Firebase to fully initialize
-      }
       
       // Check for auto-login
       if (checkAutoLogin()) {
