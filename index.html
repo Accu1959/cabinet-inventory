@@ -997,7 +997,48 @@
     </div>
   </div>
 
-  <!-- MOVE CATEGORY MODAL -->
+  <!-- EDIT SUBCATEGORY/PRODUCT TYPE MODAL -->
+  <div id="editSubcategoryModal" class="modal hidden">
+    <div class="modal-content-large">
+      <h3 class="text-xl font-bold mb-6 text-center">✏️ Edit Product Type</h3>
+      
+      <!-- Basic Product Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Product Name:</label>
+          <input type="text" id="editSubcategoryName" placeholder="e.g., 24\" Standard Base" class="input-field" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Icon (emoji):</label>
+          <input type="text" id="editSubcategoryIcon" placeholder="📦" class="input-field">
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
+        <textarea id="editSubcategoryDescription" placeholder="Product description..." class="input-field" rows="2"></textarea>
+      </div>
+      
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Product Type:</label>
+        <select id="editSubcategoryProductType" class="input-field" onchange="toggleEditMaterialRequirements()">
+          <option value="cabinet">🏠 Cabinet - Requires materials</option>
+          <option value="hardware">🔧 Hardware - No material requirements</option>
+        </select>
+      </div>
+
+      <!-- Cabinet Configuration -->
+      <div id="editCabinetConfiguration" class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <!-- Configuration will be populated by toggleEditMaterialRequirements() -->
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="updateSubcategory()" class="btn btn-green flex-1">✅ Update Product Type</button>
+        <button onclick="closeEditSubcategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
   <div id="moveCategoryModal" class="modal hidden">
     <div class="modal-content">
       <h3 class="text-xl font-bold mb-6 text-center">📁 Move Category</h3>
@@ -2018,20 +2059,22 @@
               <h4 class="font-semibold text-gray-800 flex items-center gap-2 mb-2">
                 ${folder.icon} ${folder.name}
                 <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${folderCategories.length} categories</span>
-                ${folder.visibility === 'hidden' ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">🙈 Hidden</span>' : ''}
+                ${folder.visibility === 'hidden' ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">🙈 Hidden</span>' : '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">👁️ Visible</span>'}
               </h4>
               <p class="text-sm text-gray-600 mb-2">${folder.description || 'No description'}</p>
               <div class="text-xs text-gray-500">
                 Color: <span class="capitalize">${folder.color}</span> | 
-                Visibility: <span class="capitalize">${folder.visibility || 'visible'}</span> |
                 Created: ${new Date(folder.dateCreated).toLocaleDateString()}
               </div>
             </div>
-            <div class="flex flex-col gap-2 ml-4">
-              <button onclick="showEditFolderModal(${folder.id})" class="btn btn-primary text-xs px-3 py-1">
+            <div class="flex flex-col gap-1 ml-4">
+              <button onclick="toggleFolderVisibility(${folder.id})" class="btn ${folder.visibility === 'hidden' ? 'btn-green' : 'btn-orange'} text-xs px-2 py-1">
+                ${folder.visibility === 'hidden' ? '👁️ Show' : '🙈 Hide'}
+              </button>
+              <button onclick="showEditFolderModal(${folder.id})" class="btn btn-primary text-xs px-2 py-1">
                 ✏️ Edit
               </button>
-              <button onclick="deleteFolder(${folder.id})" class="btn btn-red text-xs px-3 py-1">
+              <button onclick="deleteFolder(${folder.id})" class="btn btn-red text-xs px-2 py-1">
                 🗑️ Delete
               </button>
             </div>
@@ -2070,6 +2113,7 @@
                         ${category.icon} ${category.name}
                         <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
                         <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">${totalUnits} units</span>
+                        ${category.visibility === 'hidden' ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">🙈 Hidden</span>' : '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">👁️ Visible</span>'}
                       </h5>
                       <p class="text-sm text-gray-600">${category.description || 'No description'}</p>
                       <div class="text-xs text-gray-500 mt-1">
@@ -2077,6 +2121,9 @@
                       </div>
                     </div>
                     <div class="flex flex-col gap-1 ml-4">
+                      <button onclick="toggleCategoryVisibility(${category.id})" class="btn ${category.visibility === 'hidden' ? 'btn-green' : 'btn-orange'} text-xs px-2 py-1">
+                        ${category.visibility === 'hidden' ? '👁️ Show' : '🙈 Hide'}
+                      </button>
                       <button onclick="showMoveCategoryModal(${category.id})" class="btn btn-purple text-xs px-2 py-1">
                         📁 Move
                       </button>
@@ -2122,6 +2169,7 @@
                       ${category.icon} ${category.name}
                       <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${categorySubcategories.length} types</span>
                       <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">${totalUnits} units</span>
+                      ${category.visibility === 'hidden' ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">🙈 Hidden</span>' : '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">👁️ Visible</span>'}
                     </h5>
                     <p class="text-sm text-gray-600">${category.description || 'No description'}</p>
                     <div class="text-xs text-gray-500 mt-1">
@@ -2129,6 +2177,9 @@
                     </div>
                   </div>
                   <div class="flex flex-col gap-1 ml-4">
+                    <button onclick="toggleCategoryVisibility(${category.id})" class="btn ${category.visibility === 'hidden' ? 'btn-green' : 'btn-orange'} text-xs px-2 py-1">
+                      ${category.visibility === 'hidden' ? '👁️ Show' : '🙈 Hide'}
+                    </button>
                     <button onclick="showMoveCategoryModal(${category.id})" class="btn btn-purple text-xs px-2 py-1">
                       📁 Move
                     </button>
@@ -2285,7 +2336,36 @@
       }
     }
 
-    // Move Category Functions
+    // Quick Visibility Toggle Functions
+    async function toggleFolderVisibility(folderId) {
+      const folder = folders.find(f => f.id === folderId);
+      if (!folder?.firebaseId) return;
+      
+      const newVisibility = folder.visibility === 'hidden' ? 'visible' : 'hidden';
+      
+      await updateData('folders', folder.firebaseId, {
+        visibility: newVisibility,
+        lastUpdated: new Date().toISOString()
+      });
+      
+      const action = newVisibility === 'visible' ? 'shown' : 'hidden';
+      showSuccess(`Folder "${folder.name}" is now ${action}!`);
+    }
+
+    async function toggleCategoryVisibility(categoryId) {
+      const category = categories.find(c => c.id === categoryId);
+      if (!category?.firebaseId) return;
+      
+      const newVisibility = category.visibility === 'hidden' ? 'visible' : 'hidden';
+      
+      await updateData('categories', category.firebaseId, {
+        visibility: newVisibility,
+        lastUpdated: new Date().toISOString()
+      });
+      
+      const action = newVisibility === 'visible' ? 'shown' : 'hidden';
+      showSuccess(`Category "${category.name}" is now ${action}!`);
+    }
     let currentMovingCategoryId = null;
 
     function showMoveCategoryModal(categoryId) {
@@ -3462,9 +3542,226 @@
       }
     }
 
-    // Edit functions placeholder
+    // Edit Subcategory Functions
+    let currentEditingSubcategoryId = null;
+
+    function showEditSubcategoryModal(subcategoryId) {
+      currentEditingSubcategoryId = subcategoryId;
+      const subcategory = subcategories.find(s => s.id === subcategoryId);
+      
+      if (!subcategory) return;
+      
+      document.getElementById('editSubcategoryName').value = subcategory.name;
+      document.getElementById('editSubcategoryIcon').value = subcategory.icon;
+      document.getElementById('editSubcategoryDescription').value = subcategory.description || '';
+      document.getElementById('editSubcategoryProductType').value = subcategory.productType || 'cabinet';
+      
+      toggleEditMaterialRequirements();
+      
+      // Populate material values if it's a cabinet
+      if (subcategory.productType === 'cabinet' || !subcategory.productType) {
+        setTimeout(() => {
+          document.getElementById('editSubcategoryMaterials').value = subcategory.materials || '';
+          document.getElementById('editSubcategoryPrice').value = subcategory.pricePerUnit || '';
+          
+          if (subcategory.materialRequirements) {
+            if (subcategory.materialRequirements.plywood) {
+              document.getElementById('editSubcategoryPlywoodType').value = subcategory.materialRequirements.plywood.id || '';
+              document.getElementById('editSubcategoryPlywoodSheets').value = subcategory.materialRequirements.plywood.sheetsPerUnit || '';
+            }
+            if (subcategory.materialRequirements.mdf) {
+              document.getElementById('editSubcategoryMDFType').value = subcategory.materialRequirements.mdf.id || '';
+              document.getElementById('editSubcategoryMDFSheets').value = subcategory.materialRequirements.mdf.sheetsPerUnit || '';
+            }
+          }
+        }, 100);
+      } else {
+        setTimeout(() => {
+          document.getElementById('editSubcategoryMaterials').value = subcategory.materials || '';
+          document.getElementById('editSubcategoryPrice').value = subcategory.pricePerUnit || '';
+        }, 100);
+      }
+      
+      document.getElementById('editSubcategoryModal').classList.remove('hidden');
+    }
+
+    function closeEditSubcategoryModal() {
+      document.getElementById('editSubcategoryModal').classList.add('hidden');
+      currentEditingSubcategoryId = null;
+    }
+
+    function toggleEditMaterialRequirements() {
+      const productType = document.getElementById('editSubcategoryProductType').value;
+      const configSection = document.getElementById('editCabinetConfiguration');
+      
+      if (productType === 'hardware') {
+        // Hardware - hide material requirements
+        configSection.innerHTML = `
+          <h4 class="font-semibold text-blue-800 mb-3">🔧 Hardware Configuration</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Default Materials/Components:</label>
+              <input type="text" id="editSubcategoryMaterials" placeholder="e.g., Stainless steel screws, hinges" class="input-field">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Price per Unit ($):</label>
+              <input type="number" id="editSubcategoryPrice" placeholder="25.00" step="0.01" class="input-field">
+            </div>
+          </div>
+          
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+            <p class="text-sm text-yellow-700">
+              <strong>ℹ️ Hardware Note:</strong> Material requirements are not needed for hardware items. 
+              Inventory will be managed manually without automatic material deduction.
+            </p>
+          </div>
+        `;
+      } else {
+        // Cabinet - show full material requirements
+        configSection.innerHTML = `
+          <h4 class="font-semibold text-blue-800 mb-3">🔨 Cabinet Configuration</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Default Materials:</label>
+              <input type="text" id="editSubcategoryMaterials" placeholder="e.g., Oak plywood, soft-close hinges" class="input-field">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Price per Unit ($):</label>
+              <input type="number" id="editSubcategoryPrice" placeholder="350.00" step="0.01" class="input-field">
+            </div>
+          </div>
+
+          <!-- Material Requirements -->
+          <h5 class="font-medium text-blue-700 mb-3">📦 Material Requirements (per cabinet)</h5>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Plywood Type:</label>
+              <select id="editSubcategoryPlywoodType" class="input-field">
+                <option value="">Select Plywood Type</option>
+              </select>
+              <input type="number" id="editSubcategoryPlywoodSheets" placeholder="Sheets per cabinet" 
+                     step="0.1" class="input-field mt-2">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">MDF Type (for doors):</label>
+              <select id="editSubcategoryMDFType" class="input-field">
+                <option value="">Select MDF Type</option>
+              </select>
+              <input type="number" id="editSubcategoryMDFSheets" placeholder="Sheets per cabinet" 
+                     step="0.1" class="input-field mt-2">
+            </div>
+          </div>
+        `;
+        
+        // Repopulate material selects for cabinet type
+        populateEditMaterialSelects();
+      }
+    }
+
+    function populateEditMaterialSelects() {
+      const plywoodSelect = document.getElementById('editSubcategoryPlywoodType');
+      const mdfSelect = document.getElementById('editSubcategoryMDFType');
+      
+      if (plywoodSelect) {
+        plywoodSelect.innerHTML = '<option value="">Select Plywood Type</option>';
+        plywood.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.id;
+          option.textContent = `${item.type} (${item.sheets} sheets available)`;
+          
+          if (!item.type.toLowerCase().includes('mdf')) {
+            plywoodSelect.appendChild(option);
+          }
+        });
+      }
+      
+      if (mdfSelect) {
+        mdfSelect.innerHTML = '<option value="">Select MDF Type</option>';
+        plywood.forEach(item => {
+          if (item.type.toLowerCase().includes('mdf')) {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.type} (${item.sheets} sheets available)`;
+            mdfSelect.appendChild(option);
+          }
+        });
+      }
+    }
+
+    async function updateSubcategory() {
+      if (!currentEditingSubcategoryId) return;
+      
+      const name = document.getElementById('editSubcategoryName').value.trim();
+      const icon = document.getElementById('editSubcategoryIcon').value.trim() || '📦';
+      const description = document.getElementById('editSubcategoryDescription').value.trim();
+      const materials = document.getElementById('editSubcategoryMaterials').value.trim();
+      const pricePerUnit = parseFloat(document.getElementById('editSubcategoryPrice').value) || 0;
+      const productType = document.getElementById('editSubcategoryProductType').value;
+      
+      // Material requirements (only for cabinets)
+      let materialRequirements = null;
+      
+      if (productType === 'cabinet') {
+        const plywoodId = document.getElementById('editSubcategoryPlywoodType').value;
+        const plywoodSheets = parseFloat(document.getElementById('editSubcategoryPlywoodSheets').value) || 0;
+        const mdfId = document.getElementById('editSubcategoryMDFType').value;
+        const mdfSheets = parseFloat(document.getElementById('editSubcategoryMDFSheets').value) || 0;
+
+        materialRequirements = {
+          plywood: plywoodId ? {
+            id: plywoodId,
+            sheetsPerUnit: plywoodSheets,
+            type: plywood.find(p => p.id == plywoodId)?.type || 'Unknown'
+          } : null,
+          mdf: mdfId ? {
+            id: mdfId,
+            sheetsPerUnit: mdfSheets,
+            type: plywood.find(p => p.id == mdfId)?.type || 'Unknown'
+          } : null
+        };
+      }
+
+      if (!name) {
+        alert('❌ Please enter a product name');
+        return;
+      }
+
+      // Check for duplicate names in this category (excluding current subcategory)
+      if (subcategories.find(sub => 
+        sub.id !== currentEditingSubcategoryId &&
+        sub.categoryId === currentCategoryId && 
+        sub.name.toLowerCase() === name.toLowerCase())) {
+        alert('❌ Product name already exists in this category');
+        return;
+      }
+
+      const subcategory = subcategories.find(s => s.id === currentEditingSubcategoryId);
+      if (subcategory?.firebaseId) {
+        await updateData('subcategories', subcategory.firebaseId, {
+          name,
+          icon,
+          description,
+          materials: materials || (productType === 'cabinet' ? 'Standard materials' : 'Hardware components'),
+          pricePerUnit,
+          productType,
+          materialRequirements,
+          lastUpdated: new Date().toISOString()
+        });
+        
+        showSuccess(`Product type "${name}" updated successfully!`);
+        closeEditSubcategoryModal();
+      }
+    }
+
+    // Edit functions placeholder (updated)
     function editSubcategory(subcategoryId) {
-      alert('Edit functionality coming soon! For now, delete and recreate the product type.');
+      showEditSubcategoryModal(subcategoryId);
     }
 
     async function deleteSubcategory(subcategoryId) {
