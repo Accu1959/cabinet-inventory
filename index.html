@@ -773,15 +773,18 @@
           <div id="plywoodForm" class="card p-6 mb-6 hidden">
             <h3 class="font-bold text-lg mb-4 text-gray-800">➕ Add New Plywood Material</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″)" class="input-field" required>
+              <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″) *" class="input-field" required>
               <input type="number" id="plywoodSheets" placeholder="Sheets" class="input-field" required>
               <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input-field">
-              <input type="text" id="plywoodSupplier" placeholder="Supplier" class="input-field" required>
+              <input type="text" id="plywoodSupplier" placeholder="Supplier *" class="input-field" required>
               <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field" required>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <input type="text" id="plywoodInvoice" placeholder="Invoice Number *" class="input-field" required>
+              <input type="text" id="plywoodInvoice" placeholder="Invoice Number (Optional)" class="input-field">
               <input type="date" id="plywoodDate" class="input-field" required>
+            </div>
+            <div class="text-xs text-gray-500 mt-2">
+              * Required fields. Invoice number is optional - you can add materials without an invoice.
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mt-6">
               <button onclick="addPlywood()" class="btn btn-green flex-1">✅ Add Material</button>
@@ -1159,14 +1162,18 @@
       }
     }
 
-    // Enhanced Cloud Connection Management
+    // Enhanced Cloud Connection Management with working buttons
     async function initializeCloudConnection() {
       console.log('🔄 Initializing Firebase connection...');
       
       try {
         // Check if Firebase is available
         if (typeof firebase === 'undefined') {
-          throw new Error('Firebase SDK not loaded. Check your internet connection.');
+          console.log('⚠️ Firebase SDK not loaded - operating in local mode');
+          cloudSyncStatus = 'local-only';
+          isFirebaseAvailable = false;
+          updateCloudStatusDisplay();
+          return false;
         }
         
         // Your actual Firebase configuration
@@ -1191,31 +1198,8 @@
         // Initialize Firestore
         db = firebase.firestore();
         
-        // Configure Firestore settings for better performance
-        if (db.settings) {
-          db.settings({
-            cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-          });
-        }
-        
-        // Enable offline persistence (optional)
-        try {
-          await db.enablePersistence({ synchronizeTabs: true });
-          console.log('💾 Firestore offline persistence enabled');
-        } catch (persistenceError) {
-          if (persistenceError.code === 'failed-precondition') {
-            console.log('⚠️ Persistence failed: Multiple tabs open');
-          } else if (persistenceError.code === 'unimplemented') {
-            console.log('⚠️ Persistence not available in this browser');
-          } else {
-            console.log('⚠️ Persistence error:', persistenceError.message);
-          }
-        }
-        
         // Test connection with a simple read operation
         console.log('🔗 Testing Firestore connection...');
-        
-        // Try to read from a test collection (with basic read permissions)
         const testQuery = await db.collection('cabinet_data').limit(1).get();
         console.log('✅ Firestore connection test successful');
         
@@ -1228,43 +1212,29 @@
           
           // Start sync monitoring
           startSyncMonitoring();
+          updateCloudStatusDisplay();
           
           return true;
         } else {
           console.log('📱 Local mode enabled, skipping cloud sync');
-          throw new Error('Local mode enabled');
+          cloudSyncStatus = 'local-only';
+          updateCloudStatusDisplay();
+          return false;
         }
         
       } catch (error) {
         console.warn('⚠️ Firebase connection failed:', error.message);
-        console.warn('🔧 Error details:', {
-          code: error.code,
-          message: error.message,
-          firebaseAvailable: typeof firebase !== 'undefined'
-        });
-        
-        // Check for specific Firebase errors
-        if (typeof firebase === 'undefined') {
-          console.warn('🌐 Firebase SDK not loaded - check internet connection or CDN availability');
-        } else if (error.code === 'permission-denied') {
-          console.warn('🔒 Firestore security rules may be blocking access');
-          console.warn('💡 Try updating Firestore rules to allow read/write access');
-        } else if (error.code === 'unavailable') {
-          console.warn('🌐 Firebase service temporarily unavailable');
-        } else if (error.message.includes('network')) {
-          console.warn('📡 Network connectivity issue');
-        }
-        
         cloudSyncStatus = 'disconnected';
         isFirebaseAvailable = false;
+        updateCloudStatusDisplay();
         
-        // Schedule retry with longer delay for initialization
-        if (typeof firebase !== 'undefined') {
-          setTimeout(async () => {
-            console.log('🔄 Retrying Firebase connection...');
+        // Auto-retry in background
+        setTimeout(async () => {
+          if (!forceLocalMode) {
+            console.log('🔄 Auto-retrying Firebase connection...');
             await initializeCloudConnection();
-          }, 10000); // 10 seconds
-        }
+          }
+        }, 15000); // 15 seconds
         
         return false;
       }
@@ -2967,7 +2937,7 @@
     function hidePlywoodForm() {
       document.getElementById('plywoodForm').classList.add('hidden');
     }
-    // Add functions - Full implementations
+    // Add hidden property to all add functions and employee visibility controls
     function addCabinetFolder() {
       const name = document.getElementById('newCabinetFolderName').value.trim();
       const icon = document.getElementById('newCabinetFolderIcon').value.trim() || '🗄️';
@@ -2983,7 +2953,10 @@
         name,
         icon,
         description,
-        dateCreated: new Date().toISOString()
+        dateCreated: new Date().toISOString(),
+        hidden: false, // Add visibility control
+        employeeVisible: true, // Can employees see this?
+        createdBy: currentUser
       };
       
       cabinetFolders.push(folder);
@@ -3003,11 +2976,9 @@
       let materials, pricePerUnit, materialRequirements = null;
 
       if (productType === 'cabinet') {
-        // Cabinet configuration
         materials = document.getElementById('subcategoryMaterials').value.trim();
         pricePerUnit = parseFloat(document.getElementById('subcategoryPrice').value) || 0;
         
-        // Material requirements
         const plywoodTypeId = document.getElementById('subcategoryPlywoodType').value;
         const plywoodSheets = parseFloat(document.getElementById('subcategoryPlywoodSheets').value) || 0;
         const secondaryTypeId = document.getElementById('subcategorySecondaryType').value;
@@ -3031,7 +3002,6 @@
           }
         }
       } else {
-        // Non-cabinet configuration
         materials = document.getElementById('nonCabinetMaterials').value.trim();
         pricePerUnit = parseFloat(document.getElementById('nonCabinetPrice').value) || 0;
       }
@@ -3051,7 +3021,10 @@
         materials: materials || 'Standard materials',
         pricePerUnit,
         materialRequirements,
-        dateCreated: new Date().toISOString()
+        dateCreated: new Date().toISOString(),
+        hidden: false, // Add visibility control
+        employeeVisible: true, // Can employees see this?
+        createdBy: currentUser
       };
 
       subcategories.push(subcategory);
@@ -3062,6 +3035,87 @@
       showSuccess(`Product type "${name}" created successfully!`);
     }
 
+    // Employee visibility filter functions
+    function isVisibleToCurrentUser(item) {
+      // Admins can see everything
+      if (userRole === 'admin') {
+        return true;
+      }
+      
+      // Employees can only see items that are not hidden and marked as employee visible
+      return !item.hidden && item.employeeVisible !== false;
+    }
+
+    function toggleItemVisibility(itemType, itemId) {
+      let item;
+      let collection;
+      
+      switch (itemType) {
+        case 'cabinet':
+          collection = cabinetFolders;
+          item = collection.find(c => c.id === itemId);
+          break;
+        case 'subcategory':
+          collection = subcategories;
+          item = collection.find(s => s.id === itemId);
+          break;
+        case 'plywood':
+          collection = plywood;
+          item = collection.find(p => p.id === itemId);
+          break;
+        case 'dispatch':
+          collection = dispatches;
+          item = collection.find(d => d.id === itemId);
+          break;
+      }
+      
+      if (item) {
+        item.hidden = !item.hidden;
+        
+        // Refresh the appropriate view
+        switch (itemType) {
+          case 'cabinet':
+            renderCabinetFoldersGrid();
+            break;
+          case 'subcategory':
+            renderSubcategoriesList();
+            break;
+          case 'plywood':
+            renderPlywood();
+            break;
+          case 'dispatch':
+            renderDispatches();
+            break;
+        }
+        
+        const action = item.hidden ? 'hidden' : 'shown';
+        showSuccess(`Item ${action} from ${userRole === 'admin' ? 'employees' : 'view'}`);
+      }
+    }
+
+    function toggleEmployeeAccess(itemType, itemId) {
+      let item;
+      
+      switch (itemType) {
+        case 'cabinet':
+          item = cabinetFolders.find(c => c.id === itemId);
+          break;
+        case 'subcategory':
+          item = subcategories.find(s => s.id === itemId);
+          break;
+        case 'plywood':
+          item = plywood.find(p => p.id === itemId);
+          break;
+      }
+      
+      if (item) {
+        item.employeeVisible = !item.employeeVisible;
+        const access = item.employeeVisible ? 'granted' : 'removed';
+        showSuccess(`Employee access ${access} for this item`);
+      }
+    }
+
+    // Fixed plywood function - make invoice optional
     function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value) || 0;
@@ -3071,8 +3125,9 @@
       const invoice = document.getElementById('plywoodInvoice').value.trim();
       const date = document.getElementById('plywoodDate').value;
 
-      if (!type || !supplier || !invoice) {
-        alert('❌ Please fill in all required fields');
+      // Only require type and supplier - invoice is optional
+      if (!type || !supplier) {
+        alert('❌ Please fill in Type and Supplier (Invoice is optional)');
         return;
       }
 
@@ -3083,24 +3138,30 @@
         minStock,
         supplier,
         cost,
-        lastInvoice: invoice,
-        dateAdded: date || new Date().toISOString()
+        lastInvoice: invoice || 'No Invoice',
+        dateAdded: date || new Date().toISOString(),
+        hidden: false, // Add hidden property for employee control
+        createdBy: currentUser
       };
 
       plywood.push(material);
       
-      // Create invoice record
-      const invoiceRecord = {
-        id: Date.now(),
-        invoiceNumber: invoice,
-        supplier,
-        date: date || new Date().toISOString(),
-        items: 1,
-        total: sheets * cost,
-        materials: [{ type, sheets, cost }]
-      };
-      
-      invoices.push(invoiceRecord);
+      // Create invoice record only if invoice number provided
+      if (invoice) {
+        const invoiceRecord = {
+          id: Date.now(),
+          invoiceNumber: invoice,
+          supplier,
+          date: date || new Date().toISOString(),
+          items: 1,
+          total: sheets * cost,
+          materials: [{ type, sheets, cost }],
+          hidden: false,
+          createdBy: currentUser
+        };
+        
+        invoices.push(invoiceRecord);
+      }
       
       hidePlywoodForm();
       renderPlywood();
