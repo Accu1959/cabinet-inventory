@@ -774,17 +774,17 @@
             <h3 class="font-bold text-lg mb-4 text-gray-800">➕ Add New Plywood Material</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <input type="text" id="plywoodType" placeholder="Type (e.g., Oak 3/4″) *" class="input-field" required>
-              <input type="number" id="plywoodSheets" placeholder="Sheets" class="input-field" required>
+              <input type="number" id="plywoodSheets" placeholder="Sheets *" class="input-field" required>
               <input type="number" id="plywoodMinStock" placeholder="Min Stock" class="input-field">
               <input type="text" id="plywoodSupplier" placeholder="Supplier *" class="input-field" required>
-              <input type="number" id="plywoodCost" placeholder="Cost/sheet" step="0.01" class="input-field" required>
+              <input type="number" id="plywoodCost" placeholder="Cost/sheet *" step="0.01" class="input-field" required>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <input type="text" id="plywoodInvoice" placeholder="Invoice Number (Optional)" class="input-field">
+              <input type="text" id="plywoodInvoice" placeholder="Invoice Number *" class="input-field" required>
               <input type="date" id="plywoodDate" class="input-field" required>
             </div>
-            <div class="text-xs text-gray-500 mt-2">
-              * Required fields. Invoice number is optional - you can add materials without an invoice.
+            <div class="text-xs text-red-600 mt-2 font-medium">
+              * All fields are required. Invoice number is mandatory for tracking and accountability.
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mt-6">
               <button onclick="addPlywood()" class="btn btn-green flex-1">✅ Add Material</button>
@@ -3115,7 +3115,7 @@
       }
     }
 
-    // Fixed plywood function - make invoice optional
+    // Fixed plywood function - require invoice again
     function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value) || 0;
@@ -3125,9 +3125,9 @@
       const invoice = document.getElementById('plywoodInvoice').value.trim();
       const date = document.getElementById('plywoodDate').value;
 
-      // Only require type and supplier - invoice is optional
-      if (!type || !supplier) {
-        alert('❌ Please fill in Type and Supplier (Invoice is optional)');
+      // Require all fields including invoice
+      if (!type || !supplier || !invoice) {
+        alert('❌ Please fill in all required fields including Invoice Number');
         return;
       }
 
@@ -3138,7 +3138,7 @@
         minStock,
         supplier,
         cost,
-        lastInvoice: invoice || 'No Invoice',
+        lastInvoice: invoice,
         dateAdded: date || new Date().toISOString(),
         hidden: false, // Add hidden property for employee control
         createdBy: currentUser
@@ -3146,28 +3146,26 @@
 
       plywood.push(material);
       
-      // Create invoice record only if invoice number provided
-      if (invoice) {
-        const invoiceRecord = {
-          id: Date.now(),
-          invoiceNumber: invoice,
-          supplier,
-          date: date || new Date().toISOString(),
-          items: 1,
-          total: sheets * cost,
-          materials: [{ type, sheets, cost }],
-          hidden: false,
-          createdBy: currentUser
-        };
-        
-        invoices.push(invoiceRecord);
-      }
+      // Always create invoice record when adding plywood
+      const invoiceRecord = {
+        id: Date.now(),
+        invoiceNumber: invoice,
+        supplier,
+        date: date || new Date().toISOString(),
+        items: 1,
+        total: sheets * cost,
+        materials: [{ type, sheets, cost }],
+        hidden: false,
+        createdBy: currentUser
+      };
+      
+      invoices.push(invoiceRecord);
       
       hidePlywoodForm();
       renderPlywood();
       updateStats();
       checkLowStock();
-      showSuccess(`Material "${type}" added successfully!`);
+      showSuccess(`Material "${type}" added successfully with invoice ${invoice}!`);
     }
 
     function processManufacturing() {
@@ -3352,18 +3350,60 @@
 
     function updatePlywoodQuantity(id, change) {
       const item = plywood.find(p => p.id === id);
-      if (item) {
+      if (!item) {
+        alert('❌ Material not found');
+        return;
+      }
+
+      // If adding plywood (+1), require invoice number
+      if (change > 0) {
+        const invoice = prompt(`📋 Adding ${Math.abs(change)} sheet(s) of ${item.type}\n\nPlease enter Invoice Number:`);
+        
+        if (invoice === null) {
+          // User cancelled
+          return;
+        }
+        
+        if (!invoice || invoice.trim() === '') {
+          alert('❌ Invoice number is required to add plywood materials');
+          return;
+        }
+        
+        // Update the material
+        const newQuantity = Math.max(0, item.sheets + change);
+        item.sheets = newQuantity;
+        item.lastInvoice = invoice.trim();
+        item.lastUpdated = new Date().toISOString();
+        
+        // Create invoice record for the addition
+        const invoiceRecord = {
+          id: Date.now(),
+          invoiceNumber: invoice.trim(),
+          supplier: item.supplier,
+          date: new Date().toISOString(),
+          items: 1,
+          total: change * item.cost,
+          materials: [{ type: item.type, sheets: change, cost: item.cost }],
+          hidden: false,
+          createdBy: currentUser,
+          additionType: 'manual_increase'
+        };
+        
+        invoices.push(invoiceRecord);
+        
+        showSuccess(`Added ${Math.abs(change)} sheet(s) of ${item.type} with invoice ${invoice.trim()}. New total: ${newQuantity}`);
+      } else {
+        // For removing plywood (-1), no invoice needed
         const newQuantity = Math.max(0, item.sheets + change);
         item.sheets = newQuantity;
         item.lastUpdated = new Date().toISOString();
         
-        renderPlywood();
-        updateStats();
-        checkLowStock();
-        
-        const action = change > 0 ? 'Added' : 'Removed';
-        showSuccess(`${action} ${Math.abs(change)} sheet(s) of ${item.type}. New total: ${newQuantity}`);
+        showSuccess(`Removed ${Math.abs(change)} sheet(s) of ${item.type}. New total: ${newQuantity}`);
       }
+      
+      renderPlywood();
+      updateStats();
+      checkLowStock();
     }
 
     function markDelivered(dispatchId) {
