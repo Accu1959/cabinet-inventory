@@ -2392,45 +2392,7 @@
         document.getElementById('breadcrumbPath').textContent = path;
       }
 
-      // Continue with all the remaining functions...
-      // [The complete function implementations would continue here]
-      
-      // Export public interface to global scope
-      window.cabinetApp = {
-        // Navigation functions
-        showHomePage,
-        showCabinetsPage, 
-        showCabinetFolderPage,
-        showPlywoodPage,
-        showDispatchPage,
-        showInvoicePage,
-        showSettingsPage,
-        
-        // Authentication
-        login,
-        logout,
-        
-        // Modal functions
-        showCabinetFolderModal: () => {
-          editingCabinetFolder = null;
-          document.getElementById('cabinetFolderModalTitle').textContent = '📁 Add New Cabinet Category';
-          document.getElementById('cabinetFolderSubmitBtn').textContent = '✅ Create Category';
-          document.getElementById('cabinetFolderSubmitBtn').onclick = addCabinetFolder;
-          document.getElementById('cabinetFolderModal').classList.remove('hidden');
-          document.getElementById('newCabinetFolderName').value = '';
-          document.getElementById('newCabinetFolderIcon').value = '';
-          document.getElementById('newCabinetFolderDescription').value = '';
-        },
-        
-        closeCabinetFolderModal: () => {
-          document.getElementById('cabinetFolderModal').classList.add('hidden');
-          editingCabinetFolder = null;
-        },
-        
-        // Add more public functions as needed...
-      };
-
-      // Add functions with real-time updates
+      // Cabinet Management Functions
       function addCabinetFolder() {
         const name = sanitizeInput(document.getElementById('newCabinetFolderName').value.trim());
         const icon = sanitizeInput(document.getElementById('newCabinetFolderIcon').value.trim()) || '🗄️';
@@ -2441,25 +2403,93 @@
           return;
         }
         
-        const folder = {
-          id: Date.now(),
-          name,
-          icon,
-          description,
-          dateCreated: new Date().toISOString(),
-          hidden: false,
-          employeeVisible: true,
-          createdBy: currentUser
-        };
+        if (editingCabinetFolder) {
+          // Update existing folder
+          const folder = cabinetFolders.find(f => f.id === editingCabinetFolder);
+          if (folder) {
+            folder.name = name;
+            folder.icon = icon;
+            folder.description = description;
+            folder.lastModified = new Date().toISOString();
+            folder.modifiedBy = currentUser;
+          }
+          editingCabinetFolder = null;
+          showSuccess(`Cabinet category "${name}" updated successfully!`);
+        } else {
+          // Create new folder
+          const folder = {
+            id: Date.now(),
+            name,
+            icon,
+            description,
+            dateCreated: new Date().toISOString(),
+            hidden: false,
+            employeeVisible: true,
+            createdBy: currentUser
+          };
+          cabinetFolders.push(folder);
+          showSuccess(`Cabinet category "${name}" created successfully!`);
+        }
         
-        cabinetFolders.push(folder);
-        window.cabinetApp.closeCabinetFolderModal();
+        closeCabinetFolderModal();
         renderCabinetFoldersGrid();
         updateStats();
         updateAllCabinetsStats();
-        showSuccess(`Cabinet category "${name}" created successfully!`);
       }
 
+      function editCabinetFolder(folderId) {
+        const folder = cabinetFolders.find(f => f.id === folderId);
+        if (!folder) return;
+        
+        editingCabinetFolder = folderId;
+        document.getElementById('cabinetFolderModalTitle').textContent = '✏️ Edit Cabinet Category';
+        document.getElementById('cabinetFolderSubmitBtn').textContent = '✅ Update Category';
+        
+        document.getElementById('newCabinetFolderName').value = folder.name;
+        document.getElementById('newCabinetFolderIcon').value = folder.icon;
+        document.getElementById('newCabinetFolderDescription').value = folder.description || '';
+        
+        document.getElementById('cabinetFolderModal').classList.remove('hidden');
+      }
+
+      function deleteCabinetFolder(folderId) {
+        const folder = cabinetFolders.find(f => f.id === folderId);
+        if (!folder) return;
+        
+        const folderSubcategories = subcategories.filter(sub => sub.folderId === folderId);
+        const folderCabinets = cabinets.filter(cab => cab.folderId === folderId);
+        
+        if (folderSubcategories.length > 0 || folderCabinets.length > 0) {
+          if (!confirm(`This category contains ${folderSubcategories.length} product types and ${folderCabinets.length} cabinet units. Are you sure you want to delete it? This action cannot be undone.`)) {
+            return;
+          }
+          
+          // Remove all related data
+          subcategories = subcategories.filter(sub => sub.folderId !== folderId);
+          cabinets = cabinets.filter(cab => cab.folderId !== folderId);
+          dispatches = dispatches.filter(dispatch => {
+            const subcategory = subcategories.find(s => s.id === dispatch.subcategoryId);
+            return subcategory && subcategory.folderId !== folderId;
+          });
+        } else {
+          if (!confirm(`Are you sure you want to delete the "${folder.name}" category?`)) {
+            return;
+          }
+        }
+        
+        cabinetFolders = cabinetFolders.filter(f => f.id !== folderId);
+        renderCabinetFoldersGrid();
+        updateStats();
+        updateAllCabinetsStats();
+        showSuccess(`Cabinet category "${folder.name}" deleted successfully!`);
+      }
+
+      function closeCabinetFolderModal() {
+        document.getElementById('cabinetFolderModal').classList.add('hidden');
+        editingCabinetFolder = null;
+      }
+
+      // Subcategory/Product Type Management
       function addSubcategory() {
         const name = sanitizeInput(document.getElementById('subcategoryName').value.trim());
         const icon = sanitizeInput(document.getElementById('subcategoryIcon').value.trim()) || '📦';
@@ -2504,30 +2534,517 @@
           return;
         }
 
-        const subcategory = {
-          id: Date.now(),
-          folderId: currentFolderId,
-          name,
-          icon,
-          description,
-          productType,
-          materials: materials || 'Standard materials',
-          pricePerUnit,
-          materialRequirements,
-          dateCreated: new Date().toISOString(),
-          hidden: false,
-          employeeVisible: true,
-          createdBy: currentUser
-        };
+        if (editingSubcategory) {
+          // Update existing subcategory
+          const subcategory = subcategories.find(s => s.id === editingSubcategory);
+          if (subcategory) {
+            subcategory.name = name;
+            subcategory.icon = icon;
+            subcategory.description = description;
+            subcategory.productType = productType;
+            subcategory.materials = materials || 'Standard materials';
+            subcategory.pricePerUnit = pricePerUnit;
+            subcategory.materialRequirements = materialRequirements;
+            subcategory.lastModified = new Date().toISOString();
+            subcategory.modifiedBy = currentUser;
+          }
+          editingSubcategory = null;
+          showSuccess(`Product type "${name}" updated successfully!`);
+        } else {
+          // Create new subcategory
+          const subcategory = {
+            id: Date.now(),
+            folderId: currentFolderId,
+            name,
+            icon,
+            description,
+            productType,
+            materials: materials || 'Standard materials',
+            pricePerUnit,
+            materialRequirements,
+            dateCreated: new Date().toISOString(),
+            hidden: false,
+            employeeVisible: true,
+            createdBy: currentUser
+          };
+          subcategories.push(subcategory);
+          showSuccess(`Product type "${name}" created successfully!`);
+        }
 
-        subcategories.push(subcategory);
         closeSubcategoryModal();
         renderSubcategoriesList();
         updateFolderStats();
         updateAllCabinetsStats();
-        showSuccess(`Product type "${name}" created successfully!`);
       }
 
+      function editSubcategory(subcategoryId) {
+        const subcategory = subcategories.find(s => s.id === subcategoryId);
+        if (!subcategory) return;
+        
+        editingSubcategory = subcategoryId;
+        document.getElementById('subcategoryModalTitle').textContent = '✏️ Edit Product Type';
+        document.getElementById('subcategorySubmitBtn').textContent = '✅ Update Product Type';
+        
+        // Populate form fields
+        document.getElementById('subcategoryName').value = subcategory.name;
+        document.getElementById('subcategoryIcon').value = subcategory.icon;
+        document.getElementById('subcategoryDescription').value = subcategory.description || '';
+        document.getElementById('productType').value = subcategory.productType || 'cabinet';
+        
+        if (subcategory.productType === 'cabinet') {
+          document.getElementById('subcategoryMaterials').value = subcategory.materials || '';
+          document.getElementById('subcategoryPrice').value = subcategory.pricePerUnit || '';
+          
+          if (subcategory.materialRequirements?.primary) {
+            document.getElementById('subcategoryPlywoodType').value = subcategory.materialRequirements.primary.materialId;
+            document.getElementById('subcategoryPlywoodSheets').value = subcategory.materialRequirements.primary.sheetsPerUnit;
+          }
+          
+          if (subcategory.materialRequirements?.secondary) {
+            document.getElementById('subcategorySecondaryType').value = subcategory.materialRequirements.secondary.materialId;
+            document.getElementById('subcategorySecondarySheets').value = subcategory.materialRequirements.secondary.sheetsPerUnit;
+          }
+        } else {
+          document.getElementById('nonCabinetMaterials').value = subcategory.materials || '';
+          document.getElementById('nonCabinetPrice').value = subcategory.pricePerUnit || '';
+        }
+        
+        populateMaterialSelects();
+        toggleProductTypeOptions();
+        document.getElementById('subcategoryModal').classList.remove('hidden');
+      }
+
+      function deleteSubcategory(subcategoryId) {
+        const subcategory = subcategories.find(s => s.id === subcategoryId);
+        if (!subcategory) return;
+        
+        const subcategoryCabinets = cabinets.filter(cab => cab.subcategoryId === subcategoryId);
+        const subcategoryDispatches = dispatches.filter(dispatch => dispatch.subcategoryId === subcategoryId);
+        
+        if (subcategoryCabinets.length > 0 || subcategoryDispatches.length > 0) {
+          if (!confirm(`This product type has ${subcategoryCabinets.length} cabinet units and ${subcategoryDispatches.length} dispatches. Are you sure you want to delete it? This action cannot be undone.`)) {
+            return;
+          }
+          
+          // Remove related cabinets and dispatches
+          cabinets = cabinets.filter(cab => cab.subcategoryId !== subcategoryId);
+          dispatches = dispatches.filter(dispatch => dispatch.subcategoryId !== subcategoryId);
+        } else {
+          if (!confirm(`Are you sure you want to delete the "${subcategory.name}" product type?`)) {
+            return;
+          }
+        }
+        
+        subcategories = subcategories.filter(s => s.id !== subcategoryId);
+        renderSubcategoriesList();
+        updateFolderStats();
+        updateAllCabinetsStats();
+        showSuccess(`Product type "${subcategory.name}" deleted successfully!`);
+      }
+
+      function showSubcategoryModal() {
+        if (!currentFolderId) {
+          alert('❌ Please select a cabinet category first');
+          return;
+        }
+        
+        editingSubcategory = null;
+        document.getElementById('subcategoryModalTitle').textContent = '➕ Add New Product Type';
+        document.getElementById('subcategorySubmitBtn').textContent = '✅ Create Product Type';
+        
+        document.getElementById('subcategoryModal').classList.remove('hidden');
+        clearSubcategoryForm();
+        populateMaterialSelects();
+      }
+
+      function closeSubcategoryModal() {
+        document.getElementById('subcategoryModal').classList.add('hidden');
+        editingSubcategory = null;
+      }
+
+      function clearSubcategoryForm() {
+        ['subcategoryName', 'subcategoryIcon', 'subcategoryDescription', 
+         'subcategoryMaterials', 'subcategoryPrice', 'subcategoryPlywoodSheets', 
+         'subcategorySecondarySheets', 'nonCabinetMaterials', 'nonCabinetPrice'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.value = '';
+        });
+        
+        ['subcategoryPlywoodType', 'subcategorySecondaryType', 'productType'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.selectedIndex = 0;
+        });
+        
+        const cabinetConfig = document.getElementById('cabinetConfiguration');
+        const nonCabinetConfig = document.getElementById('nonCabinetConfiguration');
+        if (cabinetConfig) cabinetConfig.classList.remove('hidden');
+        if (nonCabinetConfig) nonCabinetConfig.classList.add('hidden');
+      }
+
+      function populateMaterialSelects() {
+        const primarySelect = document.getElementById('subcategoryPlywoodType');
+        const secondarySelect = document.getElementById('subcategorySecondaryType');
+        
+        if (primarySelect && secondarySelect) {
+          primarySelect.innerHTML = '<option value="">Select Plywood Type</option>';
+          secondarySelect.innerHTML = '<option value="">Select Secondary Material</option>';
+          
+          plywood.forEach(material => {
+            const option1 = document.createElement('option');
+            option1.value = material.id;
+            option1.textContent = `${material.type} (${material.sheets} sheets available)`;
+            primarySelect.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = material.id;
+            option2.textContent = `${material.type} (${material.sheets} sheets available)`;
+            secondarySelect.appendChild(option2);
+          });
+        }
+      }
+
+      function toggleProductTypeOptions() {
+        const productType = document.getElementById('productType').value;
+        const cabinetConfig = document.getElementById('cabinetConfiguration');
+        const nonCabinetConfig = document.getElementById('nonCabinetConfiguration');
+        
+        if (productType === 'cabinet') {
+          cabinetConfig.classList.remove('hidden');
+          nonCabinetConfig.classList.add('hidden');
+        } else {
+          cabinetConfig.classList.add('hidden');
+          nonCabinetConfig.classList.remove('hidden');
+        }
+      }
+
+      // Manufacturing Modal Functions
+      function showManufacturingModal(subcategoryId) {
+        const subcategory = subcategories.find(s => s.id === subcategoryId);
+        if (!subcategory) return;
+        
+        currentSubcategoryId = subcategoryId;
+        
+        const detailsDiv = document.getElementById('manufacturingDetails');
+        detailsDiv.innerHTML = `
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 class="font-semibold text-blue-800 mb-2">${subcategory.icon} ${subcategory.name}</h4>
+            <p class="text-sm text-blue-700 mb-2">${subcategory.description || 'No description'}</p>
+            <p class="text-sm text-blue-600">💰 Price per unit: ${(subcategory.pricePerUnit || 0).toFixed(2)}</p>
+            
+            ${subcategory.materialRequirements ? `
+              <div class="mt-3 text-xs text-blue-600">
+                <strong>📦 Material Requirements per unit:</strong><br>
+                ${subcategory.materialRequirements.primary ? 
+                  `• ${subcategory.materialRequirements.primary.materialName}: ${subcategory.materialRequirements.primary.sheetsPerUnit} sheets<br>` : ''
+                }
+                ${subcategory.materialRequirements.secondary ? 
+                  `• ${subcategory.materialRequirements.secondary.materialName}: ${subcategory.materialRequirements.secondary.sheetsPerUnit} sheets` : ''
+                }
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        document.getElementById('manufacturingQuantity').value = '1';
+        document.getElementById('manufacturingModal').classList.remove('hidden');
+      }
+
+      function closeManufacturingModal() {
+        document.getElementById('manufacturingModal').classList.add('hidden');
+        currentSubcategoryId = null;
+      }
+
+      function processManufacturing() {
+        const quantity = parseInt(document.getElementById('manufacturingQuantity').value) || 1;
+        const subcategory = subcategories.find(s => s.id === currentSubcategoryId);
+        
+        if (!subcategory || quantity <= 0) {
+          alert('❌ Invalid manufacturing parameters');
+          return;
+        }
+        
+        // Check material availability for cabinets
+        if (subcategory.productType === 'cabinet' && subcategory.materialRequirements) {
+          const { primary, secondary } = subcategory.materialRequirements;
+          
+          if (primary) {
+            const primaryMaterial = plywood.find(p => p.id === primary.materialId);
+            const requiredPrimary = primary.sheetsPerUnit * quantity;
+            
+            if (!primaryMaterial || primaryMaterial.sheets < requiredPrimary) {
+              alert(`❌ Insufficient ${primary.materialName}: Need ${requiredPrimary} sheets, have ${primaryMaterial?.sheets || 0}`);
+              return;
+            }
+          }
+          
+          if (secondary) {
+            const secondaryMaterial = plywood.find(p => p.id === secondary.materialId);
+            const requiredSecondary = secondary.sheetsPerUnit * quantity;
+            
+            if (!secondaryMaterial || secondaryMaterial.sheets < requiredSecondary) {
+              alert(`❌ Insufficient ${secondary.materialName}: Need ${requiredSecondary} sheets, have ${secondaryMaterial?.sheets || 0}`);
+              return;
+            }
+          }
+          
+          // Deduct materials
+          if (primary) {
+            const primaryMaterial = plywood.find(p => p.id === primary.materialId);
+            primaryMaterial.sheets -= primary.sheetsPerUnit * quantity;
+          }
+          
+          if (secondary) {
+            const secondaryMaterial = plywood.find(p => p.id === secondary.materialId);
+            secondaryMaterial.sheets -= secondary.sheetsPerUnit * quantity;
+          }
+        }
+        
+        // Add manufactured cabinets to inventory
+        let existingCabinet = cabinets.find(c => c.subcategoryId === currentSubcategoryId);
+        
+        if (existingCabinet) {
+          existingCabinet.quantity += quantity;
+          existingCabinet.lastManufactured = new Date().toISOString();
+          existingCabinet.manufacturedBy = currentUser;
+        } else {
+          const newCabinet = {
+            id: Date.now(),
+            subcategoryId: currentSubcategoryId,
+            folderId: subcategory.folderId,
+            quantity: quantity,
+            pricePerUnit: subcategory.pricePerUnit,
+            dateCreated: new Date().toISOString(),
+            lastManufactured: new Date().toISOString(),
+            createdBy: currentUser,
+            manufacturedBy: currentUser
+          };
+          cabinets.push(newCabinet);
+        }
+        
+        closeManufacturingModal();
+        renderSubcategoriesList();
+        renderPlywood();
+        updateFolderStats();
+        updateAllCabinetsStats();
+        updateStats();
+        checkLowStock();
+        showSuccess(`✅ Manufactured ${quantity} ${subcategory.name}(s) successfully!`);
+      }
+
+      // Dispatch Modal Functions
+      function showDispatchModal(subcategoryId) {
+        const subcategory = subcategories.find(s => s.id === subcategoryId);
+        const cabinet = cabinets.find(c => c.subcategoryId === subcategoryId);
+        
+        if (!subcategory || !cabinet || cabinet.quantity <= 0) {
+          alert('❌ No stock available for dispatch');
+          return;
+        }
+        
+        currentDispatchSubcategoryId = subcategoryId;
+        
+        const detailsDiv = document.getElementById('dispatchDetails');
+        detailsDiv.innerHTML = `
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 class="font-semibold text-green-800 mb-2">${subcategory.icon} ${subcategory.name}</h4>
+            <p class="text-sm text-green-700 mb-2">${subcategory.description || 'No description'}</p>
+            <p class="text-sm text-green-600">📦 Available stock: ${cabinet.quantity} units</p>
+            <p class="text-sm text-green-600">💰 Price per unit: ${(subcategory.pricePerUnit || 0).toFixed(2)}</p>
+          </div>
+        `;
+        
+        document.getElementById('dispatchQuantity').value = '1';
+        document.getElementById('dispatchQuantity').max = cabinet.quantity;
+        document.getElementById('dispatchAddress').value = '';
+        document.getElementById('dispatchDeliveryDate').value = '';
+        document.getElementById('dispatchNotes').value = '';
+        
+        document.getElementById('dispatchModal').classList.remove('hidden');
+      }
+
+      function closeDispatchModal() {
+        document.getElementById('dispatchModal').classList.add('hidden');
+        currentDispatchSubcategoryId = null;
+      }
+
+      function processDispatch() {
+        const quantity = parseInt(document.getElementById('dispatchQuantity').value) || 1;
+        const address = sanitizeInput(document.getElementById('dispatchAddress').value.trim());
+        const deliveryDate = document.getElementById('dispatchDeliveryDate').value;
+        const notes = sanitizeInput(document.getElementById('dispatchNotes').value.trim());
+        
+        const subcategory = subcategories.find(s => s.id === currentDispatchSubcategoryId);
+        const cabinet = cabinets.find(c => c.subcategoryId === currentDispatchSubcategoryId);
+        
+        if (!subcategory || !cabinet || !address) {
+          alert('❌ Please fill in all required fields');
+          return;
+        }
+        
+        if (quantity <= 0 || quantity > cabinet.quantity) {
+          alert('❌ Invalid quantity for dispatch');
+          return;
+        }
+        
+        // Create dispatch record
+        const dispatch = {
+          id: Date.now(),
+          subcategoryId: currentDispatchSubcategoryId,
+          productName: `${subcategory.icon} ${subcategory.name}`,
+          quantity: quantity,
+          address: address,
+          expectedDeliveryDate: deliveryDate,
+          notes: notes,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser
+        };
+        
+        dispatches.push(dispatch);
+        
+        // Reduce cabinet inventory
+        cabinet.quantity -= quantity;
+        
+        // Remove cabinet entry if quantity becomes 0
+        if (cabinet.quantity <= 0) {
+          const cabinetIndex = cabinets.findIndex(c => c.id === cabinet.id);
+          if (cabinetIndex !== -1) {
+            cabinets.splice(cabinetIndex, 1);
+          }
+        }
+        
+        closeDispatchModal();
+        renderSubcategoriesList();
+        renderDispatches();
+        updateFolderStats();
+        updateAllCabinetsStats();
+        updateDispatchStats();
+        showSuccess(`🚚 Dispatched ${quantity} ${subcategory.name}(s) successfully!`);
+      }
+
+      // Dispatch Management Functions
+      function editDispatch(dispatchId) {
+        const dispatch = dispatches.find(d => d.id === dispatchId);
+        if (!dispatch) return;
+        
+        editingDispatch = dispatchId;
+        
+        document.getElementById('editDispatchQuantity').value = dispatch.quantity;
+        document.getElementById('editDispatchAddress').value = dispatch.address;
+        document.getElementById('editDispatchDeliveryDate').value = dispatch.expectedDeliveryDate;
+        document.getElementById('editDispatchNotes').value = dispatch.notes || '';
+        document.getElementById('editDispatchStatus').value = dispatch.status;
+        
+        document.getElementById('editDispatchModal').classList.remove('hidden');
+      }
+
+      function updateDispatch() {
+        const dispatch = dispatches.find(d => d.id === editingDispatch);
+        if (!dispatch) return;
+        
+        const quantity = parseInt(document.getElementById('editDispatchQuantity').value) || 1;
+        const address = sanitizeInput(document.getElementById('editDispatchAddress').value.trim());
+        const deliveryDate = document.getElementById('editDispatchDeliveryDate').value;
+        const notes = sanitizeInput(document.getElementById('editDispatchNotes').value.trim());
+        const status = document.getElementById('editDispatchStatus').value;
+        
+        if (!address) {
+          alert('❌ Address is required');
+          return;
+        }
+        
+        dispatch.quantity = quantity;
+        dispatch.address = address;
+        dispatch.expectedDeliveryDate = deliveryDate;
+        dispatch.notes = notes;
+        dispatch.status = status;
+        dispatch.lastModified = new Date().toISOString();
+        dispatch.modifiedBy = currentUser;
+        
+        closeEditDispatchModal();
+        renderDispatches();
+        updateDispatchStats();
+        showSuccess('✅ Dispatch updated successfully!');
+      }
+
+      function closeEditDispatchModal() {
+        document.getElementById('editDispatchModal').classList.add('hidden');
+        editingDispatch = null;
+      }
+
+      function deleteDispatch(dispatchId) {
+        const dispatch = dispatches.find(d => d.id === dispatchId);
+        if (!dispatch) return;
+        
+        if (!confirm(`Are you sure you want to delete dispatch #${dispatch.id}?`)) {
+          return;
+        }
+        
+        dispatches = dispatches.filter(d => d.id !== dispatchId);
+        renderDispatches();
+        updateDispatchStats();
+        showSuccess('❌ Dispatch deleted successfully!');
+      }
+
+      function markDelivered(dispatchId) {
+        const dispatch = dispatches.find(d => d.id === dispatchId);
+        if (!dispatch) return;
+        
+        dispatch.status = 'completed';
+        dispatch.completedAt = new Date().toISOString();
+        dispatch.completedBy = currentUser;
+        
+        renderDispatches();
+        updateDispatchStats();
+        showSuccess('✅ Dispatch marked as delivered!');
+      }
+
+      function undoLastDispatch() {
+        if (dispatches.length === 0) {
+          alert('❌ No dispatches to undo');
+          return;
+        }
+        
+        const lastDispatch = dispatches[dispatches.length - 1];
+        
+        if (!confirm(`Undo last dispatch: ${lastDispatch.productName} (${lastDispatch.quantity} units)?`)) {
+          return;
+        }
+        
+        // Find the subcategory and restore inventory
+        const subcategory = subcategories.find(s => s.id === lastDispatch.subcategoryId);
+        if (subcategory) {
+          let cabinet = cabinets.find(c => c.subcategoryId === lastDispatch.subcategoryId);
+          
+          if (cabinet) {
+            cabinet.quantity += lastDispatch.quantity;
+          } else {
+            // Recreate cabinet entry
+            cabinet = {
+              id: Date.now(),
+              subcategoryId: lastDispatch.subcategoryId,
+              folderId: subcategory.folderId,
+              quantity: lastDispatch.quantity,
+              pricePerUnit: subcategory.pricePerUnit,
+              dateCreated: new Date().toISOString(),
+              restoredBy: currentUser
+            };
+            cabinets.push(cabinet);
+          }
+        }
+        
+        // Remove the dispatch
+        dispatches.pop();
+        
+        renderSubcategoriesList();
+        renderDispatches();
+        updateFolderStats();
+        updateAllCabinetsStats();
+        updateDispatchStats();
+        showSuccess('↩️ Last dispatch undone successfully!');
+      }
+
+      // Plywood Management Functions
       function addPlywood() {
         const type = sanitizeInput(document.getElementById('plywoodType').value.trim());
         const sheets = parseInt(document.getElementById('plywoodSheets').value) || 0;
@@ -2578,6 +3095,451 @@
         showSuccess(`Material "${type}" added successfully with invoice ${invoice}!`);
       }
 
+      function editPlywood(plywoodId) {
+        const material = plywood.find(p => p.id === plywoodId);
+        if (!material) return;
+        
+        editingPlywood = plywoodId;
+        
+        document.getElementById('editPlywoodType').value = material.type;
+        document.getElementById('editPlywoodSheets').value = material.sheets;
+        document.getElementById('editPlywoodMinStock').value = material.minStock || 0;
+        document.getElementById('editPlywoodSupplier').value = material.supplier;
+        document.getElementById('editPlywoodCost').value = material.cost;
+        
+        document.getElementById('editPlywoodModal').classList.remove('hidden');
+      }
+
+      function updatePlywood() {
+        const material = plywood.find(p => p.id === editingPlywood);
+        if (!material) {
+          alert('❌ Material not found');
+          return;
+        }
+        
+        const type = sanitizeInput(document.getElementById('editPlywoodType').value.trim());
+        const sheets = parseInt(document.getElementById('editPlywoodSheets').value) || 0;
+        const minStock = parseInt(document.getElementById('editPlywoodMinStock').value) || 0;
+        const supplier = sanitizeInput(document.getElementById('editPlywoodSupplier').value.trim());
+        const cost = parseFloat(document.getElementById('editPlywoodCost').value) || 0;
+        
+        if (!type || !supplier) {
+          alert('❌ Type and supplier are required');
+          return;
+        }
+        
+        material.type = type;
+        material.sheets = sheets;
+        material.minStock = minStock;
+        material.supplier = supplier;
+        material.cost = cost;
+        material.lastModified = new Date().toISOString();
+        material.modifiedBy = currentUser;
+        
+        closeEditPlywoodModal();
+        renderPlywood();
+        updateStats();
+        checkLowStock();
+        populateMaterialSelects();
+        showSuccess(`Material "${type}" updated successfully!`);
+      }
+
+      function closeEditPlywoodModal() {
+        document.getElementById('editPlywoodModal').classList.add('hidden');
+        editingPlywood = null;
+        
+        // Clear the form fields
+        ['editPlywoodType', 'editPlywoodSheets', 'editPlywoodMinStock', 'editPlywoodSupplier', 'editPlywoodCost'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.value = '';
+        });
+      }
+
+      function deletePlywood(plywoodId) {
+        const material = plywood.find(p => p.id === plywoodId);
+        if (!material) return;
+        
+        // Check if material is used in any subcategory requirements
+        const usedInSubcategories = subcategories.filter(sub => {
+          if (sub.materialRequirements?.primary?.materialId === plywoodId) return true;
+          if (sub.materialRequirements?.secondary?.materialId === plywoodId) return true;
+          return false;
+        });
+        
+        if (usedInSubcategories.length > 0) {
+          const subcategoryNames = usedInSubcategories.map(s => s.name).join(', ');
+          if (!confirm(`This material is used in the following product types: ${subcategoryNames}. Deleting it will affect manufacturing. Continue?`)) {
+            return;
+          }
+        } else {
+          if (!confirm(`Are you sure you want to delete the "${material.type}" material?`)) {
+            return;
+          }
+        }
+        
+        plywood = plywood.filter(p => p.id !== plywoodId);
+        renderPlywood();
+        updateStats();
+        checkLowStock();
+        populateMaterialSelects();
+        showSuccess(`Material "${material.type}" deleted successfully!`);
+      }
+
+      function updatePlywoodQuantity(plywoodId, change) {
+        const material = plywood.find(p => p.id === plywoodId);
+        if (!material) return;
+        
+        const newQuantity = Math.max(0, material.sheets + change);
+        material.sheets = newQuantity;
+        material.lastModified = new Date().toISOString();
+        material.modifiedBy = currentUser;
+        
+        renderPlywood();
+        updateStats();
+        checkLowStock();
+        showSuccess(`Updated ${material.type} quantity to ${newQuantity} sheets`);
+      }
+
+      function showPlywoodForm() {
+        document.getElementById('plywoodForm').classList.remove('hidden');
+        document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
+      }
+
+      function hidePlywoodForm() {
+        document.getElementById('plywoodForm').classList.add('hidden');
+        // Clear form
+        ['plywoodType', 'plywoodSheets', 'plywoodMinStock', 'plywoodSupplier', 'plywoodCost', 'plywoodInvoice'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.value = '';
+        });
+      }
+
+      // Export Functions
+      function exportAllDispatches() {
+        if (dispatches.length === 0) {
+          alert('❌ No dispatches to export');
+          return;
+        }
+        
+        try {
+          const headers = ['Dispatch ID', 'Product', 'Quantity', 'Address', 'Expected Delivery', 'Status', 'Created Date', 'Notes'];
+          const csvContent = [
+            headers.join(','),
+            ...dispatches.map(dispatch => [
+              dispatch.id,
+              `"${dispatch.productName}"`,
+              dispatch.quantity,
+              `"${dispatch.address.replace(/"/g, '""')}"`,
+              dispatch.expectedDeliveryDate || '',
+              dispatch.status,
+              new Date(dispatch.createdAt).toLocaleDateString(),
+              `"${(dispatch.notes || '').replace(/"/g, '""')}"`
+            ].join(','))
+          ].join('\n');
+          
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `dispatches_${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          showSuccess('📄 Dispatches exported successfully!');
+        } catch (error) {
+          console.error('Export error:', error);
+          alert('❌ Failed to export dispatches');
+        }
+      }
+
+      function exportInvoices() {
+        if (invoices.length === 0) {
+          alert('❌ No invoices to export');
+          return;
+        }
+        
+        try {
+          const headers = ['Invoice Number', 'Supplier', 'Date', 'Items', 'Total', 'Created By'];
+          const csvContent = [
+            headers.join(','),
+            ...invoices.map(invoice => [
+              `"${invoice.invoiceNumber}"`,
+              `"${invoice.supplier}"`,
+              invoice.date,
+              invoice.items,
+              invoice.total.toFixed(2),
+              `"${invoice.createdBy || 'System'}"`
+            ].join(','))
+          ].join('\n');
+          
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `invoices_${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          showSuccess('📄 Invoices exported successfully!');
+        } catch (error) {
+          console.error('Export error:', error);
+          alert('❌ Failed to export invoices');
+        }
+      }
+
+      function exportAllData() {
+        try {
+          const data = {
+            cabinetFolders,
+            subcategories,
+            plywood,
+            cabinets,
+            dispatches,
+            invoices,
+            exportDate: new Date().toISOString(),
+            exportedBy: currentUser
+          };
+          
+          const jsonContent = JSON.stringify(data, null, 2);
+          const blob = new Blob([jsonContent], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cabinet_inventory_backup_${new Date().toISOString().split('T')[0]}.json`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          showSuccess('📤 All data exported successfully!');
+        } catch (error) {
+          console.error('Export error:', error);
+          alert('❌ Failed to export data');
+        }
+      }
+
+      // Search and Filter Functions
+      function filterInvoices() {
+        const searchTerm = document.getElementById('invoiceSearch').value.toLowerCase();
+        
+        if (!searchTerm) {
+          renderInvoices();
+          return;
+        }
+        
+        const filteredInvoices = invoices.filter(invoice => 
+          invoice.invoiceNumber.toLowerCase().includes(searchTerm) ||
+          invoice.supplier.toLowerCase().includes(searchTerm)
+        );
+        
+        const list = document.getElementById('invoiceList');
+        list.innerHTML = '';
+        
+        if (filteredInvoices.length === 0) {
+          list.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+              📋 No invoices found matching "${searchTerm}".
+            </div>
+          `;
+          return;
+        }
+        
+        const sortedInvoices = [...filteredInvoices].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        sortedInvoices.forEach(invoice => {
+          const div = document.createElement('div');
+          div.className = 'border-b border-gray-200 py-3';
+          
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="font-semibold">${invoice.invoiceNumber}</p>
+                <p class="text-sm text-gray-600">${invoice.supplier} - ${new Date(invoice.date).toLocaleDateString()}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold">${(invoice.total || 0).toFixed(2)}</p>
+                <p class="text-sm text-gray-600">${invoice.items || 0} items</p>
+              </div>
+            </div>
+          `;
+          
+          list.appendChild(div);
+        });
+      }
+
+      // Data Management Functions
+      function loadDemoData() {
+        if (!confirm('Load demo data? This will add sample products and materials to your inventory.')) {
+          return;
+        }
+        
+        // Add demo plywood materials
+        const demoPlywood = [
+          { id: Date.now() + 1, type: 'Oak 3/4"', sheets: 25, minStock: 5, supplier: 'Premium Wood Co.', cost: 45.50, lastInvoice: 'PW-2024-001', dateAdded: new Date().toISOString(), createdBy: currentUser },
+          { id: Date.now() + 2, type: 'Maple 1/2"', sheets: 30, minStock: 8, supplier: 'Quality Lumber', cost: 38.75, lastInvoice: 'QL-2024-002', dateAdded: new Date().toISOString(), createdBy: currentUser },
+          { id: Date.now() + 3, type: 'Cherry 3/4"', sheets: 15, minStock: 3, supplier: 'Exotic Woods Inc.', cost: 65.00, lastInvoice: 'EW-2024-003', dateAdded: new Date().toISOString(), createdBy: currentUser }
+        ];
+        
+        plywood.push(...demoPlywood);
+        
+        // Add demo subcategories to existing folders
+        if (cabinetFolders.length > 0) {
+          const demoSubcategories = [
+            {
+              id: Date.now() + 10,
+              folderId: cabinetFolders[0].id,
+              name: '24" Standard Wall Cabinet',
+              icon: '📦',
+              description: 'Standard 24-inch wall cabinet with adjustable shelves',
+              productType: 'cabinet',
+              materials: 'Oak plywood, soft-close hinges, adjustable shelves',
+              pricePerUnit: 350.00,
+              materialRequirements: {
+                primary: { materialId: demoPlywood[0].id, sheetsPerUnit: 1.5, materialName: 'Oak 3/4"' }
+              },
+              dateCreated: new Date().toISOString(),
+              createdBy: currentUser
+            },
+            {
+              id: Date.now() + 11,
+              folderId: cabinetFolders[1].id,
+              name: '36" Base Cabinet',
+              icon: '🏠',
+              description: 'Large base cabinet with drawer and door',
+              productType: 'cabinet',
+              materials: 'Oak plywood, drawer slides, soft-close hinges',
+              pricePerUnit: 425.00,
+              materialRequirements: {
+                primary: { materialId: demoPlywood[0].id, sheetsPerUnit: 2.0, materialName: 'Oak 3/4"' }
+              },
+              dateCreated: new Date().toISOString(),
+              createdBy: currentUser
+            }
+          ];
+          
+          subcategories.push(...demoSubcategories);
+        }
+        
+        populateMaterialSelects();
+        renderPlywood();
+        renderSubcategoriesList();
+        updateStats();
+        updateAllCabinetsStats();
+        updateFolderStats();
+        showSuccess('🎯 Demo data loaded successfully!');
+      }
+
+      function clearAllData() {
+        if (!confirm('⚠️ Clear ALL data? This will permanently delete everything including cabinets, materials, and dispatches. This action cannot be undone!')) {
+          return;
+        }
+        
+        if (!confirm('🚨 FINAL WARNING: You are about to delete ALL data. Type "DELETE" in the next prompt to confirm.')) {
+          return;
+        }
+        
+        const confirmation = prompt('Type "DELETE" to confirm data deletion:');
+        if (confirmation !== 'DELETE') {
+          alert('❌ Data deletion cancelled');
+          return;
+        }
+        
+        cabinetFolders = [];
+        subcategories = [];
+        plywood = [];
+        cabinets = [];
+        dispatches = [];
+        invoices = [];
+        
+        initializeDefaultCabinetFolders();
+        renderCabinetFoldersGrid();
+        renderPlywood();
+        updateAllDisplays();
+        showSuccess('🗑️ All data cleared and reset to defaults!');
+      }
+
+      function resetSystem() {
+        if (!confirm('Reset system to factory defaults? This will clear all data and settings.')) {
+          return;
+        }
+        
+        // Clear localStorage
+        if (isLocalStorageAvailable) {
+          try {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+              if (key.startsWith('cabinet_')) {
+                localStorage.removeItem(key);
+              }
+            });
+          } catch (error) {
+            console.error('Error clearing localStorage:', error);
+          }
+        }
+        
+        // Reset all variables
+        cabinetFolders = [];
+        subcategories = [];
+        plywood = [];
+        cabinets = [];
+        dispatches = [];
+        invoices = [];
+        dataInitialized = false;
+        
+        // Reinitialize
+        initializeDefaultCabinetFolders();
+        updateAllDisplays();
+        showSuccess('🔄 System reset to factory defaults!');
+      }
+
+      function backupData() {
+        exportAllData();
+      }
+
+      function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = function(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const data = JSON.parse(e.target.result);
+              
+              if (!data.cabinetFolders || !Array.isArray(data.cabinetFolders)) {
+                throw new Error('Invalid backup file format');
+              }
+              
+              if (!confirm('Import data? This will replace all current data with the backup.')) {
+                return;
+              }
+              
+              cabinetFolders = data.cabinetFolders || [];
+              subcategories = data.subcategories || [];
+              plywood = data.plywood || [];
+              cabinets = data.cabinets || [];
+              dispatches = data.dispatches || [];
+              invoices = data.invoices || [];
+              
+              dataInitialized = true;
+              saveAllData();
+              updateAllDisplays();
+              showSuccess('📥 Data imported successfully!');
+              
+            } catch (error) {
+              console.error('Import error:', error);
+              alert('❌ Failed to import data. Please check the file format.');
+            }
+          };
+          
+          reader.readAsText(file);
+        };
+        
+        input.click();
+      }
+
       // Render functions
       function renderCabinetFoldersGrid() {
         const grid = document.getElementById('cabinetFoldersGrid');
@@ -2604,15 +3566,15 @@
           
           div.innerHTML = `
             <div class="edit-button-container">
-              <button onclick="window.cabinetApp.editCabinetFolder(${folder.id})" class="edit-btn-small btn-blue" title="Edit Category">
+              <button onclick="editCabinetFolder(${folder.id})" class="edit-btn-small btn-blue" title="Edit Category">
                 ✏️
               </button>
-              <button onclick="window.cabinetApp.deleteCabinetFolder(${folder.id})" class="edit-btn-small btn-red" title="Delete Category">
+              <button onclick="deleteCabinetFolder(${folder.id})" class="edit-btn-small btn-red" title="Delete Category">
                 🗑️
               </button>
             </div>
             
-            <div class="text-center" onclick="window.cabinetApp.showCabinetFolderPage(${folder.id})">
+            <div class="text-center" onclick="showCabinetFolderPage(${folder.id})">
               <div class="text-4xl mb-3">${folder.icon}</div>
               <h3 class="font-bold text-lg text-gray-800 mb-2">${folder.name}</h3>
               <p class="text-gray-600 text-sm mb-4 line-clamp-2">${folder.description || 'No description'}</p>
@@ -2666,10 +3628,10 @@
           
           div.innerHTML = `
             <div class="edit-button-container">
-              <button onclick="window.cabinetApp.editSubcategory(${subcategory.id})" class="edit-btn-small btn-blue" title="Edit Product Type">
+              <button onclick="editSubcategory(${subcategory.id})" class="edit-btn-small btn-blue" title="Edit Product Type">
                 ✏️
               </button>
-              <button onclick="window.cabinetApp.deleteSubcategory(${subcategory.id})" class="edit-btn-small btn-red" title="Delete Product Type">
+              <button onclick="deleteSubcategory(${subcategory.id})" class="edit-btn-small btn-red" title="Delete Product Type">
                 🗑️
               </button>
             </div>
@@ -2696,11 +3658,11 @@
                 </div>
                 
                 <div class="flex lg:flex-col gap-2">
-                  <button onclick="window.cabinetApp.showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
+                  <button onclick="showManufacturingModal(${subcategory.id})" class="btn btn-green text-sm">
                     🔨 Make
                   </button>
                   ${totalQuantity > 0 ? `
-                    <button onclick="window.cabinetApp.showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
+                    <button onclick="showDispatchModal(${subcategory.id})" class="btn btn-orange text-sm">
                       🚚 Ship (${totalQuantity})
                     </button>
                   ` : `
@@ -2746,10 +3708,10 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
                   <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
                   <div class="flex gap-2">
-                    <button onclick="window.cabinetApp.editPlywood(${item.id})" class="edit-btn-small btn-blue" title="Edit Material">
+                    <button onclick="editPlywood(${item.id})" class="edit-btn-small btn-blue" title="Edit Material">
                       ✏️ Edit
                     </button>
-                    <button onclick="window.cabinetApp.deletePlywood(${item.id})" class="edit-btn-small btn-red" title="Delete Material">
+                    <button onclick="deletePlywood(${item.id})" class="edit-btn-small btn-red" title="Delete Material">
                       🗑️ Delete
                     </button>
                   </div>
@@ -2765,8 +3727,8 @@
                   <div class="text-gray-600 font-medium">sheets</div>
                 </div>
                 <div class="flex lg:flex-col gap-2">
-                  <button onclick="window.cabinetApp.updatePlywoodQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
-                  <button onclick="window.cabinetApp.updatePlywoodQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
+                  <button onclick="updatePlywoodQuantity(${item.id}, 1)" class="btn btn-green text-sm">+1</button>
+                  <button onclick="updatePlywoodQuantity(${item.id}, -1)" class="btn btn-orange text-sm">-1</button>
                 </div>
               </div>
             </div>
@@ -2812,10 +3774,10 @@
                     </span>
                   </div>
                   <div class="flex gap-2">
-                    <button onclick="window.cabinetApp.editDispatch(${dispatch.id})" class="edit-btn-small btn-blue" title="Edit Dispatch">
+                    <button onclick="editDispatch(${dispatch.id})" class="edit-btn-small btn-blue" title="Edit Dispatch">
                       ✏️ Edit
                     </button>
-                    <button onclick="window.cabinetApp.deleteDispatch(${dispatch.id})" class="edit-btn-small btn-red" title="Delete Dispatch">
+                    <button onclick="deleteDispatch(${dispatch.id})" class="edit-btn-small btn-red" title="Delete Dispatch">
                       🗑️ Delete
                     </button>
                   </div>
@@ -2838,7 +3800,7 @@
               
               <div class="flex lg:flex-col gap-2">
                 ${dispatch.status === 'pending' ? `
-                  <button onclick="window.cabinetApp.markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
+                  <button onclick="markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
                 ` : ''}
               </div>
             </div>
@@ -3034,92 +3996,6 @@
         }
       }
 
-      // Modal functions
-      function showSubcategoryModal() {
-        if (!currentFolderId) {
-          alert('❌ Please select a cabinet category first');
-          return;
-        }
-        
-        editingSubcategory = null;
-        document.getElementById('subcategoryModalTitle').textContent = '➕ Add New Product Type';
-        document.getElementById('subcategorySubmitBtn').textContent = '✅ Create Product Type';
-        document.getElementById('subcategorySubmitBtn').onclick = addSubcategory;
-        
-        document.getElementById('subcategoryModal').classList.remove('hidden');
-        clearSubcategoryForm();
-        populateMaterialSelects();
-      }
-
-      function closeSubcategoryModal() {
-        document.getElementById('subcategoryModal').classList.add('hidden');
-        editingSubcategory = null;
-      }
-
-      function clearSubcategoryForm() {
-        ['subcategoryName', 'subcategoryIcon', 'subcategoryDescription', 
-         'subcategoryMaterials', 'subcategoryPrice', 'subcategoryPlywoodSheets', 
-         'subcategorySecondarySheets', 'nonCabinetMaterials', 'nonCabinetPrice'].forEach(id => {
-          const element = document.getElementById(id);
-          if (element) element.value = '';
-        });
-        
-        ['subcategoryPlywoodType', 'subcategorySecondaryType', 'productType'].forEach(id => {
-          const element = document.getElementById(id);
-          if (element) element.selectedIndex = 0;
-        });
-        
-        const cabinetConfig = document.getElementById('cabinetConfiguration');
-        const nonCabinetConfig = document.getElementById('nonCabinetConfiguration');
-        if (cabinetConfig) cabinetConfig.classList.remove('hidden');
-        if (nonCabinetConfig) nonCabinetConfig.classList.add('hidden');
-      }
-
-      function populateMaterialSelects() {
-        const primarySelect = document.getElementById('subcategoryPlywoodType');
-        const secondarySelect = document.getElementById('subcategorySecondaryType');
-        
-        if (primarySelect && secondarySelect) {
-          primarySelect.innerHTML = '<option value="">Select Plywood Type</option>';
-          secondarySelect.innerHTML = '<option value="">Select Secondary Material</option>';
-          
-          plywood.forEach(material => {
-            const option1 = document.createElement('option');
-            option1.value = material.id;
-            option1.textContent = `${material.type} (${material.sheets} sheets available)`;
-            primarySelect.appendChild(option1);
-            
-            const option2 = document.createElement('option');
-            option2.value = material.id;
-            option2.textContent = `${material.type} (${material.sheets} sheets available)`;
-            secondarySelect.appendChild(option2);
-          });
-        }
-      }
-
-      function toggleProductTypeOptions() {
-        const productType = document.getElementById('productType').value;
-        const cabinetConfig = document.getElementById('cabinetConfiguration');
-        const nonCabinetConfig = document.getElementById('nonCabinetConfiguration');
-        
-        if (productType === 'cabinet') {
-          cabinetConfig.classList.remove('hidden');
-          nonCabinetConfig.classList.add('hidden');
-        } else {
-          cabinetConfig.classList.add('hidden');
-          nonCabinetConfig.classList.remove('hidden');
-        }
-      }
-
-      function showPlywoodForm() {
-        document.getElementById('plywoodForm').classList.remove('hidden');
-        document.getElementById('plywoodDate').value = new Date().toISOString().split('T')[0];
-      }
-
-      function hidePlywoodForm() {
-        document.getElementById('plywoodForm').classList.add('hidden');
-      }
-
       // Cloud sync functions
       function showConnectionModal() {
         document.getElementById('connectionModal').classList.remove('hidden');
@@ -3194,22 +4070,21 @@
           editingCabinetFolder = null;
           document.getElementById('cabinetFolderModalTitle').textContent = '📁 Add New Cabinet Category';
           document.getElementById('cabinetFolderSubmitBtn').textContent = '✅ Create Category';
-          document.getElementById('cabinetFolderSubmitBtn').onclick = addCabinetFolder;
           document.getElementById('cabinetFolderModal').classList.remove('hidden');
           document.getElementById('newCabinetFolderName').value = '';
           document.getElementById('newCabinetFolderIcon').value = '';
           document.getElementById('newCabinetFolderDescription').value = '';
         },
         
-        closeCabinetFolderModal: () => {
-          document.getElementById('cabinetFolderModal').classList.add('hidden');
-          editingCabinetFolder = null;
-        },
-
+        closeCabinetFolderModal,
         showSubcategoryModal,
         closeSubcategoryModal,
         showPlywoodForm,
         hidePlywoodForm,
+        showManufacturingModal,
+        closeManufacturingModal,
+        showDispatchModal,
+        closeDispatchModal,
         
         // Cloud functions
         showConnectionModal,
@@ -3448,29 +4323,42 @@
           }
         },
         
-        // Add all other public functions
-        editCabinetFolder: () => { /* Implementation */ },
-        deleteCabinetFolder: () => { /* Implementation */ },
-        editSubcategory: () => { /* Implementation */ },
-        deleteSubcategory: () => { /* Implementation */ },
-        editPlywood: () => { /* Implementation */ },
-        deletePlywood: () => { /* Implementation */ },
-        editDispatch: () => { /* Implementation */ },
-        deleteDispatch: () => { /* Implementation */ },
-        showManufacturingModal: () => { /* Implementation */ },
-        showDispatchModal: () => { /* Implementation */ },
-        updatePlywoodQuantity: () => { /* Implementation */ },
-        markDelivered: () => { /* Implementation */ },
-        exportAllDispatches: () => { /* Implementation */ },
-        filterInvoices: () => { /* Implementation */ },
-        exportInvoices: () => { /* Implementation */ },
-        loadDemoData: () => { /* Implementation */ },
-        exportAllData: () => { /* Implementation */ },
-        importData: () => { /* Implementation */ },
-        clearAllData: () => { /* Implementation */ },
-        resetSystem: () => { /* Implementation */ },
-        backupData: () => { /* Implementation */ },
-        undoLastDispatch: () => { /* Implementation */ },
+        // Management functions
+        editCabinetFolder,
+        deleteCabinetFolder,
+        addCabinetFolder,
+        editSubcategory,
+        deleteSubcategory,
+        addSubcategory,
+        editPlywood,
+        deletePlywood,
+        updatePlywood,
+        closeEditPlywoodModal,
+        updatePlywoodQuantity,
+        addPlywood,
+        editDispatch,
+        deleteDispatch,
+        updateDispatch,
+        closeEditDispatchModal,
+        markDelivered,
+        undoLastDispatch,
+        processManufacturing,
+        processDispatch,
+        
+        // Export functions
+        exportAllDispatches,
+        exportInvoices,
+        exportAllData,
+        
+        // Data management functions
+        loadDemoData,
+        importData,
+        clearAllData,
+        resetSystem,
+        backupData,
+        
+        // Filter functions
+        filterInvoices,
         
         // Utility functions
         toggleProductTypeOptions
@@ -3519,6 +4407,7 @@
     function closeConnectionModal() { window.cabinetApp.closeConnectionModal(); }
     function showHomePage() { window.cabinetApp.showHomePage(); }
     function showCabinetsPage() { window.cabinetApp.showCabinetsPage(); }
+    function showCabinetFolderPage(id) { window.cabinetApp.showCabinetFolderPage(id); }
     function showPlywoodPage() { window.cabinetApp.showPlywoodPage(); }
     function showDispatchPage() { window.cabinetApp.showDispatchPage(); }
     function showInvoicePage() { window.cabinetApp.showInvoicePage(); }
@@ -3537,6 +4426,55 @@
     function resetCloudConnection() { window.cabinetApp.resetCloudConnection(); }
     function switchToLocalMode() { window.cabinetApp.switchToLocalMode(); }
     function switchToCloudMode() { window.cabinetApp.switchToCloudMode(); }
+    
+    // Cabinet management
+    function addCabinetFolder() { window.cabinetApp.addCabinetFolder(); }
+    function editCabinetFolder(id) { window.cabinetApp.editCabinetFolder(id); }
+    function deleteCabinetFolder(id) { window.cabinetApp.deleteCabinetFolder(id); }
+    
+    // Subcategory management
+    function addSubcategory() { window.cabinetApp.addSubcategory(); }
+    function editSubcategory(id) { window.cabinetApp.editSubcategory(id); }
+    function deleteSubcategory(id) { window.cabinetApp.deleteSubcategory(id); }
+    
+    // Manufacturing and dispatch
+    function showManufacturingModal(id) { window.cabinetApp.showManufacturingModal(id); }
+    function closeManufacturingModal() { window.cabinetApp.closeManufacturingModal(); }
+    function processManufacturing() { window.cabinetApp.processManufacturing(); }
+    function showDispatchModal(id) { window.cabinetApp.showDispatchModal(id); }
+    function closeDispatchModal() { window.cabinetApp.closeDispatchModal(); }
+    function processDispatch() { window.cabinetApp.processDispatch(); }
+    
+    // Plywood management
+    function addPlywood() { window.cabinetApp.addPlywood(); }
+    function editPlywood(id) { window.cabinetApp.editPlywood(id); }
+    function updatePlywood() { window.cabinetApp.updatePlywood(); }
+    function closeEditPlywoodModal() { window.cabinetApp.closeEditPlywoodModal(); }
+    function deletePlywood(id) { window.cabinetApp.deletePlywood(id); }
+    function updatePlywoodQuantity(id, change) { window.cabinetApp.updatePlywoodQuantity(id, change); }
+    
+    // Dispatch management
+    function editDispatch(id) { window.cabinetApp.editDispatch(id); }
+    function updateDispatch() { window.cabinetApp.updateDispatch(); }
+    function closeEditDispatchModal() { window.cabinetApp.closeEditDispatchModal(); }
+    function deleteDispatch(id) { window.cabinetApp.deleteDispatch(id); }
+    function markDelivered(id) { window.cabinetApp.markDelivered(id); }
+    function undoLastDispatch() { window.cabinetApp.undoLastDispatch(); }
+    
+    // Export functions
+    function exportAllDispatches() { window.cabinetApp.exportAllDispatches(); }
+    function exportInvoices() { window.cabinetApp.exportInvoices(); }
+    function exportAllData() { window.cabinetApp.exportAllData(); }
+    
+    // Data management
+    function loadDemoData() { window.cabinetApp.loadDemoData(); }
+    function importData() { window.cabinetApp.importData(); }
+    function clearAllData() { window.cabinetApp.clearAllData(); }
+    function resetSystem() { window.cabinetApp.resetSystem(); }
+    function backupData() { window.cabinetApp.backupData(); }
+    
+    // Search and filter
+    function filterInvoices() { window.cabinetApp.filterInvoices(); }
   </script>
 </body>
 </html>
