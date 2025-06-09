@@ -80,6 +80,11 @@
       color: white;
     }
 
+    .btn-blue {
+      background: linear-gradient(135deg, #3b82f6, #1e40af);
+      color: white;
+    }
+
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -203,6 +208,7 @@
       margin: 12px 0;
       cursor: pointer;
       transition: all 0.3s ease;
+      position: relative;
     }
 
     .category-card:hover {
@@ -218,6 +224,7 @@
       padding: 20px;
       margin: 8px 0;
       transition: all 0.3s ease;
+      position: relative;
     }
 
     .subcategory-card:hover {
@@ -259,6 +266,33 @@
     .completed-dispatch {
       background: linear-gradient(135deg, #f0fdf4, #dcfce7);
       border-color: #22c55e;
+    }
+
+    /* Edit button positioning */
+    .edit-button-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+    }
+
+    .edit-btn-small {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .edit-btn-small:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     /* Login Page Styles */
@@ -457,6 +491,12 @@
         padding: 8px 12px;
         min-width: 160px;
         font-size: 12px;
+      }
+
+      .edit-button-container {
+        position: static;
+        margin-top: 10px;
+        justify-content: center;
       }
     }
   </style>
@@ -912,10 +952,10 @@
     </div>
   </div>
 
-  <!-- ADD CABINET FOLDER MODAL -->
+  <!-- ADD/EDIT CABINET FOLDER MODAL -->
   <div id="cabinetFolderModal" class="modal hidden">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6 text-center">📁 Add New Cabinet Category</h3>
+      <h3 id="cabinetFolderModalTitle" class="text-xl font-bold mb-6 text-center">📁 Add New Cabinet Category</h3>
       
       <div class="space-y-4">
         <div>
@@ -935,16 +975,16 @@
       </div>
 
       <div class="flex gap-3 mt-6">
-        <button onclick="addCabinetFolder()" class="btn btn-green flex-1">✅ Create Category</button>
+        <button id="cabinetFolderSubmitBtn" onclick="addCabinetFolder()" class="btn btn-green flex-1">✅ Create Category</button>
         <button onclick="closeCabinetFolderModal()" class="btn btn-gray flex-1">❌ Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- ADD SUBCATEGORY/PRODUCT TYPE MODAL -->
+  <!-- ADD/EDIT SUBCATEGORY/PRODUCT TYPE MODAL -->
   <div id="subcategoryModal" class="modal hidden">
     <div class="modal-content-large">
-      <h3 class="text-xl font-bold mb-6 text-center">➕ Add New Product Type</h3>
+      <h3 id="subcategoryModalTitle" class="text-xl font-bold mb-6 text-center">➕ Add New Product Type</h3>
       
       <!-- Basic Product Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -1044,8 +1084,89 @@
       </div>
 
       <div class="flex gap-3">
-        <button onclick="addSubcategory()" class="btn btn-green flex-1">✅ Create Product Type</button>
+        <button id="subcategorySubmitBtn" onclick="addSubcategory()" class="btn btn-green flex-1">✅ Create Product Type</button>
         <button onclick="closeSubcategoryModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT PLYWOOD MODAL -->
+  <div id="editPlywoodModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">✏️ Edit Plywood Material</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Type:</label>
+          <input type="text" id="editPlywoodType" class="input-field" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sheets:</label>
+          <input type="number" id="editPlywoodSheets" class="input-field" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Min Stock:</label>
+          <input type="number" id="editPlywoodMinStock" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Supplier:</label>
+          <input type="text" id="editPlywoodSupplier" class="input-field" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Cost per Sheet ($):</label>
+          <input type="number" id="editPlywoodCost" step="0.01" class="input-field" required>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="updatePlywood()" class="btn btn-green flex-1">✅ Update Material</button>
+        <button onclick="closeEditPlywoodModal()" class="btn btn-gray flex-1">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT DISPATCH MODAL -->
+  <div id="editDispatchModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6 text-center">✏️ Edit Dispatch</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Quantity:</label>
+          <input type="number" id="editDispatchQuantity" class="input-field" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Destination Address:</label>
+          <textarea id="editDispatchAddress" class="input-field" rows="3" required></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Expected Delivery Date:</label>
+          <input type="date" id="editDispatchDeliveryDate" class="input-field">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Notes:</label>
+          <textarea id="editDispatchNotes" class="input-field" rows="2"></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Status:</label>
+          <select id="editDispatchStatus" class="input-field">
+            <option value="pending">🚛 Pending Delivery</option>
+            <option value="completed">✅ Completed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="updateDispatch()" class="btn btn-green flex-1">✅ Update Dispatch</button>
+        <button onclick="closeEditDispatchModal()" class="btn btn-gray flex-1">❌ Cancel</button>
       </div>
     </div>
   </div>
@@ -1121,6 +1242,12 @@
     let db = null;
     let isFirebaseAvailable = false;
     let dataInitialized = false;
+
+    // Edit mode variables
+    let editingCabinetFolder = null;
+    let editingSubcategory = null;
+    let editingPlywood = null;
+    let editingDispatch = null;
 
     // Authentication variables
     let currentUser = null;
@@ -1763,365 +1890,6 @@
       console.log('✅ Default cabinet folders initialized');
     }
 
-    // Cloud sync management functions
-    async function forceCloudSync() {
-      if (forceLocalMode) {
-        showSuccess('⚠️ Currently in local mode. Switch to cloud mode first.');
-        return;
-      }
-      
-      console.log('🔄 Force syncing all data to cloud...');
-      
-      // Update status
-      cloudSyncStatus = 'syncing';
-      updateCloudStatusDisplay();
-      
-      try {
-        // Reset connection
-        await initializeCloudConnection();
-        
-        if (cloudSyncStatus === 'connected') {
-          // Save all data
-          const syncSuccess = await saveAllData();
-          
-          if (syncSuccess) {
-            lastSyncTime = new Date();
-            // Process pending operations
-            await processPendingSyncOperations();
-            showSuccess('✅ Force sync completed successfully!');
-          } else {
-            throw new Error('Force sync failed');
-          }
-        } else {
-          throw new Error('Could not establish cloud connection');
-        }
-        
-      } catch (error) {
-        console.error('❌ Force sync failed:', error);
-        cloudSyncStatus = 'disconnected';
-        updateCloudStatusDisplay();
-        showSuccess('❌ Force sync failed. Check connection and try again.');
-      }
-    }
-
-    async function repairCloudConnection() {
-      console.log('🔧 Repairing Firebase connection...');
-      showSuccess('🔧 Repairing Firebase connection...');
-      
-      // Check if Firebase SDK is available
-      if (typeof firebase === 'undefined') {
-        console.error('❌ Firebase SDK not available');
-        showSuccess('❌ Firebase SDK not loaded. Check internet connection and reload page.');
-        return false;
-      }
-      
-      // Reset connection state
-      cloudSyncStatus = 'disconnected';
-      isFirebaseAvailable = false;
-      syncRetryCount = 0;
-      forceLocalMode = false;
-      
-      // Clear intervals
-      if (connectionMonitorInterval) {
-        clearInterval(connectionMonitorInterval);
-        connectionMonitorInterval = null;
-      }
-      
-      if (syncInterval) {
-        clearInterval(syncInterval);
-        syncInterval = null;
-      }
-      
-      updateCloudStatusDisplay();
-      
-      // Try to reinitialize Firebase
-      try {
-        // Attempt to reconnect
-        const connectionSuccess = await initializeCloudConnection();
-        
-        if (connectionSuccess) {
-          showSuccess('🔧 Firebase connection repaired successfully!');
-          // Try to sync pending operations
-          await processPendingSyncOperations();
-          return true;
-        } else {
-          // Provide more specific guidance
-          showSuccess('❌ Connection repair failed. Check Firestore rules and internet connection.');
-          
-          // Log specific troubleshooting steps
-          console.log('🔧 Troubleshooting Steps:');
-          console.log('1. Check your internet connection');
-          console.log('2. Verify Firestore security rules allow read/write access');
-          console.log('3. Check Firebase project status at https://status.firebase.google.com/');
-          console.log('4. Open browser developer tools to see detailed error messages');
-          console.log('5. Try refreshing the page to reload Firebase SDK');
-          
-          return false;
-        }
-      } catch (error) {
-        console.error('❌ Repair failed:', error);
-        showSuccess(`❌ Repair failed: ${error.message}`);
-        return false;
-      }
-    }
-
-    async function processPendingSyncOperations() {
-      if (pendingSyncOperations.length === 0) {
-        return;
-      }
-      
-      console.log(`🔄 Processing ${pendingSyncOperations.length} pending sync operations...`);
-      
-      const processed = [];
-      
-      for (const operation of pendingSyncOperations) {
-        try {
-          if (operation.action === 'save') {
-            await saveToCloud(operation.key, operation.data);
-            processed.push(operation);
-          }
-        } catch (error) {
-          console.error('❌ Failed to process pending operation:', error);
-          break; // Stop processing if we hit an error
-        }
-      }
-      
-      // Remove processed operations
-      pendingSyncOperations = pendingSyncOperations.filter(op => !processed.includes(op));
-      
-      if (processed.length > 0) {
-        console.log(`✅ Processed ${processed.length} pending operations`);
-        lastSyncTime = new Date();
-        updateCloudStatusDisplay();
-      }
-    }
-
-    function switchToLocalMode() {
-      if (confirm('Switch to local mode? This will disable cloud sync until you switch back.')) {
-        forceLocalMode = true;
-        cloudSyncStatus = 'local-only';
-        isFirebaseAvailable = false;
-        
-        // Clear monitoring intervals
-        if (connectionMonitorInterval) {
-          clearInterval(connectionMonitorInterval);
-          connectionMonitorInterval = null;
-        }
-        
-        if (syncInterval) {
-          clearInterval(syncInterval);
-          syncInterval = null;
-        }
-        
-        updateCloudStatusDisplay();
-        showSuccess('📱 Switched to local mode. Data will be stored locally only.');
-      }
-    }
-
-    async function switchToCloudMode() {
-      if (!forceLocalMode && cloudSyncStatus === 'connected') {
-        showSuccess('✅ Already in cloud mode and connected!');
-        return;
-      }
-      
-      forceLocalMode = false;
-      cloudSyncStatus = 'disconnected';
-      
-      updateCloudStatusDisplay();
-      showSuccess('🔄 Switching to cloud mode...');
-      
-      const connectionSuccess = await initializeCloudConnection();
-      
-      if (connectionSuccess) {
-        showSuccess('☁️ Successfully switched to cloud mode!');
-        // Try to sync current data
-        await saveAllData();
-      } else {
-        showSuccess('⚠️ Switched to cloud mode, but connection failed. Will retry automatically.');
-      }
-    }
-
-    async function validateCloudData() {
-      console.log('🔍 Starting Firebase validation...');
-      
-      // First, try to repair connection if not connected
-      if (cloudSyncStatus !== 'connected' || forceLocalMode || !db) {
-        console.log('⚠️ Not connected to Firebase, attempting to connect...');
-        showSuccess('🔄 Not connected - attempting to repair Firebase connection...');
-        
-        const connectionSuccess = await repairCloudConnection();
-        
-        // Wait a moment for connection to stabilize
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        if (cloudSyncStatus !== 'connected') {
-          showSuccess('❌ Cannot validate: Firebase connection failed. Check console for details.');
-          return;
-        }
-      }
-      
-      console.log('✅ Validating Firebase data...');
-      showSuccess('🔍 Validating Firebase data...');
-      
-      try {
-        const collections = ['cabinetFolders', 'subcategories', 'plywood', 'cabinets', 'dispatches', 'invoices'];
-        const validation = {};
-        
-        console.log('📋 Checking collections:', collections);
-        
-        // Check each collection
-        for (const collection of collections) {
-          try {
-            console.log(`🔍 Checking ${collection}...`);
-            const doc = await db.collection('cabinet_data').doc(collection).get();
-            
-            validation[collection] = {
-              exists: doc.exists,
-              itemCount: doc.exists ? (doc.data()?.data?.length || 0) : 0,
-              lastUpdated: doc.exists ? doc.data()?.lastUpdated : null,
-              hasData: doc.exists && doc.data()?.data
-            };
-            
-            console.log(`✅ ${collection}:`, validation[collection]);
-          } catch (docError) {
-            console.error(`❌ Error checking ${collection}:`, docError);
-            validation[collection] = {
-              exists: false,
-              error: docError.message,
-              itemCount: 0
-            };
-          }
-        }
-        
-        const existingCollections = Object.entries(validation).filter(([key, valid]) => valid.exists);
-        const totalItems = Object.values(validation).reduce((sum, v) => sum + (v.itemCount || 0), 0);
-        
-        console.log('📊 Firebase Validation Results:', validation);
-        
-        if (existingCollections.length === collections.length) {
-          showSuccess(`✅ Firebase validation passed! ${collections.length} collections with ${totalItems} total items found.`);
-        } else if (existingCollections.length > 0) {
-          const existing = existingCollections.map(([key]) => key);
-          const missing = Object.entries(validation)
-            .filter(([key, valid]) => !valid.exists)
-            .map(([key]) => key);
-          
-          showSuccess(`⚠️ Partial validation: Found ${existing.length} collections (${existing.join(', ')}). Missing: ${missing.join(', ')}`);
-        } else {
-          showSuccess(`📭 No data collections found in Firebase. This is normal for a new setup. Add some data and it will sync automatically.`);
-        }
-        
-        // Show detailed results in console
-        console.table(validation);
-        
-      } catch (error) {
-        console.error('❌ Firebase data validation failed:', error);
-        console.error('🔧 Error details:', {
-          code: error.code,
-          message: error.message,
-          projectId: db?.app?.options?.projectId
-        });
-        
-        if (error.code === 'permission-denied') {
-          showSuccess('❌ Validation failed: Permission denied. Update Firestore security rules.');
-        } else if (error.code === 'unavailable') {
-          showSuccess('❌ Validation failed: Firebase service unavailable. Try again later.');
-        } else {
-          showSuccess(`❌ Validation failed: ${error.message}`);
-        }
-      }
-    }
-
-    async function resetCloudConnection() {
-      if (confirm('Reset cloud connection? This will clear all cloud sync state and reconnect.')) {
-        console.log('🔄 Resetting cloud connection...');
-        
-        // Clear all connection state
-        cloudSyncStatus = 'disconnected';
-        isFirebaseAvailable = false;
-        lastSyncTime = null;
-        syncRetryCount = 0;
-        pendingSyncOperations = [];
-        forceLocalMode = false;
-        
-        // Clear intervals
-        if (connectionMonitorInterval) {
-          clearInterval(connectionMonitorInterval);
-          connectionMonitorInterval = null;
-        }
-        
-        if (syncInterval) {
-          clearInterval(syncInterval);
-          syncInterval = null;
-        }
-        
-        updateCloudStatusDisplay();
-        
-        // Reinitialize connection
-        const connectionSuccess = await initializeCloudConnection();
-        
-        if (connectionSuccess) {
-          showSuccess('🔄 Cloud connection reset and reconnected successfully!');
-        } else {
-          showSuccess('🔄 Cloud connection reset. Attempting to reconnect...');
-        }
-      }
-    }
-
-    // Connection modal management
-    function showConnectionModal() {
-      document.getElementById('connectionModal').classList.remove('hidden');
-      updateConnectionDiagnostics();
-    }
-
-    function closeConnectionModal() {
-      document.getElementById('connectionModal').classList.add('hidden');
-    }
-
-    function updateConnectionDiagnostics() {
-      const diagnosticsDiv = document.getElementById('connectionDiagnostics');
-      
-      const cloudStatus = cloudSyncStatus === 'connected' ? 'good' : 
-                         cloudSyncStatus === 'syncing' ? 'warning' : 'error';
-      
-      const localStatus = isLocalStorageAvailable ? 'good' : 'warning';
-      
-      const pendingOps = pendingSyncOperations.length;
-      const pendingStatus = pendingOps === 0 ? 'good' : pendingOps < 5 ? 'warning' : 'error';
-      
-      diagnosticsDiv.innerHTML = `
-        <div class="status-item status-${cloudStatus}">
-          <span><strong>Cloud Connection:</strong> ${cloudSyncStatus}</span>
-          <span>${cloudSyncStatus === 'connected' ? '✅' : cloudSyncStatus === 'syncing' ? '🔄' : '❌'}</span>
-        </div>
-        
-        <div class="status-item status-${localStatus}">
-          <span><strong>Local Storage:</strong> ${isLocalStorageAvailable ? 'Available' : 'Unavailable'}</span>
-          <span>${isLocalStorageAvailable ? '✅' : '⚠️'}</span>
-        </div>
-        
-        <div class="status-item status-${pendingStatus}">
-          <span><strong>Pending Operations:</strong> ${pendingOps} queued</span>
-          <span>${pendingOps === 0 ? '✅' : pendingOps < 5 ? '⚠️' : '❌'}</span>
-        </div>
-        
-        <div class="status-item status-good">
-          <span><strong>Last Sync:</strong> ${lastSyncTime ? formatTimeAgo(lastSyncTime) : 'Never'}</span>
-          <span>📅</span>
-        </div>
-        
-        <div class="status-item status-${forceLocalMode ? 'warning' : 'good'}">
-          <span><strong>Mode:</strong> ${forceLocalMode ? 'Local Only' : 'Cloud Sync'}</span>
-          <span>${forceLocalMode ? '💾' : '☁️'}</span>
-        </div>
-        
-        <div class="status-item status-good">
-          <span><strong>Retry Attempts:</strong> ${syncRetryCount}/${maxRetryAttempts}</span>
-          <span>🔄</span>
-        </div>
-      `;
-    }
-
     // Enhanced success message function with auto-save
     function showSuccess(message = 'Data saved successfully!') {
       const msgElement = document.getElementById('successMessage');
@@ -2345,10 +2113,430 @@
       document.getElementById('breadcrumbPath').textContent = path;
     }
 
-    // Render functions - continuing with all the application logic...
-    // [The rest of the functions would continue here - render functions, modal functions, etc.]
-    // Due to length constraints, I'll add the essential functions to make the app work
+    // EDIT FUNCTIONS FOR CABINET FOLDERS
+    function editCabinetFolder(folderId) {
+      const folder = cabinetFolders.find(f => f.id === folderId);
+      if (!folder) {
+        alert('❌ Cabinet folder not found');
+        return;
+      }
+      
+      editingCabinetFolder = folder;
+      
+      // Update modal title and button
+      document.getElementById('cabinetFolderModalTitle').textContent = '✏️ Edit Cabinet Category';
+      document.getElementById('cabinetFolderSubmitBtn').textContent = '✅ Update Category';
+      document.getElementById('cabinetFolderSubmitBtn').onclick = updateCabinetFolder;
+      
+      // Populate form with existing data
+      document.getElementById('newCabinetFolderName').value = folder.name;
+      document.getElementById('newCabinetFolderIcon').value = folder.icon;
+      document.getElementById('newCabinetFolderDescription').value = folder.description || '';
+      
+      document.getElementById('cabinetFolderModal').classList.remove('hidden');
+    }
 
+    function updateCabinetFolder() {
+      const name = document.getElementById('newCabinetFolderName').value.trim();
+      const icon = document.getElementById('newCabinetFolderIcon').value.trim() || '🗄️';
+      const description = document.getElementById('newCabinetFolderDescription').value.trim();
+      
+      if (!name) {
+        alert('❌ Please enter a category name');
+        return;
+      }
+      
+      if (!editingCabinetFolder) {
+        alert('❌ No folder selected for editing');
+        return;
+      }
+      
+      // Update the folder
+      editingCabinetFolder.name = name;
+      editingCabinetFolder.icon = icon;
+      editingCabinetFolder.description = description;
+      editingCabinetFolder.lastUpdated = new Date().toISOString();
+      editingCabinetFolder.updatedBy = currentUser;
+      
+      closeCabinetFolderModal();
+      renderCabinetFoldersGrid();
+      updateStats();
+      updateAllCabinetsStats();
+      showSuccess(`Cabinet category "${name}" updated successfully!`);
+      
+      editingCabinetFolder = null;
+    }
+
+    function deleteCabinetFolder(folderId) {
+      const folder = cabinetFolders.find(f => f.id === folderId);
+      if (!folder) {
+        alert('❌ Cabinet folder not found');
+        return;
+      }
+      
+      // Check if folder has subcategories
+      const folderSubcategories = subcategories.filter(s => s.folderId === folderId);
+      if (folderSubcategories.length > 0) {
+        if (!confirm(`Delete "${folder.name}"? This will also delete ${folderSubcategories.length} product types and their inventory.`)) {
+          return;
+        }
+        
+        // Delete associated subcategories and cabinets
+        subcategories = subcategories.filter(s => s.folderId !== folderId);
+        cabinets = cabinets.filter(c => c.folderId !== folderId);
+      } else {
+        if (!confirm(`Delete "${folder.name}"?`)) {
+          return;
+        }
+      }
+      
+      // Remove folder
+      const folderIndex = cabinetFolders.findIndex(f => f.id === folderId);
+      if (folderIndex !== -1) {
+        cabinetFolders.splice(folderIndex, 1);
+      }
+      
+      renderCabinetFoldersGrid();
+      updateStats();
+      updateAllCabinetsStats();
+      showSuccess(`Cabinet category "${folder.name}" deleted successfully!`);
+    }
+
+    // EDIT FUNCTIONS FOR SUBCATEGORIES
+    function editSubcategory(subcategoryId) {
+      const subcategory = subcategories.find(s => s.id === subcategoryId);
+      if (!subcategory) {
+        alert('❌ Product type not found');
+        return;
+      }
+      
+      editingSubcategory = subcategory;
+      currentFolderId = subcategory.folderId; // Make sure we have the right folder
+      
+      // Update modal title and button
+      document.getElementById('subcategoryModalTitle').textContent = '✏️ Edit Product Type';
+      document.getElementById('subcategorySubmitBtn').textContent = '✅ Update Product Type';
+      document.getElementById('subcategorySubmitBtn').onclick = updateSubcategory;
+      
+      // Populate form with existing data
+      document.getElementById('subcategoryName').value = subcategory.name;
+      document.getElementById('subcategoryIcon').value = subcategory.icon || '';
+      document.getElementById('subcategoryDescription').value = subcategory.description || '';
+      document.getElementById('productType').value = subcategory.productType || 'cabinet';
+      
+      // Populate material selects
+      populateMaterialSelects();
+      
+      // Show appropriate configuration section
+      toggleProductTypeOptions();
+      
+      if (subcategory.productType === 'cabinet') {
+        document.getElementById('subcategoryMaterials').value = subcategory.materials || '';
+        document.getElementById('subcategoryPrice').value = subcategory.pricePerUnit || '';
+        
+        // Set material requirements if they exist
+        if (subcategory.materialRequirements) {
+          if (subcategory.materialRequirements.primary) {
+            document.getElementById('subcategoryPlywoodType').value = subcategory.materialRequirements.primary.materialId || '';
+            document.getElementById('subcategoryPlywoodSheets').value = subcategory.materialRequirements.primary.sheetsPerUnit || '';
+          }
+          if (subcategory.materialRequirements.secondary) {
+            document.getElementById('subcategorySecondaryType').value = subcategory.materialRequirements.secondary.materialId || '';
+            document.getElementById('subcategorySecondarySheets').value = subcategory.materialRequirements.secondary.sheetsPerUnit || '';
+          }
+        }
+      } else {
+        document.getElementById('nonCabinetMaterials').value = subcategory.materials || '';
+        document.getElementById('nonCabinetPrice').value = subcategory.pricePerUnit || '';
+      }
+      
+      document.getElementById('subcategoryModal').classList.remove('hidden');
+    }
+
+    function updateSubcategory() {
+      const name = document.getElementById('subcategoryName').value.trim();
+      const icon = document.getElementById('subcategoryIcon').value.trim() || '📦';
+      const description = document.getElementById('subcategoryDescription').value.trim();
+      const productType = document.getElementById('productType').value;
+      
+      let materials, pricePerUnit, materialRequirements = null;
+
+      if (productType === 'cabinet') {
+        materials = document.getElementById('subcategoryMaterials').value.trim();
+        pricePerUnit = parseFloat(document.getElementById('subcategoryPrice').value) || 0;
+        
+        const plywoodTypeId = document.getElementById('subcategoryPlywoodType').value;
+        const plywoodSheets = parseFloat(document.getElementById('subcategoryPlywoodSheets').value) || 0;
+        const secondaryTypeId = document.getElementById('subcategorySecondaryType').value;
+        const secondarySheets = parseFloat(document.getElementById('subcategorySecondarySheets').value) || 0;
+        
+        if (plywoodTypeId && plywoodSheets > 0) {
+          materialRequirements = {
+            primary: {
+              materialId: parseInt(plywoodTypeId),
+              sheetsPerUnit: plywoodSheets,
+              materialName: plywood.find(p => p.id == plywoodTypeId)?.type || 'Unknown'
+            }
+          };
+          
+          if (secondaryTypeId && secondarySheets > 0) {
+            materialRequirements.secondary = {
+              materialId: parseInt(secondaryTypeId),
+              sheetsPerUnit: secondarySheets,
+              materialName: plywood.find(p => p.id == secondaryTypeId)?.type || 'Unknown'
+            };
+          }
+        }
+      } else {
+        materials = document.getElementById('nonCabinetMaterials').value.trim();
+        pricePerUnit = parseFloat(document.getElementById('nonCabinetPrice').value) || 0;
+      }
+
+      if (!name) {
+        alert('❌ Please enter a product name');
+        return;
+      }
+      
+      if (!editingSubcategory) {
+        alert('❌ No product type selected for editing');
+        return;
+      }
+
+      // Update the subcategory
+      editingSubcategory.name = name;
+      editingSubcategory.icon = icon;
+      editingSubcategory.description = description;
+      editingSubcategory.productType = productType;
+      editingSubcategory.materials = materials || 'Standard materials';
+      editingSubcategory.pricePerUnit = pricePerUnit;
+      editingSubcategory.materialRequirements = materialRequirements;
+      editingSubcategory.lastUpdated = new Date().toISOString();
+      editingSubcategory.updatedBy = currentUser;
+      
+      // Update any existing cabinet records with new price
+      const existingCabinet = cabinets.find(c => c.subcategoryId === editingSubcategory.id);
+      if (existingCabinet) {
+        existingCabinet.pricePerUnit = pricePerUnit;
+        existingCabinet.type = name;
+        existingCabinet.materials = materials;
+        existingCabinet.lastUpdated = new Date().toISOString();
+      }
+
+      closeSubcategoryModal();
+      renderSubcategoriesList();
+      updateFolderStats();
+      updateAllCabinetsStats();
+      showSuccess(`Product type "${name}" updated successfully!`);
+      
+      editingSubcategory = null;
+    }
+
+    function deleteSubcategory(subcategoryId) {
+      const subcategory = subcategories.find(s => s.id === subcategoryId);
+      if (!subcategory) {
+        alert('❌ Product type not found');
+        return;
+      }
+      
+      // Check if there's inventory for this subcategory
+      const cabinet = cabinets.find(c => c.subcategoryId === subcategoryId);
+      if (cabinet && cabinet.quantity > 0) {
+        if (!confirm(`Delete "${subcategory.name}"? This will also delete ${cabinet.quantity} units of inventory.`)) {
+          return;
+        }
+        
+        // Remove cabinet inventory
+        const cabinetIndex = cabinets.findIndex(c => c.subcategoryId === subcategoryId);
+        if (cabinetIndex !== -1) {
+          cabinets.splice(cabinetIndex, 1);
+        }
+      } else {
+        if (!confirm(`Delete "${subcategory.name}"?`)) {
+          return;
+        }
+      }
+      
+      // Remove subcategory
+      const subcategoryIndex = subcategories.findIndex(s => s.id === subcategoryId);
+      if (subcategoryIndex !== -1) {
+        subcategories.splice(subcategoryIndex, 1);
+      }
+      
+      renderSubcategoriesList();
+      updateFolderStats();
+      updateAllCabinetsStats();
+      updateStats();
+      showSuccess(`Product type "${subcategory.name}" deleted successfully!`);
+    }
+
+    // EDIT FUNCTIONS FOR PLYWOOD
+    function editPlywood(plywoodId) {
+      const material = plywood.find(p => p.id === plywoodId);
+      if (!material) {
+        alert('❌ Material not found');
+        return;
+      }
+      
+      editingPlywood = material;
+      
+      // Populate edit form
+      document.getElementById('editPlywoodType').value = material.type;
+      document.getElementById('editPlywoodSheets').value = material.sheets || 0;
+      document.getElementById('editPlywoodMinStock').value = material.minStock || 0;
+      document.getElementById('editPlywoodSupplier').value = material.supplier;
+      document.getElementById('editPlywoodCost').value = material.cost || 0;
+      
+      document.getElementById('editPlywoodModal').classList.remove('hidden');
+    }
+
+    function updatePlywood() {
+      const type = document.getElementById('editPlywoodType').value.trim();
+      const sheets = parseInt(document.getElementById('editPlywoodSheets').value) || 0;
+      const minStock = parseInt(document.getElementById('editPlywoodMinStock').value) || 0;
+      const supplier = document.getElementById('editPlywoodSupplier').value.trim();
+      const cost = parseFloat(document.getElementById('editPlywoodCost').value) || 0;
+      
+      if (!type || !supplier) {
+        alert('❌ Please fill in all required fields');
+        return;
+      }
+      
+      if (!editingPlywood) {
+        alert('❌ No material selected for editing');
+        return;
+      }
+      
+      // Update the material
+      editingPlywood.type = type;
+      editingPlywood.sheets = sheets;
+      editingPlywood.minStock = minStock;
+      editingPlywood.supplier = supplier;
+      editingPlywood.cost = cost;
+      editingPlywood.lastUpdated = new Date().toISOString();
+      editingPlywood.updatedBy = currentUser;
+      
+      closeEditPlywoodModal();
+      renderPlywood();
+      updateStats();
+      checkLowStock();
+      showSuccess(`Material "${type}" updated successfully!`);
+      
+      editingPlywood = null;
+    }
+
+    function deletePlywood(plywoodId) {
+      const material = plywood.find(p => p.id === plywoodId);
+      if (!material) {
+        alert('❌ Material not found');
+        return;
+      }
+      
+      if (!confirm(`Delete "${material.type}"? This will permanently remove this material from inventory.`)) {
+        return;
+      }
+      
+      // Remove material
+      const materialIndex = plywood.findIndex(p => p.id === plywoodId);
+      if (materialIndex !== -1) {
+        plywood.splice(materialIndex, 1);
+      }
+      
+      renderPlywood();
+      updateStats();
+      checkLowStock();
+      showSuccess(`Material "${material.type}" deleted successfully!`);
+    }
+
+    function closeEditPlywoodModal() {
+      document.getElementById('editPlywoodModal').classList.add('hidden');
+      editingPlywood = null;
+    }
+
+    // EDIT FUNCTIONS FOR DISPATCHES
+    function editDispatch(dispatchId) {
+      const dispatch = dispatches.find(d => d.id === dispatchId);
+      if (!dispatch) {
+        alert('❌ Dispatch not found');
+        return;
+      }
+      
+      editingDispatch = dispatch;
+      
+      // Populate edit form
+      document.getElementById('editDispatchQuantity').value = dispatch.quantity || 0;
+      document.getElementById('editDispatchAddress').value = dispatch.address || '';
+      document.getElementById('editDispatchDeliveryDate').value = dispatch.expectedDeliveryDate || '';
+      document.getElementById('editDispatchNotes').value = dispatch.notes || '';
+      document.getElementById('editDispatchStatus').value = dispatch.status || 'pending';
+      
+      document.getElementById('editDispatchModal').classList.remove('hidden');
+    }
+
+    function updateDispatch() {
+      const quantity = parseInt(document.getElementById('editDispatchQuantity').value) || 0;
+      const address = document.getElementById('editDispatchAddress').value.trim();
+      const deliveryDate = document.getElementById('editDispatchDeliveryDate').value;
+      const notes = document.getElementById('editDispatchNotes').value.trim();
+      const status = document.getElementById('editDispatchStatus').value;
+      
+      if (!address) {
+        alert('❌ Please enter a destination address');
+        return;
+      }
+      
+      if (!editingDispatch) {
+        alert('❌ No dispatch selected for editing');
+        return;
+      }
+      
+      const oldQuantity = editingDispatch.quantity || 0;
+      const quantityDiff = quantity - oldQuantity;
+      
+      // If quantity changed, update cabinet inventory
+      if (quantityDiff !== 0) {
+        const cabinet = cabinets.find(c => c.subcategoryId === editingDispatch.subcategoryId);
+        if (cabinet) {
+          const newCabinetQuantity = cabinet.quantity - quantityDiff;
+          if (newCabinetQuantity < 0) {
+            alert(`❌ Insufficient cabinets available! Only ${cabinet.quantity + oldQuantity} units available.`);
+            return;
+          }
+          cabinet.quantity = newCabinetQuantity;
+          cabinet.lastUpdated = new Date().toISOString();
+        }
+      }
+      
+      // Update the dispatch
+      editingDispatch.quantity = quantity;
+      editingDispatch.address = address;
+      editingDispatch.expectedDeliveryDate = deliveryDate;
+      editingDispatch.notes = notes;
+      editingDispatch.status = status;
+      editingDispatch.lastUpdated = new Date().toISOString();
+      editingDispatch.updatedBy = currentUser;
+      
+      if (status === 'completed' && !editingDispatch.deliveredAt) {
+        editingDispatch.deliveredAt = new Date().toISOString();
+      }
+      
+      closeEditDispatchModal();
+      renderDispatches();
+      renderSubcategoriesList(); // Update inventory display
+      updateDispatchStats();
+      updateStats();
+      updateFolderStats();
+      updateAllCabinetsStats();
+      showSuccess(`Dispatch #${editingDispatch.id} updated successfully!`);
+      
+      editingDispatch = null;
+    }
+
+    function closeEditDispatchModal() {
+      document.getElementById('editDispatchModal').classList.add('hidden');
+      editingDispatch = null;
+    }
+
+    // Render functions with edit buttons
     function renderCabinetFoldersGrid() {
       const grid = document.getElementById('cabinetFoldersGrid');
       if (!grid) return;
@@ -2371,10 +2559,18 @@
         
         const div = document.createElement('div');
         div.className = 'category-card';
-        div.onclick = () => showCabinetFolderPage(folder.id);
         
         div.innerHTML = `
-          <div class="text-center">
+          <div class="edit-button-container">
+            <button onclick="editCabinetFolder(${folder.id})" class="edit-btn-small btn-blue" title="Edit Category">
+              ✏️
+            </button>
+            <button onclick="deleteCabinetFolder(${folder.id})" class="edit-btn-small btn-red" title="Delete Category">
+              🗑️
+            </button>
+          </div>
+          
+          <div class="text-center" onclick="showCabinetFolderPage(${folder.id})">
             <div class="text-4xl mb-3">${folder.icon}</div>
             <h3 class="font-bold text-lg text-gray-800 mb-2">${folder.name}</h3>
             <p class="text-gray-600 text-sm mb-4">${folder.description || 'No description'}</p>
@@ -2400,45 +2596,6 @@
       });
     }
 
-    function updateStats() {
-      try {
-        const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
-        const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
-        const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
-        const totalDispatchCount = dispatches.length;
-
-        document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
-        document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
-        document.getElementById('activeCategories').textContent = cabinetFolders.length.toString();
-        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
-        document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
-
-      } catch (error) {
-        console.error('Error updating stats:', error);
-      }
-    }
-
-    function checkLowStock() {
-      const lowStockItems = plywood.filter(item => (item.sheets || 0) <= (item.minStock || 0));
-      const alert = document.getElementById('lowStockAlert');
-      const list = document.getElementById('lowStockList');
-      
-      if (lowStockItems.length > 0) {
-        alert.classList.remove('hidden');
-        list.innerHTML = '';
-        lowStockItems.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'font-semibold';
-          li.textContent = `📦 ${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
-          list.appendChild(li);
-        });
-      } else {
-        alert.classList.add('hidden');
-      }
-    }
-
-    // Render functions - Full implementations
     function renderSubcategoriesList() {
       const list = document.getElementById('subcategoriesList');
       if (!list || !currentFolderId) return;
@@ -2466,6 +2623,15 @@
         div.className = 'subcategory-card';
         
         div.innerHTML = `
+          <div class="edit-button-container">
+            <button onclick="editSubcategory(${subcategory.id})" class="edit-btn-small btn-blue" title="Edit Product Type">
+              ✏️
+            </button>
+            <button onclick="deleteSubcategory(${subcategory.id})" class="edit-btn-small btn-red" title="Delete Product Type">
+              🗑️
+            </button>
+          </div>
+          
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-2">
@@ -2535,7 +2701,17 @@
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             <div class="flex-1">
-              <h3 class="font-bold text-lg lg:text-xl text-gray-800 mb-2">${item.type || 'Unknown Type'}</h3>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-lg lg:text-xl text-gray-800">${item.type || 'Unknown Type'}</h3>
+                <div class="flex gap-2">
+                  <button onclick="editPlywood(${item.id})" class="edit-btn-small btn-blue" title="Edit Material">
+                    ✏️ Edit
+                  </button>
+                  <button onclick="deletePlywood(${item.id})" class="edit-btn-small btn-red" title="Delete Material">
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
               <p class="text-gray-600">📦 Supplier: ${item.supplier || 'N/A'} | 💰 Cost: ${cost.toFixed(2)}/sheet</p>
               <p class="text-sm text-gray-500 mt-1">⚠️ Min stock: ${minStock} sheets</p>
               <p class="text-sm font-semibold text-gray-700 mt-2">💵 Total value: ${(sheets * cost).toFixed(2)}</p>
@@ -2587,11 +2763,21 @@
         div.innerHTML = `
           <div class="flex flex-col lg:flex-row lg:items-start gap-4">
             <div class="flex-1">
-              <div class="flex items-center gap-3 mb-3">
-                <h4 class="font-bold text-lg text-gray-800">🚚 Dispatch #${dispatch.id}</h4>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${dispatch.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                  ${statusIcon} ${statusText}
-                </span>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <h4 class="font-bold text-lg text-gray-800">🚚 Dispatch #${dispatch.id}</h4>
+                  <span class="px-3 py-1 rounded-full text-xs font-semibold ${dispatch.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                    ${statusIcon} ${statusText}
+                  </span>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="editDispatch(${dispatch.id})" class="edit-btn-small btn-blue" title="Edit Dispatch">
+                    ✏️ Edit
+                  </button>
+                  <button onclick="deleteDispatch(${dispatch.id})" class="edit-btn-small btn-red" title="Delete Dispatch">
+                    🗑️ Delete
+                  </button>
+                </div>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-sm">
@@ -2613,13 +2799,51 @@
               ${dispatch.status === 'pending' ? `
                 <button onclick="markDelivered(${dispatch.id})" class="btn btn-green text-sm">✅ Mark Delivered</button>
               ` : ''}
-              <button onclick="deleteDispatch(${dispatch.id})" class="btn btn-red text-sm">🗑️ Delete</button>
             </div>
           </div>
         `;
         
         list.appendChild(div);
       });
+    }
+
+    // Update stats functions
+    function updateStats() {
+      try {
+        const totalSheets = plywood.reduce((sum, item) => sum + (item.sheets || 0), 0);
+        const totalCabinetCount = cabinets.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const plywoodValue = plywood.reduce((sum, item) => sum + ((item.sheets || 0) * (item.cost || 0)), 0);
+        const cabinetValue = cabinets.reduce((sum, item) => sum + ((item.quantity || 0) * (item.pricePerUnit || 0)), 0);
+        const totalDispatchCount = dispatches.length;
+
+        document.getElementById('totalPlywoodSheets').textContent = totalSheets.toLocaleString();
+        document.getElementById('totalCabinets').textContent = totalCabinetCount.toLocaleString();
+        document.getElementById('activeCategories').textContent = cabinetFolders.length.toString();
+        document.getElementById('totalDispatches').textContent = totalDispatchCount.toString();
+        document.getElementById('totalValue').textContent = `${Math.round(plywoodValue + cabinetValue).toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error updating stats:', error);
+      }
+    }
+
+    function checkLowStock() {
+      const lowStockItems = plywood.filter(item => (item.sheets || 0) <= (item.minStock || 0));
+      const alert = document.getElementById('lowStockAlert');
+      const list = document.getElementById('lowStockList');
+      
+      if (lowStockItems.length > 0) {
+        alert.classList.remove('hidden');
+        list.innerHTML = '';
+        lowStockItems.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'font-semibold';
+          li.textContent = `📦 ${item.type}: ${item.sheets} sheets (min: ${item.minStock})`;
+          list.appendChild(li);
+        });
+      } else {
+        alert.classList.add('hidden');
+      }
     }
 
     function renderInvoices() {
@@ -2769,8 +2993,15 @@
         console.error('Error updating dispatch stats:', error);
       }
     }
-    // Modal functions - Full implementations
+
+    // Modal functions
     function showCabinetFolderModal() {
+      // Reset modal for adding new folder
+      editingCabinetFolder = null;
+      document.getElementById('cabinetFolderModalTitle').textContent = '📁 Add New Cabinet Category';
+      document.getElementById('cabinetFolderSubmitBtn').textContent = '✅ Create Category';
+      document.getElementById('cabinetFolderSubmitBtn').onclick = addCabinetFolder;
+      
       document.getElementById('cabinetFolderModal').classList.remove('hidden');
       document.getElementById('newCabinetFolderName').value = '';
       document.getElementById('newCabinetFolderIcon').value = '';
@@ -2779,6 +3010,7 @@
 
     function closeCabinetFolderModal() {
       document.getElementById('cabinetFolderModal').classList.add('hidden');
+      editingCabinetFolder = null;
     }
 
     function showSubcategoryModal() {
@@ -2787,6 +3019,12 @@
         return;
       }
       
+      // Reset modal for adding new subcategory
+      editingSubcategory = null;
+      document.getElementById('subcategoryModalTitle').textContent = '➕ Add New Product Type';
+      document.getElementById('subcategorySubmitBtn').textContent = '✅ Create Product Type';
+      document.getElementById('subcategorySubmitBtn').onclick = addSubcategory;
+      
       document.getElementById('subcategoryModal').classList.remove('hidden');
       clearSubcategoryForm();
       populateMaterialSelects();
@@ -2794,6 +3032,7 @@
 
     function closeSubcategoryModal() {
       document.getElementById('subcategoryModal').classList.add('hidden');
+      editingSubcategory = null;
     }
 
     function clearSubcategoryForm() {
@@ -2937,7 +3176,8 @@
     function hidePlywoodForm() {
       document.getElementById('plywoodForm').classList.add('hidden');
     }
-    // Add hidden property to all add functions and employee visibility controls
+
+    // Add functions (non-edit)
     function addCabinetFolder() {
       const name = document.getElementById('newCabinetFolderName').value.trim();
       const icon = document.getElementById('newCabinetFolderIcon').value.trim() || '🗄️';
@@ -2954,8 +3194,8 @@
         icon,
         description,
         dateCreated: new Date().toISOString(),
-        hidden: false, // Add visibility control
-        employeeVisible: true, // Can employees see this?
+        hidden: false,
+        employeeVisible: true,
         createdBy: currentUser
       };
       
@@ -3022,8 +3262,8 @@
         pricePerUnit,
         materialRequirements,
         dateCreated: new Date().toISOString(),
-        hidden: false, // Add visibility control
-        employeeVisible: true, // Can employees see this?
+        hidden: false,
+        employeeVisible: true,
         createdBy: currentUser
       };
 
@@ -3035,87 +3275,6 @@
       showSuccess(`Product type "${name}" created successfully!`);
     }
 
-    // Employee visibility filter functions
-    function isVisibleToCurrentUser(item) {
-      // Admins can see everything
-      if (userRole === 'admin') {
-        return true;
-      }
-      
-      // Employees can only see items that are not hidden and marked as employee visible
-      return !item.hidden && item.employeeVisible !== false;
-    }
-
-    function toggleItemVisibility(itemType, itemId) {
-      let item;
-      let collection;
-      
-      switch (itemType) {
-        case 'cabinet':
-          collection = cabinetFolders;
-          item = collection.find(c => c.id === itemId);
-          break;
-        case 'subcategory':
-          collection = subcategories;
-          item = collection.find(s => s.id === itemId);
-          break;
-        case 'plywood':
-          collection = plywood;
-          item = collection.find(p => p.id === itemId);
-          break;
-        case 'dispatch':
-          collection = dispatches;
-          item = collection.find(d => d.id === itemId);
-          break;
-      }
-      
-      if (item) {
-        item.hidden = !item.hidden;
-        
-        // Refresh the appropriate view
-        switch (itemType) {
-          case 'cabinet':
-            renderCabinetFoldersGrid();
-            break;
-          case 'subcategory':
-            renderSubcategoriesList();
-            break;
-          case 'plywood':
-            renderPlywood();
-            break;
-          case 'dispatch':
-            renderDispatches();
-            break;
-        }
-        
-        const action = item.hidden ? 'hidden' : 'shown';
-        showSuccess(`Item ${action} from ${userRole === 'admin' ? 'employees' : 'view'}`);
-      }
-    }
-
-    function toggleEmployeeAccess(itemType, itemId) {
-      let item;
-      
-      switch (itemType) {
-        case 'cabinet':
-          item = cabinetFolders.find(c => c.id === itemId);
-          break;
-        case 'subcategory':
-          item = subcategories.find(s => s.id === itemId);
-          break;
-        case 'plywood':
-          item = plywood.find(p => p.id === itemId);
-          break;
-      }
-      
-      if (item) {
-        item.employeeVisible = !item.employeeVisible;
-        const access = item.employeeVisible ? 'granted' : 'removed';
-        showSuccess(`Employee access ${access} for this item`);
-      }
-    }
-
-    // Fixed plywood function - require invoice again
     function addPlywood() {
       const type = document.getElementById('plywoodType').value.trim();
       const sheets = parseInt(document.getElementById('plywoodSheets').value) || 0;
@@ -3125,7 +3284,6 @@
       const invoice = document.getElementById('plywoodInvoice').value.trim();
       const date = document.getElementById('plywoodDate').value;
 
-      // Require all fields including invoice
       if (!type || !supplier || !invoice) {
         alert('❌ Please fill in all required fields including Invoice Number');
         return;
@@ -3140,13 +3298,12 @@
         cost,
         lastInvoice: invoice,
         dateAdded: date || new Date().toISOString(),
-        hidden: false, // Add hidden property for employee control
+        hidden: false,
         createdBy: currentUser
       };
 
       plywood.push(material);
       
-      // Always create invoice record when adding plywood
       const invoiceRecord = {
         id: Date.now(),
         invoiceNumber: invoice,
@@ -3327,23 +3484,20 @@
       showSuccess(`Successfully dispatched ${quantity} units of ${subcategory.name}!`);
     }
 
-    // Utility functions - Full implementations
+    // Utility functions
     function generateFolderName(address) {
-      // Extract key parts of address and create a consistent folder name
       const cleanAddress = address.toLowerCase()
         .replace(/\n/g, ' ')
         .replace(/[^\w\s]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
       
-      // Extract key components (street, city, etc.)
       const parts = cleanAddress.split(' ');
       const relevantParts = parts.filter(part => 
         part.length > 2 && 
         !['apt', 'apartment', 'unit', 'suite', 'floor', 'the', 'and', 'of'].includes(part)
       );
       
-      // Create folder name from first few relevant parts
       const folderParts = relevantParts.slice(0, 3);
       return folderParts.join('_').substring(0, 20).toUpperCase();
     }
@@ -3355,12 +3509,10 @@
         return;
       }
 
-      // If adding plywood (+1), require invoice number
       if (change > 0) {
         const invoice = prompt(`📋 Adding ${Math.abs(change)} sheet(s) of ${item.type}\n\nPlease enter Invoice Number:`);
         
         if (invoice === null) {
-          // User cancelled
           return;
         }
         
@@ -3369,13 +3521,11 @@
           return;
         }
         
-        // Update the material
         const newQuantity = Math.max(0, item.sheets + change);
         item.sheets = newQuantity;
         item.lastInvoice = invoice.trim();
         item.lastUpdated = new Date().toISOString();
         
-        // Create invoice record for the addition
         const invoiceRecord = {
           id: Date.now(),
           invoiceNumber: invoice.trim(),
@@ -3393,7 +3543,6 @@
         
         showSuccess(`Added ${Math.abs(change)} sheet(s) of ${item.type} with invoice ${invoice.trim()}. New total: ${newQuantity}`);
       } else {
-        // For removing plywood (-1), no invoice needed
         const newQuantity = Math.max(0, item.sheets + change);
         item.sheets = newQuantity;
         item.lastUpdated = new Date().toISOString();
@@ -3488,7 +3637,6 @@
     }
 
     function filterInvoices() {
-      // Placeholder for invoice filtering
       console.log('Invoice filtering not implemented yet');
     }
 
@@ -3514,13 +3662,342 @@
       
       showSuccess(`Invoice records exported! ${invoices.length} invoices exported to CSV`);
     }
-    // Settings functions - Full implementations
+
+    // Cloud sync management functions
+    async function forceCloudSync() {
+      if (forceLocalMode) {
+        showSuccess('⚠️ Currently in local mode. Switch to cloud mode first.');
+        return;
+      }
+      
+      console.log('🔄 Force syncing all data to cloud...');
+      
+      cloudSyncStatus = 'syncing';
+      updateCloudStatusDisplay();
+      
+      try {
+        await initializeCloudConnection();
+        
+        if (cloudSyncStatus === 'connected') {
+          const syncSuccess = await saveAllData();
+          
+          if (syncSuccess) {
+            lastSyncTime = new Date();
+            await processPendingSyncOperations();
+            showSuccess('✅ Force sync completed successfully!');
+          } else {
+            throw new Error('Force sync failed');
+          }
+        } else {
+          throw new Error('Could not establish cloud connection');
+        }
+        
+      } catch (error) {
+        console.error('❌ Force sync failed:', error);
+        cloudSyncStatus = 'disconnected';
+        updateCloudStatusDisplay();
+        showSuccess('❌ Force sync failed. Check connection and try again.');
+      }
+    }
+
+    async function repairCloudConnection() {
+      console.log('🔧 Repairing Firebase connection...');
+      showSuccess('🔧 Repairing Firebase connection...');
+      
+      if (typeof firebase === 'undefined') {
+        console.error('❌ Firebase SDK not available');
+        showSuccess('❌ Firebase SDK not loaded. Check internet connection and reload page.');
+        return false;
+      }
+      
+      cloudSyncStatus = 'disconnected';
+      isFirebaseAvailable = false;
+      syncRetryCount = 0;
+      forceLocalMode = false;
+      
+      if (connectionMonitorInterval) {
+        clearInterval(connectionMonitorInterval);
+        connectionMonitorInterval = null;
+      }
+      
+      if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+      }
+      
+      updateCloudStatusDisplay();
+      
+      try {
+        const connectionSuccess = await initializeCloudConnection();
+        
+        if (connectionSuccess) {
+          showSuccess('🔧 Firebase connection repaired successfully!');
+          await processPendingSyncOperations();
+          return true;
+        } else {
+          showSuccess('❌ Connection repair failed. Check Firestore rules and internet connection.');
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Repair failed:', error);
+        showSuccess(`❌ Repair failed: ${error.message}`);
+        return false;
+      }
+    }
+
+    async function processPendingSyncOperations() {
+      if (pendingSyncOperations.length === 0) {
+        return;
+      }
+      
+      console.log(`🔄 Processing ${pendingSyncOperations.length} pending sync operations...`);
+      
+      const processed = [];
+      
+      for (const operation of pendingSyncOperations) {
+        try {
+          if (operation.action === 'save') {
+            await saveToCloud(operation.key, operation.data);
+            processed.push(operation);
+          }
+        } catch (error) {
+          console.error('❌ Failed to process pending operation:', error);
+          break;
+        }
+      }
+      
+      pendingSyncOperations = pendingSyncOperations.filter(op => !processed.includes(op));
+      
+      if (processed.length > 0) {
+        console.log(`✅ Processed ${processed.length} pending operations`);
+        lastSyncTime = new Date();
+        updateCloudStatusDisplay();
+      }
+    }
+
+    function switchToLocalMode() {
+      if (confirm('Switch to local mode? This will disable cloud sync until you switch back.')) {
+        forceLocalMode = true;
+        cloudSyncStatus = 'local-only';
+        isFirebaseAvailable = false;
+        
+        if (connectionMonitorInterval) {
+          clearInterval(connectionMonitorInterval);
+          connectionMonitorInterval = null;
+        }
+        
+        if (syncInterval) {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+        
+        updateCloudStatusDisplay();
+        showSuccess('📱 Switched to local mode. Data will be stored locally only.');
+      }
+    }
+
+    async function switchToCloudMode() {
+      if (!forceLocalMode && cloudSyncStatus === 'connected') {
+        showSuccess('✅ Already in cloud mode and connected!');
+        return;
+      }
+      
+      forceLocalMode = false;
+      cloudSyncStatus = 'disconnected';
+      
+      updateCloudStatusDisplay();
+      showSuccess('🔄 Switching to cloud mode...');
+      
+      const connectionSuccess = await initializeCloudConnection();
+      
+      if (connectionSuccess) {
+        showSuccess('☁️ Successfully switched to cloud mode!');
+        await saveAllData();
+      } else {
+        showSuccess('⚠️ Switched to cloud mode, but connection failed. Will retry automatically.');
+      }
+    }
+
+    async function validateCloudData() {
+      console.log('🔍 Starting Firebase validation...');
+      
+      if (cloudSyncStatus !== 'connected' || forceLocalMode || !db) {
+        console.log('⚠️ Not connected to Firebase, attempting to connect...');
+        showSuccess('🔄 Not connected - attempting to repair Firebase connection...');
+        
+        const connectionSuccess = await repairCloudConnection();
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        if (cloudSyncStatus !== 'connected') {
+          showSuccess('❌ Cannot validate: Firebase connection failed. Check console for details.');
+          return;
+        }
+      }
+      
+      console.log('✅ Validating Firebase data...');
+      showSuccess('🔍 Validating Firebase data...');
+      
+      try {
+        const collections = ['cabinetFolders', 'subcategories', 'plywood', 'cabinets', 'dispatches', 'invoices'];
+        const validation = {};
+        
+        console.log('📋 Checking collections:', collections);
+        
+        for (const collection of collections) {
+          try {
+            console.log(`🔍 Checking ${collection}...`);
+            const doc = await db.collection('cabinet_data').doc(collection).get();
+            
+            validation[collection] = {
+              exists: doc.exists,
+              itemCount: doc.exists ? (doc.data()?.data?.length || 0) : 0,
+              lastUpdated: doc.exists ? doc.data()?.lastUpdated : null,
+              hasData: doc.exists && doc.data()?.data
+            };
+            
+            console.log(`✅ ${collection}:`, validation[collection]);
+          } catch (docError) {
+            console.error(`❌ Error checking ${collection}:`, docError);
+            validation[collection] = {
+              exists: false,
+              error: docError.message,
+              itemCount: 0
+            };
+          }
+        }
+        
+        const existingCollections = Object.entries(validation).filter(([key, valid]) => valid.exists);
+        const totalItems = Object.values(validation).reduce((sum, v) => sum + (v.itemCount || 0), 0);
+        
+        console.log('📊 Firebase Validation Results:', validation);
+        
+        if (existingCollections.length === collections.length) {
+          showSuccess(`✅ Firebase validation passed! ${collections.length} collections with ${totalItems} total items found.`);
+        } else if (existingCollections.length > 0) {
+          const existing = existingCollections.map(([key]) => key);
+          const missing = Object.entries(validation)
+            .filter(([key, valid]) => !valid.exists)
+            .map(([key]) => key);
+          
+          showSuccess(`⚠️ Partial validation: Found ${existing.length} collections (${existing.join(', ')}). Missing: ${missing.join(', ')}`);
+        } else {
+          showSuccess(`📭 No data collections found in Firebase. This is normal for a new setup. Add some data and it will sync automatically.`);
+        }
+        
+        console.table(validation);
+        
+      } catch (error) {
+        console.error('❌ Firebase data validation failed:', error);
+        console.error('🔧 Error details:', {
+          code: error.code,
+          message: error.message,
+          projectId: db?.app?.options?.projectId
+        });
+        
+        if (error.code === 'permission-denied') {
+          showSuccess('❌ Validation failed: Permission denied. Update Firestore security rules.');
+        } else if (error.code === 'unavailable') {
+          showSuccess('❌ Validation failed: Firebase service unavailable. Try again later.');
+        } else {
+          showSuccess(`❌ Validation failed: ${error.message}`);
+        }
+      }
+    }
+
+    async function resetCloudConnection() {
+      if (confirm('Reset cloud connection? This will clear all cloud sync state and reconnect.')) {
+        console.log('🔄 Resetting cloud connection...');
+        
+        cloudSyncStatus = 'disconnected';
+        isFirebaseAvailable = false;
+        lastSyncTime = null;
+        syncRetryCount = 0;
+        pendingSyncOperations = [];
+        forceLocalMode = false;
+        
+        if (connectionMonitorInterval) {
+          clearInterval(connectionMonitorInterval);
+          connectionMonitorInterval = null;
+        }
+        
+        if (syncInterval) {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+        
+        updateCloudStatusDisplay();
+        
+        const connectionSuccess = await initializeCloudConnection();
+        
+        if (connectionSuccess) {
+          showSuccess('🔄 Cloud connection reset and reconnected successfully!');
+        } else {
+          showSuccess('🔄 Cloud connection reset. Attempting to reconnect...');
+        }
+      }
+    }
+
+    // Connection modal management
+    function showConnectionModal() {
+      document.getElementById('connectionModal').classList.remove('hidden');
+      updateConnectionDiagnostics();
+    }
+
+    function closeConnectionModal() {
+      document.getElementById('connectionModal').classList.add('hidden');
+    }
+
+    function updateConnectionDiagnostics() {
+      const diagnosticsDiv = document.getElementById('connectionDiagnostics');
+      
+      const cloudStatus = cloudSyncStatus === 'connected' ? 'good' : 
+                         cloudSyncStatus === 'syncing' ? 'warning' : 'error';
+      
+      const localStatus = isLocalStorageAvailable ? 'good' : 'warning';
+      
+      const pendingOps = pendingSyncOperations.length;
+      const pendingStatus = pendingOps === 0 ? 'good' : pendingOps < 5 ? 'warning' : 'error';
+      
+      diagnosticsDiv.innerHTML = `
+        <div class="status-item status-${cloudStatus}">
+          <span><strong>Cloud Connection:</strong> ${cloudSyncStatus}</span>
+          <span>${cloudSyncStatus === 'connected' ? '✅' : cloudSyncStatus === 'syncing' ? '🔄' : '❌'}</span>
+        </div>
+        
+        <div class="status-item status-${localStatus}">
+          <span><strong>Local Storage:</strong> ${isLocalStorageAvailable ? 'Available' : 'Unavailable'}</span>
+          <span>${isLocalStorageAvailable ? '✅' : '⚠️'}</span>
+        </div>
+        
+        <div class="status-item status-${pendingStatus}">
+          <span><strong>Pending Operations:</strong> ${pendingOps} queued</span>
+          <span>${pendingOps === 0 ? '✅' : pendingOps < 5 ? '⚠️' : '❌'}</span>
+        </div>
+        
+        <div class="status-item status-good">
+          <span><strong>Last Sync:</strong> ${lastSyncTime ? formatTimeAgo(lastSyncTime) : 'Never'}</span>
+          <span>📅</span>
+        </div>
+        
+        <div class="status-item status-${forceLocalMode ? 'warning' : 'good'}">
+          <span><strong>Mode:</strong> ${forceLocalMode ? 'Local Only' : 'Cloud Sync'}</span>
+          <span>${forceLocalMode ? '💾' : '☁️'}</span>
+        </div>
+        
+        <div class="status-item status-good">
+          <span><strong>Retry Attempts:</strong> ${syncRetryCount}/${maxRetryAttempts}</span>
+          <span>🔄</span>
+        </div>
+      `;
+    }
+
+    // Settings functions
     function loadDemoData() {
       if (!confirm('This will replace all current data with demo data. Continue?')) {
         return;
       }
       
-      // Create demo cabinet folders
       cabinetFolders = [
         {
           id: 1,
@@ -3552,7 +4029,6 @@
         }
       ];
 
-      // Create demo subcategories
       subcategories = [
         {
           id: 1,
@@ -3589,7 +4065,6 @@
         }
       ];
 
-      // Create demo plywood
       plywood = [
         {
           id: 1,
@@ -3623,7 +4098,6 @@
         }
       ];
 
-      // Create demo cabinets inventory
       cabinets = [
         {
           id: 1,
@@ -3649,7 +4123,6 @@
         }
       ];
 
-      // Create demo invoices
       invoices = [
         {
           id: 1,
@@ -3674,7 +4147,6 @@
       dispatches = [];
       dataInitialized = true;
       
-      // Refresh all UI
       renderCabinetFoldersGrid();
       renderPlywood();
       renderInvoices();
@@ -3730,7 +4202,6 @@
               
               dataInitialized = true;
               
-              // Refresh all UI
               renderCabinetFoldersGrid();
               renderPlywood();
               renderDispatches();
@@ -3764,7 +4235,6 @@
       dispatches = [];
       invoices = [];
       
-      // Clear from storage
       if (isLocalStorageAvailable) {
         ['cabinetFolders', 'subcategories', 'plywood', 'cabinets', 'dispatches', 'invoices'].forEach(key => {
           try {
@@ -3775,7 +4245,6 @@
         });
       }
       
-      // Initialize default folders
       initializeDefaultCabinetFolders();
       renderCabinetFoldersGrid();
       updateStats();
@@ -3795,109 +4264,20 @@
     function backupData() {
       exportAllData();
     }
-    
-    // New diagnostic functions
-    async function testFirebaseConnection() {
-      console.log('🔗 Testing Firebase connection...');
-      showSuccess('🔗 Testing Firebase connection...');
-      
-      try {
-        if (!db) {
-          throw new Error('Firestore not initialized');
-        }
-        
-        // Test basic connectivity
-        console.log('📊 Firebase app info:', {
-          projectId: firebase.app().options.projectId,
-          appName: firebase.app().name,
-          authDomain: firebase.app().options.authDomain
-        });
-        
-        // Try to read from Firestore
-        const testCollection = db.collection('test');
-        const snapshot = await testCollection.limit(1).get();
-        
-        console.log('✅ Firestore read test successful');
-        showSuccess('✅ Firebase connection test passed!');
-        
-        // Update connection status
-        cloudSyncStatus = 'connected';
-        isFirebaseAvailable = true;
-        updateCloudStatusDisplay();
-        
-      } catch (error) {
-        console.error('❌ Firebase connection test failed:', error);
-        console.error('🔧 Error details:', {
-          code: error.code,
-          message: error.message,
-          name: error.name
-        });
-        
-        let errorMessage = 'Connection test failed: ';
-        
-        if (error.code === 'permission-denied') {
-          errorMessage += 'Permission denied. Update Firestore security rules.';
-        } else if (error.code === 'unavailable') {
-          errorMessage += 'Firebase service unavailable. Check internet connection.';
-        } else if (error.message.includes('network')) {
-          errorMessage += 'Network error. Check internet connection.';
-        } else {
-          errorMessage += error.message;
-        }
-        
-        showSuccess(`❌ ${errorMessage}`);
-        
-        cloudSyncStatus = 'disconnected';
-        isFirebaseAvailable = false;
-        updateCloudStatusDisplay();
-      }
-    }
-    
-    function showFirebaseConfig() {
-      console.log('🔧 Firebase Configuration:');
-      
-      if (firebase.apps.length > 0) {
-        const config = firebase.app().options;
-        console.log('📊 Current Firebase Config:', {
-          projectId: config.projectId,
-          authDomain: config.authDomain,
-          apiKey: config.apiKey ? config.apiKey.substring(0, 10) + '...' : 'Not set',
-          storageBucket: config.storageBucket,
-          messagingSenderId: config.messagingSenderId,
-          appId: config.appId
-        });
-        
-        console.log('🔗 Firebase App Status:', {
-          appName: firebase.app().name,
-          isInitialized: true,
-          firestoreInitialized: !!db
-        });
-        
-        showSuccess('🔧 Firebase config logged to console. Check browser developer tools.');
-      } else {
-        console.log('❌ No Firebase apps initialized');
-        showSuccess('❌ Firebase not initialized');
-      }
-    }
-    
+
     // Initialize the application
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 Cabinet Manufacturing System Starting...');
       
-      // Check localStorage availability first
       checkLocalStorageAvailability();
-      
-      // Initialize cloud status display
       updateCloudStatusDisplay();
       
-      // Check for auto-login
       if (checkAutoLogin()) {
         await showMainApp();
       } else {
         showLoginPage();
       }
       
-      // Login form handler
       const loginForm = document.getElementById('loginForm');
       if (loginForm) {
         loginForm.addEventListener('submit', async function(e) {
